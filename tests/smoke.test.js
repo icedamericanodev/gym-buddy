@@ -35,6 +35,20 @@ dom.window.addEventListener('load', () => {
     assert.strictEqual(document.querySelectorAll('.tab-btn').length, 3);
   });
 
+  check('version pill in header matches CHANGELOG top entry', () => {
+    const versionEl = document.querySelector('header .version');
+    assert.ok(versionEl, 'expected a .version pill in the header');
+    const shown = versionEl.textContent.trim();
+    assert.ok(/^v\d+\.\d+\.\d+$/.test(shown),
+      `expected vN.N.N format, got "${shown}"`);
+
+    const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
+    const m = changelog.match(/^##\s+(v\d+\.\d+\.\d+)/m);
+    assert.ok(m, 'expected at least one ## vN.N.N heading in CHANGELOG.md');
+    assert.strictEqual(shown, m[1],
+      `header pill (${shown}) should match top CHANGELOG entry (${m[1]})`);
+  });
+
   check('profile calculation produces a sane BMI', () => {
     document.getElementById('p-age').value = '30';
     document.getElementById('p-sex').value = 'male';

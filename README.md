@@ -28,6 +28,24 @@ To make it easier next time, right-click `index.html` → *Send to* → *Desktop
 - **Target calories** = TDEE + your goal adjustment (−500 to cut, 0 to maintain, +300 to bulk)
 - **Macros** — 1.8 g protein per kg bodyweight, 25 % of calories from fat, the rest from carbs
 
+## Use it online
+
+Once GitHub Pages is enabled (one-time, see below), the latest version lives at:
+
+**https://icedamericanodev.github.io/gym-buddy/**
+
+Every merge to `main` re-deploys automatically.
+
+### Enabling GitHub Pages (one-time setup)
+
+1. In this repo on GitHub, go to **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Done. The next merge to `main` will publish the site.
+
+## Versioning
+
+The current version shows as a small pill in the app header (e.g. `v0.3.0`). The full history of changes lives in `CHANGELOG.md`.
+
 ## Coming in next steps
 
 - Step 2 — real exercise GIFs/images
