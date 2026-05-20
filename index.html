@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Buddy</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --accent: #22d3ee;
+    --accent-2: #34d399;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --danger: #f87171;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #1e3a8a, #0f766e);
+    padding: 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 28px; }
+  header p { margin: 4px 0 0; color: #cbd5e1; }
+
+  nav {
+    display: flex;
+    background: var(--panel);
+    border-bottom: 1px solid #334155;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  nav button {
+    flex: 1;
+    padding: 14px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--panel-2);
+  }
+
+  main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .card {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #334155;
+  }
+  h2 { margin-top: 0; color: var(--accent); }
+  h3 { margin-bottom: 8px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    background: var(--panel-2);
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  button.primary {
+    background: var(--accent);
+    color: #0f172a;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button.primary:hover { background: #67e8f9; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .stat {
+    background: var(--panel-2);
+    padding: 14px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .stat .num { font-size: 22px; font-weight: 700; color: var(--accent-2); }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stat .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: var(--panel-2);
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  .pill.good { background: #064e3b; color: #6ee7b7; }
+  .pill.warn { background: #78350f; color: #fcd34d; }
+  .pill.bad  { background: #7f1d1d; color: #fca5a5; }
+
+  .recipe, .exercise {
+    background: var(--panel-2);
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--accent);
+  }
+  .recipe h4, .exercise h4 { margin: 0 0 6px 0; font-size: 16px; }
+  .recipe .meta, .exercise .meta { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .recipe .steps, .exercise .desc { font-size: 14px; color: #cbd5e1; }
+  .have { color: var(--accent-2); }
+  .miss { color: var(--warn); }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .filter-bar button {
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid #475569;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .filter-bar button.on {
+    background: var(--accent);
+    color: #0f172a;
+    border-color: var(--accent);
+  }
+
+  .visual {
+    font-size: 48px;
+    text-align: center;
+    padding: 16px;
+    background: #0b1220;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .empty { color: var(--muted); text-align: center; padding: 20px; font-style: italic; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .saved-flash {
+    display: inline-block;
+    color: var(--accent-2);
+    font-size: 13px;
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .saved-flash.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    nav button { font-size: 13px; padding: 12px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gym Buddy</h1>
+  <p>Your personal gym + nutrition assistant</p>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="profile">Profile</button>
+  <button class="tab-btn" data-tab="meals">Meals</button>
+  <button class="tab-btn" data-tab="workouts">Workouts</button>
+</nav>
+
+<main>
+
+  <!-- ============ PROFILE TAB ============ -->
+  <section id="profile" class="tab active">
+    <div class="card">
+      <h2>Your Profile</h2>
+      <p class="hint">Fill this in once. We calculate your BMI, daily calories, and macros.</p>
+
+      <div class="form-row">
+        <div>
+          <label>Name</label>
+          <input id="p-name" type="text" placeholder="e.g. Alex">
+        </div>
+        <div>
+          <label>Age</label>
+          <input id="p-age" type="number" min="10" max="100" placeholder="30">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>Sex</label>
+          <select id="p-sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div>
+          <label>Height (cm)</label>
+          <input id="p-height" type="number" min="100" max="250" placeholder="175">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>Weight (kg)</label>
+          <input id="p-weight" type="number" min="30" max="300" step="0.1" placeholder="75">
+        </div>
+        <div>
+          <label>Activity level</label>
+          <select id="p-activity">
+            <option value="1.2">Sedentary (desk job, no exercise)</option>
+            <option value="1.375">Light (1–3 days/week)</option>
+            <option value="1.55" selected>Moderate (3–5 days/week)</option>
+            <option value="1.725">Very active (6–7 days/week)</option>
+            <option value="1.9">Extra active (athlete / physical job)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>Goal</label>
+          <select id="p-goal">
+            <option value="-500">Lose weight (−500 kcal/day)</option>
+            <option value="0" selected>Maintain weight</option>
+            <option value="300">Gain muscle (+300 kcal/day)</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="primary" id="p-save">Save & Calculate</button>
+        </div>
+      </div>
+      <span id="p-saved" class="saved-flash">Saved!</span>
+    </div>
+
+    <div class="card" id="p-results" style="display:none;">
+      <h2>Your Numbers</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="num" id="r-bmi">–</div>
+          <div class="label">BMI</div>
+          <div class="sub" id="r-bmi-cat"></div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-bmr">–</div>
+          <div class="label">BMR (kcal)</div>
+          <div class="sub">at rest</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-tdee">–</div>
+          <div class="label">TDEE (kcal)</div>
+          <div class="sub">maintain</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-target">–</div>
+          <div class="label">Daily target</div>
+          <div class="sub" id="r-goal-sub"></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px;">Daily macros</h3>
+      <div class="stats">
+        <div class="stat">
+          <div class="num" id="r-protein">–</div>
+          <div class="label">Protein (g)</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-carbs">–</div>
+          <div class="label">Carbs (g)</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-fat">–</div>
+          <div class="label">Fat (g)</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="r-water">–</div>
+          <div class="label">Water (L)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MEALS TAB ============ -->
+  <section id="meals" class="tab">
+    <div class="card">
+      <h2>What's in your kitchen?</h2>
+      <p class="hint">Type the ingredients you have (comma-separated). We'll suggest meals you can make right now.</p>
+      <textarea id="m-ingredients" placeholder="eggs, bread, tomato, chicken, rice, onion, cheese"></textarea>
+      <div style="margin-top:10px;">
+        <button class="primary" id="m-find">Find meals</button>
+      </div>
+    </div>
+
+    <div id="m-results"></div>
+  </section>
+
+  <!-- ============ WORKOUTS TAB ============ -->
+  <section id="workouts" class="tab">
+    <div class="card">
+      <h2>Today's Coach</h2>
+      <p class="hint">Pick where you're training. We'll show suitable exercises with form tips.</p>
+
+      <div class="filter-bar" id="loc-filter">
+        <button data-loc="all" class="on">All</button>
+        <button data-loc="bodyweight">Bodyweight</button>
+        <button data-loc="home">Home (light equipment)</button>
+        <button data-loc="gym">Gym</button>
+      </div>
+
+      <div class="filter-bar" id="muscle-filter">
+        <button data-muscle="all" class="on">All muscles</button>
+        <button data-muscle="chest">Chest</button>
+        <button data-muscle="back">Back</button>
+        <button data-muscle="legs">Legs</button>
+        <button data-muscle="shoulders">Shoulders</button>
+        <button data-muscle="arms">Arms</button>
+        <button data-muscle="core">Core</button>
+        <button data-muscle="cardio">Cardio</button>
+      </div>
+
+      <button class="primary" id="w-plan">Build me a quick session (5 exercises)</button>
+    </div>
+
+    <div id="w-results"></div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   DATA: recipes & exercises (small starter sets)
+   ============================================================ */
+
+const RECIPES = [
+  { name: "Scrambled eggs on toast", kcal: 350, protein: 22,
+    ingredients: ["eggs", "bread", "butter", "salt"],
+    steps: "Whisk 3 eggs with salt. Cook in butter on low heat, stirring slowly. Serve on 2 slices of toast." },
+  { name: "Oatmeal with banana", kcal: 420, protein: 12,
+    ingredients: ["oats", "banana", "milk", "honey"],
+    steps: "Simmer 60g oats in 250ml milk for 4 min. Top with sliced banana and a drizzle of honey." },
+  { name: "Greek yogurt bowl", kcal: 300, protein: 20,
+    ingredients: ["yogurt", "berries", "honey", "nuts"],
+    steps: "200g Greek yogurt, top with berries, a teaspoon of honey, and a small handful of nuts." },
+  { name: "Chicken stir-fry with rice", kcal: 550, protein: 40,
+    ingredients: ["chicken", "rice", "onion", "pepper", "soy sauce", "garlic", "oil"],
+    steps: "Cook 80g rice. Stir-fry diced chicken in oil with garlic, onion, and peppers. Add soy sauce. Serve over rice." },
+  { name: "Pasta with tomato sauce", kcal: 480, protein: 14,
+    ingredients: ["pasta", "tomato", "garlic", "onion", "oil", "salt"],
+    steps: "Boil 100g pasta. Sauté onion + garlic, add chopped tomato, simmer 10 min, season, toss with pasta." },
+  { name: "Grilled chicken salad", kcal: 380, protein: 35,
+    ingredients: ["chicken", "lettuce", "tomato", "cucumber", "oil", "lemon"],
+    steps: "Grill seasoned chicken breast. Slice over lettuce, tomato, cucumber. Dress with olive oil + lemon." },
+  { name: "Tuna sandwich", kcal: 400, protein: 28,
+    ingredients: ["tuna", "bread", "mayo", "lettuce"],
+    steps: "Mix tuna with a spoon of mayo. Spread on 2 slices of bread with lettuce." },
+  { name: "Bean burrito", kcal: 500, protein: 20,
+    ingredients: ["beans", "tortilla", "cheese", "tomato", "onion"],
+    steps: "Warm tortilla. Fill with mashed beans, diced tomato + onion, grated cheese. Roll up." },
+  { name: "Veggie omelette", kcal: 320, protein: 22,
+    ingredients: ["eggs", "pepper", "onion", "cheese", "oil"],
+    steps: "Beat 3 eggs. Sauté diced pepper + onion, pour eggs in, top with cheese, fold." },
+  { name: "Rice and beans", kcal: 460, protein: 16,
+    ingredients: ["rice", "beans", "onion", "garlic", "oil"],
+    steps: "Cook 80g rice. Sauté onion + garlic, add beans, warm through. Serve over rice." },
+  { name: "Spaghetti bolognese", kcal: 620, protein: 35,
+    ingredients: ["pasta", "beef", "tomato", "onion", "garlic", "oil"],
+    steps: "Brown beef with onion + garlic. Add chopped tomato, simmer 15 min. Serve over boiled pasta." },
+  { name: "Chicken curry with rice", kcal: 580, protein: 38,
+    ingredients: ["chicken", "rice", "onion", "garlic", "tomato", "curry powder", "oil"],
+    steps: "Sauté onion + garlic, add chicken, brown, stir in curry powder + tomato, simmer 15 min. Serve over rice." },
+  { name: "Peanut butter banana smoothie", kcal: 380, protein: 18,
+    ingredients: ["banana", "milk", "peanut butter", "oats"],
+    steps: "Blend 1 banana, 250ml milk, 1 tbsp peanut butter, 2 tbsp oats. Drink cold." },
+  { name: "Tuna pasta", kcal: 520, protein: 30,
+    ingredients: ["pasta", "tuna", "tomato", "garlic", "oil"],
+    steps: "Boil 100g pasta. Sauté garlic, add tomato + tuna, warm, toss with pasta." },
+  { name: "Egg fried rice", kcal: 510, protein: 18,
+    ingredients: ["rice", "eggs", "onion", "soy sauce", "oil", "pepper"],
+    steps: "Use cold cooked rice. Stir-fry onion + pepper, push aside, scramble eggs, mix in rice + soy sauce." },
+];
+
+const EXERCISES = [
+  { name: "Push-ups", loc: "bodyweight", muscle: "chest", emoji: "🙇",
+    sets: "3 × 8–15", desc: "Hands shoulder-width, body straight, lower chest to floor, push back up." },
+  { name: "Squats (bodyweight)", loc: "bodyweight", muscle: "legs", emoji: "🦵",
+    sets: "3 × 12–20", desc: "Feet shoulder-width, sit back like into a chair, knees track over toes, stand up." },
+  { name: "Lunges", loc: "bodyweight", muscle: "legs", emoji: "🚶",
+    sets: "3 × 10 per leg", desc: "Step forward, lower back knee toward floor, push back to start. Alternate legs." },
+  { name: "Plank", loc: "bodyweight", muscle: "core", emoji: "🧘",
+    sets: "3 × 30–60 sec", desc: "Forearms on ground, body straight from head to heels, brace core. Don't sag." },
+  { name: "Sit-ups", loc: "bodyweight", muscle: "core", emoji: "🤸",
+    sets: "3 × 15–25", desc: "Lie on back, knees bent, hands by ears, sit up curling forward, lower with control." },
+  { name: "Glute bridges", loc: "bodyweight", muscle: "legs", emoji: "🍑",
+    sets: "3 × 15", desc: "Lie on back, knees bent, drive heels into floor, lift hips, squeeze glutes at the top." },
+  { name: "Mountain climbers", loc: "bodyweight", muscle: "cardio", emoji: "⛰️",
+    sets: "3 × 30 sec", desc: "Plank position, alternate driving knees toward chest fast. Keep hips low." },
+  { name: "Burpees", loc: "bodyweight", muscle: "cardio", emoji: "💥",
+    sets: "3 × 8–12", desc: "Squat down, kick feet back to plank, push-up, jump feet forward, jump up with hands overhead." },
+  { name: "Jumping jacks", loc: "bodyweight", muscle: "cardio", emoji: "🤾",
+    sets: "3 × 60 sec", desc: "Jump feet wide while raising arms overhead, then back. Keep a steady rhythm." },
+  { name: "Tricep dips (chair)", loc: "bodyweight", muscle: "arms", emoji: "💪",
+    sets: "3 × 10", desc: "Hands on edge of sturdy chair, legs out, lower body by bending elbows, push back up." },
+  { name: "Dumbbell rows", loc: "home", muscle: "back", emoji: "🏋️",
+    sets: "3 × 10 per arm", desc: "One knee + hand on bench, dumbbell in other hand. Pull weight to hip, squeeze shoulder blade." },
+  { name: "Dumbbell shoulder press", loc: "home", muscle: "shoulders", emoji: "🏋️",
+    sets: "3 × 8–12", desc: "Sit or stand. Press dumbbells from shoulders to overhead, lower with control." },
+  { name: "Dumbbell bicep curls", loc: "home", muscle: "arms", emoji: "💪",
+    sets: "3 × 10–12", desc: "Stand with dumbbells, elbows pinned to sides, curl up by bending elbows, lower slowly." },
+  { name: "Resistance band pull-apart", loc: "home", muscle: "back", emoji: "🎯",
+    sets: "3 × 15", desc: "Hold band at chest height, pull arms apart squeezing shoulder blades, return slowly." },
+  { name: "Goblet squat (dumbbell)", loc: "home", muscle: "legs", emoji: "🏋️",
+    sets: "3 × 10–12", desc: "Hold one dumbbell at chest. Squat down keeping chest up, drive through heels to stand." },
+  { name: "Bench press", loc: "gym", muscle: "chest", emoji: "🏋️",
+    sets: "4 × 6–10", desc: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up. Use a spotter." },
+  { name: "Deadlift", loc: "gym", muscle: "back", emoji: "🏋️",
+    sets: "3 × 5", desc: "Bar over mid-foot, neutral spine, drive through floor to stand tall. Lower with control." },
+  { name: "Barbell back squat", loc: "gym", muscle: "legs", emoji: "🏋️",
+    sets: "4 × 6–10", desc: "Bar on upper back, feet shoulder-width, squat down keeping chest up, drive up." },
+  { name: "Lat pulldown", loc: "gym", muscle: "back", emoji: "💺",
+    sets: "3 × 10–12", desc: "Wide grip on bar, pull down to upper chest, squeeze lats, control the return." },
+  { name: "Leg press", loc: "gym", muscle: "legs", emoji: "💺",
+    sets: "3 × 10–15", desc: "Feet shoulder-width on platform, lower until knees are ~90°, press back up without locking knees." },
+  { name: "Pull-ups", loc: "gym", muscle: "back", emoji: "🤸",
+    sets: "3 × max", desc: "Hang from bar, pull chest toward bar, lower under control. Use band if needed." },
+  { name: "Overhead barbell press", loc: "gym", muscle: "shoulders", emoji: "🏋️",
+    sets: "3 × 6–10", desc: "Bar at shoulders, brace core, press overhead until elbows lock, lower to shoulders." },
+];
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   PROFILE — BMI / BMR / TDEE / macros
+   ============================================================ */
+const PROFILE_KEY = 'gymBuddyProfile';
+
+function loadProfile() {
+  const raw = localStorage.getItem(PROFILE_KEY);
+  if (!raw) return;
+  const p = JSON.parse(raw);
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-age').value = p.age || '';
+  document.getElementById('p-sex').value = p.sex || 'male';
+  document.getElementById('p-height').value = p.height || '';
+  document.getElementById('p-weight').value = p.weight || '';
+  document.getElementById('p-activity').value = p.activity || '1.55';
+  document.getElementById('p-goal').value = p.goal || '0';
+  calculate();
+}
+
+function bmiCategory(bmi) {
+  if (bmi < 18.5) return { text: 'Underweight', cls: 'warn' };
+  if (bmi < 25)   return { text: 'Healthy', cls: 'good' };
+  if (bmi < 30)   return { text: 'Overweight', cls: 'warn' };
+  return { text: 'Obese', cls: 'bad' };
+}
+
+function calculate() {
+  const age = +document.getElementById('p-age').value;
+  const sex = document.getElementById('p-sex').value;
+  const height = +document.getElementById('p-height').value;
+  const weight = +document.getElementById('p-weight').value;
+  const activity = +document.getElementById('p-activity').value;
+  const goalAdj = +document.getElementById('p-goal').value;
+
+  if (!age || !height || !weight) {
+    document.getElementById('p-results').style.display = 'none';
+    return;
+  }
+
+  const bmi = weight / Math.pow(height / 100, 2);
+  const cat = bmiCategory(bmi);
+
+  // Mifflin-St Jeor
+  const bmr = sex === 'male'
+    ? 10 * weight + 6.25 * height - 5 * age + 5
+    : 10 * weight + 6.25 * height - 5 * age - 161;
+
+  const tdee = bmr * activity;
+  const target = tdee + goalAdj;
+
+  // Macros: 1.8 g protein/kg, 25% fat, rest carbs
+  const protein = Math.round(weight * 1.8);
+  const fat = Math.round((target * 0.25) / 9);
+  const carbs = Math.round((target - protein * 4 - fat * 9) / 4);
+  const water = (weight * 0.035).toFixed(1);
+
+  document.getElementById('p-results').style.display = 'block';
+  document.getElementById('r-bmi').textContent = bmi.toFixed(1);
+  const bmiCatEl = document.getElementById('r-bmi-cat');
+  bmiCatEl.innerHTML = `<span class="pill ${cat.cls}">${cat.text}</span>`;
+  document.getElementById('r-bmr').textContent = Math.round(bmr);
+  document.getElementById('r-tdee').textContent = Math.round(tdee);
+  document.getElementById('r-target').textContent = Math.round(target);
+  document.getElementById('r-goal-sub').textContent =
+    goalAdj < 0 ? 'cut' : goalAdj > 0 ? 'bulk' : 'maintain';
+  document.getElementById('r-protein').textContent = protein;
+  document.getElementById('r-carbs').textContent = Math.max(0, carbs);
+  document.getElementById('r-fat').textContent = fat;
+  document.getElementById('r-water').textContent = water;
+}
+
+document.getElementById('p-save').addEventListener('click', () => {
+  const profile = {
+    name: document.getElementById('p-name').value,
+    age: document.getElementById('p-age').value,
+    sex: document.getElementById('p-sex').value,
+    height: document.getElementById('p-height').value,
+    weight: document.getElementById('p-weight').value,
+    activity: document.getElementById('p-activity').value,
+    goal: document.getElementById('p-goal').value,
+  };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  calculate();
+  const flash = document.getElementById('p-saved');
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 1500);
+});
+
+/* ============================================================
+   MEALS — match user ingredients against recipes
+   ============================================================ */
+function normalize(s) { return s.toLowerCase().trim(); }
+
+function findMeals() {
+  const raw = document.getElementById('m-ingredients').value;
+  const have = raw.split(',').map(normalize).filter(Boolean);
+  const results = document.getElementById('m-results');
+
+  if (have.length === 0) {
+    results.innerHTML = '<div class="card empty">Type some ingredients above to get suggestions.</div>';
+    return;
+  }
+
+  const scored = RECIPES.map(r => {
+    const matches = r.ingredients.filter(i => have.some(h => normalize(i).includes(h) || h.includes(normalize(i))));
+    const missing = r.ingredients.filter(i => !matches.includes(i));
+    return { recipe: r, matches, missing, score: matches.length / r.ingredients.length };
+  })
+  .filter(x => x.matches.length >= 2)
+  .sort((a, b) => b.score - a.score || a.missing.length - b.missing.length)
+  .slice(0, 8);
+
+  if (scored.length === 0) {
+    results.innerHTML = '<div class="card empty">No matches yet. Try adding more common ingredients like eggs, rice, pasta, chicken, tomato.</div>';
+    return;
+  }
+
+  results.innerHTML = '<div class="card"><h2>Meals you can try</h2>' +
+    scored.map(({ recipe, matches, missing, score }) => `
+      <div class="recipe">
+        <h4>${recipe.name}</h4>
+        <div class="meta">
+          <span class="pill good">${recipe.kcal} kcal</span>
+          <span class="pill">${recipe.protein}g protein</span>
+          <span class="pill">${Math.round(score * 100)}% match</span>
+        </div>
+        <div class="meta">
+          <span class="have">Have: ${matches.join(', ') || '–'}</span>
+          ${missing.length ? ` <span class="miss">· Need: ${missing.join(', ')}</span>` : ''}
+        </div>
+        <div class="steps">${recipe.steps}</div>
+      </div>
+    `).join('') + '</div>';
+}
+
+document.getElementById('m-find').addEventListener('click', findMeals);
+
+/* ============================================================
+   WORKOUTS — filter by location + muscle, generate session
+   ============================================================ */
+let curLoc = 'all';
+let curMuscle = 'all';
+
+document.querySelectorAll('#loc-filter button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#loc-filter button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    curLoc = b.dataset.loc;
+    renderExercises();
+  });
+});
+document.querySelectorAll('#muscle-filter button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#muscle-filter button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    curMuscle = b.dataset.muscle;
+    renderExercises();
+  });
+});
+
+function filteredExercises() {
+  return EXERCISES.filter(e =>
+    (curLoc === 'all' || e.loc === curLoc) &&
+    (curMuscle === 'all' || e.muscle === curMuscle)
+  );
+}
+
+function exerciseCard(e) {
+  return `
+    <div class="exercise">
+      <div class="visual">${e.emoji}</div>
+      <h4>${e.name}</h4>
+      <div class="meta">
+        <span class="pill">${e.loc}</span>
+        <span class="pill">${e.muscle}</span>
+        <span class="pill good">${e.sets}</span>
+      </div>
+      <div class="desc">${e.desc}</div>
+    </div>`;
+}
+
+function renderExercises() {
+  const list = filteredExercises();
+  const out = document.getElementById('w-results');
+  if (list.length === 0) {
+    out.innerHTML = '<div class="card empty">No exercises match those filters.</div>';
+    return;
+  }
+  out.innerHTML = `<div class="card"><h2>Exercises (${list.length})</h2>${list.map(exerciseCard).join('')}</div>`;
+}
+
+document.getElementById('w-plan').addEventListener('click', () => {
+  const pool = filteredExercises();
+  if (pool.length === 0) {
+    document.getElementById('w-results').innerHTML =
+      '<div class="card empty">No exercises match those filters.</div>';
+    return;
+  }
+  // Pick 5 random, prefer one per muscle group
+  const byMuscle = {};
+  pool.forEach(e => { (byMuscle[e.muscle] ||= []).push(e); });
+  const picks = [];
+  const muscles = Object.keys(byMuscle).sort(() => Math.random() - 0.5);
+  for (const m of muscles) {
+    const arr = byMuscle[m];
+    picks.push(arr[Math.floor(Math.random() * arr.length)]);
+    if (picks.length >= 5) break;
+  }
+  while (picks.length < 5 && pool.length > picks.length) {
+    const e = pool[Math.floor(Math.random() * pool.length)];
+    if (!picks.includes(e)) picks.push(e);
+  }
+  document.getElementById('w-results').innerHTML =
+    `<div class="card"><h2>Your session (${picks.length} exercises)</h2>${picks.map(exerciseCard).join('')}</div>`;
+});
+
+/* ============================================================
+   STARTUP
+   ============================================================ */
+loadProfile();
+renderExercises();
+findMeals();
+</script>
+
+</body>
+</html>
