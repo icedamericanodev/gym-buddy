@@ -2,6 +2,23 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v0.9.0 — 2026-05-20
+
+### Added
+- **Dashboard tab** — track your weight over time. Each time you save your profile with a new weight, today's value is logged automatically (last value per day wins). The Dashboard shows:
+  - Current weight
+  - Change vs 7 days / 30 days / 90 days / 1 year ago (green if down, red if up — no judgment, just the trend)
+  - An SVG line chart with time-range filter (1 week / 1 month / 3 months / 1 year / All)
+  - Empty state with guidance when you've never logged
+- **Backup & Restore** card on the Profile tab. Download a single `herlyft-backup-YYYY-MM-DD.json` file containing your profile, weight history, and hydration log; restore it on another browser or after clearing your cookies. Restoring asks for confirmation before overwriting.
+
+### Changed
+- **Profile key migrated** from `gymBuddyProfile` → `herlyftProfile`. On first load after the update, your existing data is transparently copied to the new key — no manual action needed. The legacy entry is left in place so reverting to an older version still works.
+- **Profile schema versioning** — saved profiles now include a `schema` field so future updates can migrate older shapes safely instead of guessing.
+
+### Fixed
+- **Corrupt profile data** in `localStorage` no longer crashes the app on load — it's now caught, logged, and the form starts blank.
+
 ## v0.8.0 — 2026-05-20
 
 ### Added
