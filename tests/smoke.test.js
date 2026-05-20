@@ -79,13 +79,24 @@ dom.window.addEventListener('load', () => {
     assert.ok(text.includes('ISSN'), 'expected ISSN citation');
   });
 
+  // Reset profile to a known baseline so subsequent tests don't rely on
+  // residual state from earlier tests.
+  function setBaselineProfile() {
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+  }
+
   check('protein target adapts to goal (cut > maintain)', () => {
-    // Same body, cut goal first
+    setBaselineProfile();
     document.getElementById('p-goal').value = '-500';
     document.getElementById('p-save').click();
     const cutProtein = parseInt(document.getElementById('r-protein').textContent, 10);
 
-    // Now maintain
+    setBaselineProfile();
     document.getElementById('p-goal').value = '0';
     document.getElementById('p-save').click();
     const maintainProtein = parseInt(document.getElementById('r-protein').textContent, 10);
@@ -95,16 +106,99 @@ dom.window.addEventListener('load', () => {
   });
 
   check('calorie target shifts with goal', () => {
+    setBaselineProfile();
     document.getElementById('p-goal').value = '-500';
     document.getElementById('p-save').click();
     const cutTarget = parseInt(document.getElementById('r-target').textContent, 10);
 
+    setBaselineProfile();
     document.getElementById('p-goal').value = '300';
     document.getElementById('p-save').click();
     const gainTarget = parseInt(document.getElementById('r-target').textContent, 10);
 
     assert.strictEqual(gainTarget - cutTarget, 800,
       `expected gain − cut to be 800 kcal, got ${gainTarget - cutTarget}`);
+  });
+
+  check('safety floor warning surfaces when target drops below the minimum', () => {
+    // 50kg sedentary woman on a -500 kcal cut lands well below 1200 kcal.
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'female';
+    document.getElementById('p-height').value = '160';
+    document.getElementById('p-weight').value = '50';
+    document.getElementById('p-activity').value = '1.2';
+    document.getElementById('p-goal').value = '-500';
+    document.getElementById('p-save').click();
+
+    const sub = document.getElementById('r-goal-sub');
+    assert.ok(sub.textContent.toLowerCase().includes('below safe minimum'),
+      `expected "below safe minimum" warning, got "${sub.textContent}"`);
+
+    // Maintain at the same body should not trip the warning.
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+    assert.ok(!sub.textContent.toLowerCase().includes('below safe minimum'),
+      `unexpected warning at maintain: "${sub.textContent}"`);
+  });
+
+  check('negative or zero profile inputs hide the results card', () => {
+    // First produce a valid result so the card is visible.
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+    assert.notStrictEqual(document.getElementById('p-results').style.display, 'none',
+      'expected results visible after valid save');
+
+    // Now plug in a negative weight — must hide (was a bug: negative protein/BMI).
+    document.getElementById('p-weight').value = '-50';
+    document.getElementById('p-save').click();
+    assert.strictEqual(document.getElementById('p-results').style.display, 'none',
+      'negative weight should hide the results card, not show negative macros');
+
+    // Same for height and age.
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-height').value = '-10';
+    document.getElementById('p-save').click();
+    assert.strictEqual(document.getElementById('p-results').style.display, 'none',
+      'negative height should hide the results card');
+
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-age').value = '-1';
+    document.getElementById('p-save').click();
+    assert.strictEqual(document.getElementById('p-results').style.display, 'none',
+      'negative age should hide the results card');
+  });
+
+  check('every info icon has a non-trivial title', () => {
+    const icons = document.querySelectorAll('.info');
+    assert.ok(icons.length >= 8, `expected ≥8 info icons, got ${icons.length}`);
+    icons.forEach((i, idx) => {
+      const title = i.getAttribute('title') || '';
+      assert.ok(title.length >= 30,
+        `info icon #${idx} should have a descriptive title, got "${title}"`);
+    });
+  });
+
+  check('build-a-session always returns up to 5 distinct picks across rapid clicks', () => {
+    // Reset to "all" filters
+    document.querySelectorAll('#loc-filter button').forEach(b => {
+      if (b.dataset.loc === 'all') b.click();
+    });
+    document.querySelectorAll('#muscle-filter button').forEach(b => {
+      if (b.dataset.muscle === 'all') b.click();
+    });
+    for (let i = 0; i < 25; i++) {
+      document.getElementById('w-plan').click();
+      const cards = document.querySelectorAll('#w-results .exercise');
+      const names = Array.from(cards).map(c => c.querySelector('h4').textContent);
+      assert.strictEqual(cards.length, 5,
+        `click #${i}: expected 5 picks (all filters), got ${cards.length}`);
+      const unique = new Set(names);
+      assert.strictEqual(unique.size, names.length,
+        `click #${i}: expected distinct picks, got duplicates in ${names.join(', ')}`);
+    }
   });
 
   if (process.exitCode) {
