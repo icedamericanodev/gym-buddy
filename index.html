@@ -228,10 +228,10 @@
     font-size: 14px;
     list-style: none;
   }
+  details.sources summary::-webkit-details-marker { display: none; }
   details.sources summary::before {
     content: "▸ ";
     display: inline-block;
-    transition: transform 0.15s;
   }
   details.sources[open] summary::before { content: "▾ "; }
   details.sources ul { padding-left: 18px; margin: 10px 0 4px; }
@@ -357,7 +357,7 @@
         </div>
         <div class="stat">
           <div class="num" id="r-carbs">–</div>
-          <div class="label">Carbs (g) <i class="info" title="Remainder of daily calories after protein and fat. Within the IOM Acceptable Macronutrient Distribution Range (AMDR) of 45–65% of calories.">i</i></div>
+          <div class="label">Carbs (g) <i class="info" title="Remainder of daily calories after protein and fat. Typically within the IOM Acceptable Macronutrient Distribution Range (AMDR) of 45–65% of calories; aggressive cuts may dip lower.">i</i></div>
         </div>
         <div class="stat">
           <div class="num" id="r-fat">–</div>
@@ -365,7 +365,7 @@
         </div>
         <div class="stat">
           <div class="num" id="r-water">–</div>
-          <div class="label">Water (L) <i class="info" title="35 mL per kg body weight (ESPEN 2018 guideline). The IOM (2005) suggests ~3.7 L/day total water for men and ~2.7 L for women — about 20% comes from food.">i</i></div>
+          <div class="label">Water (L) <i class="info" title="35 mL per kg body weight (EFSA 2010 adult reference). The IOM (2005) suggests ~3.7 L/day total water for men and ~2.7 L for women — about 20% comes from food.">i</i></div>
         </div>
       </div>
 
@@ -378,8 +378,8 @@
           <li><strong>Daily target</strong> — −500 kcal/day for a ~0.5 kg/week cut (NIH guidance on sustainable weight loss); +300 kcal/day for gradual lean gain (Iraki et al., 2019; Aragon et al., 2017).</li>
           <li><strong>Protein</strong> — goal-dependent: 2.0 g/kg cut, 1.6 g/kg maintain, 1.8 g/kg gain. Sources: ISSN Position Stand (Jäger et al., 2017); Morton et al. meta-analysis (2018) identified ~1.6 g/kg as the point of diminishing returns for hypertrophy.</li>
           <li><strong>Fat</strong> — 25% of daily calories. Within the Institute of Medicine Acceptable Macronutrient Distribution Range (AMDR: 20–35%).</li>
-          <li><strong>Carbs</strong> — remainder of calories after protein and fat. Within the IOM AMDR (45–65%).</li>
-          <li><strong>Water</strong> — 35 mL per kg body weight (ESPEN 2018 hydration guideline). The IOM (2005) Dietary Reference Intake suggests ~3.7 L/day total water for men and ~2.7 L for women, of which ~20% comes from food.</li>
+          <li><strong>Carbs</strong> — remainder of calories after protein and fat. Typically within the IOM AMDR (45–65%); aggressive cuts may fall below.</li>
+          <li><strong>Water</strong> — 35 mL per kg body weight (EFSA 2010 adult reference; consistent with the Holliday-Segar derivation of 30–40 mL/kg). The IOM (2005) Dietary Reference Intake suggests ~3.7 L/day total water for men and ~2.7 L for women, of which ~20% comes from food.</li>
         </ul>
         <p class="disclaimer">These are general adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations, especially if you have a medical condition.</p>
       </details>
@@ -434,6 +434,20 @@
 
 <script>
 /* ============================================================
+   UTILS
+   ============================================================ */
+
+// Escape strings before inserting them into innerHTML templates. Today the
+// data arrays are hard-coded, but if RECIPES/EXERCISES ever loads from
+// localStorage, a remote file, or user input, every interpolation site
+// below becomes a stored-XSS sink. Keep this in front of all of them.
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+/* ============================================================
    DATA: recipes & exercises (small starter sets)
    ============================================================ */
 
@@ -446,7 +460,7 @@ const RECIPES = [
   { name: "Oatmeal with banana", kcal: 550, protein: 17,
     ingredients: ["oats", "banana", "milk", "honey"],
     steps: "Simmer 60 g rolled oats in 250 mL whole milk for 4 min. Top with 1 sliced medium banana (~120 g) and 1 tbsp (~21 g) honey." },
-  { name: "Greek yogurt bowl", kcal: 270, protein: 24,
+  { name: "Greek yogurt bowl", kcal: 290, protein: 24,
     ingredients: ["yogurt", "berries", "honey", "nuts"],
     steps: "200 g plain low-fat Greek yogurt. Top with 80 g mixed berries, 1 tsp (~7 g) honey, and a 15 g handful of almonds." },
   { name: "Chicken stir-fry with rice", kcal: 640, protein: 41,
@@ -467,7 +481,7 @@ const RECIPES = [
   { name: "Veggie omelette", kcal: 380, protein: 25,
     ingredients: ["eggs", "pepper", "onion", "cheese", "oil"],
     steps: "Beat 3 large eggs (~150 g). Sauté 80 g diced pepper + onion in 1 tsp oil, pour eggs in, top with 20 g grated cheese, fold." },
-  { name: "Rice and beans", kcal: 570, protein: 19,
+  { name: "Rice and beans", kcal: 630, protein: 19,
     ingredients: ["rice", "beans", "onion", "garlic", "oil"],
     steps: "Cook 80 g (dry) white rice. Sauté half an onion + 1 clove garlic in 1 tbsp oil, add 150 g cooked beans, warm through. Serve over rice." },
   { name: "Spaghetti bolognese", kcal: 610, protein: 35,
@@ -532,7 +546,7 @@ const EXERCISES = [
   { name: "Leg press", loc: "gym", muscle: "legs", emoji: "💺",
     sets: "3 × 10–15", desc: "Feet shoulder-width on platform, lower until knees are ~90°, press back up without locking knees at the top. Don't let your lower back round off the seat." },
   { name: "Pull-ups", loc: "gym", muscle: "back", emoji: "🤸",
-    sets: "3 × AMRAP (as many reps as possible)", desc: "Hang from bar, pull chest toward bar, lower under control. Use an assist band if needed. Don't kip or swing — controlled negatives protect the shoulders." },
+    sets: "3 × AMRAP", desc: "AMRAP = as many reps as possible. Hang from bar, pull chest toward bar, lower under control. Use an assist band if needed. Don't kip or swing — controlled negatives protect the shoulders." },
   { name: "Overhead barbell press", loc: "gym", muscle: "shoulders", emoji: "🏋️",
     sets: "3 × 6–10", desc: "Bar at shoulders, brace core and squeeze glutes, press overhead until elbows lock, lower to shoulders. Don't arch your lower back to push the weight up." },
 ];
@@ -591,7 +605,7 @@ function calculate() {
   const activity = +document.getElementById('p-activity').value;
   const goalAdj = +document.getElementById('p-goal').value;
 
-  if (!age || !height || !weight) {
+  if (!age || age <= 0 || !height || height <= 0 || !weight || weight <= 0) {
     document.getElementById('p-results').style.display = 'none';
     return;
   }
@@ -622,9 +636,16 @@ function calculate() {
   // Carbs: remainder. Within IOM AMDR (45–65%).
   const carbs = Math.round((target - protein * 4 - fat * 9) / 4);
 
-  // Water: 35 mL/kg (ESPEN 2018). IOM total-water intake (3.7 L men / 2.7 L
-  // women) includes ~20% from food, so a fluids target is lower.
+  // Water: 35 mL/kg (EFSA 2010 adult reference; Holliday-Segar 30–40 mL/kg
+  // range). IOM total-water intake (3.7 L men / 2.7 L women) includes ~20%
+  // from food, so a fluids target is lower.
   const water = (weight * 0.035).toFixed(1);
+
+  // Safety floor: per dietetic guidance, daily intake under 1200 kcal (women)
+  // or 1500 kcal (men) is not generally recommended without medical
+  // supervision. Surface a warning when the goal pushes target below this.
+  const minTarget = sex === 'female' ? 1200 : 1500;
+  const belowFloor = target < minTarget;
 
   document.getElementById('p-results').style.display = 'block';
   document.getElementById('r-bmi').textContent = bmi.toFixed(1);
@@ -633,8 +654,12 @@ function calculate() {
   document.getElementById('r-bmr').textContent = Math.round(bmr);
   document.getElementById('r-tdee').textContent = Math.round(tdee);
   document.getElementById('r-target').textContent = Math.round(target);
-  document.getElementById('r-goal-sub').textContent =
-    goalAdj < 0 ? 'cut' : goalAdj > 0 ? 'bulk' : 'maintain';
+  const subEl = document.getElementById('r-goal-sub');
+  if (belowFloor) {
+    subEl.innerHTML = `<span class="pill bad" title="Below ${minTarget} kcal/day for ${sex === 'female' ? 'women' : 'men'} is not generally recommended without medical supervision. Consider a smaller deficit.">below safe minimum</span>`;
+  } else {
+    subEl.textContent = goalAdj < 0 ? 'cut' : goalAdj > 0 ? 'gain' : 'maintain';
+  }
   document.getElementById('r-protein').textContent = protein;
   document.getElementById('r-carbs').textContent = Math.max(0, carbs);
   document.getElementById('r-fat').textContent = fat;
@@ -690,17 +715,17 @@ function findMeals() {
   results.innerHTML = '<div class="card"><h2>Meals you can try</h2>' +
     scored.map(({ recipe, matches, missing, score }) => `
       <div class="recipe">
-        <h4>${recipe.name}</h4>
+        <h4>${esc(recipe.name)}</h4>
         <div class="meta">
           <span class="pill good">${recipe.kcal} kcal</span>
           <span class="pill">${recipe.protein}g protein</span>
           <span class="pill">${Math.round(score * 100)}% match</span>
         </div>
         <div class="meta">
-          <span class="have">Have: ${matches.join(', ') || '–'}</span>
-          ${missing.length ? ` <span class="miss">· Need: ${missing.join(', ')}</span>` : ''}
+          <span class="have">Have: ${esc(matches.join(', ')) || '–'}</span>
+          ${missing.length ? ` <span class="miss">· Need: ${esc(missing.join(', '))}</span>` : ''}
         </div>
-        <div class="steps">${recipe.steps}</div>
+        <div class="steps">${esc(recipe.steps)}</div>
       </div>
     `).join('') + '</div>';
 }
@@ -740,14 +765,14 @@ function filteredExercises() {
 function exerciseCard(e) {
   return `
     <div class="exercise">
-      <div class="visual">${e.emoji}</div>
-      <h4>${e.name}</h4>
+      <div class="visual">${esc(e.emoji)}</div>
+      <h4>${esc(e.name)}</h4>
       <div class="meta">
-        <span class="pill">${e.loc}</span>
-        <span class="pill">${e.muscle}</span>
-        <span class="pill good">${e.sets}</span>
+        <span class="pill">${esc(e.loc)}</span>
+        <span class="pill">${esc(e.muscle)}</span>
+        <span class="pill good">${esc(e.sets)}</span>
       </div>
-      <div class="desc">${e.desc}</div>
+      <div class="desc">${esc(e.desc)}</div>
     </div>`;
 }
 
