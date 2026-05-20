@@ -31,8 +31,8 @@ function check(name, fn) {
 dom.window.addEventListener('load', () => {
   console.log('Running smoke tests...');
 
-  check('three tab buttons render', () => {
-    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 3);
+  check('four tab buttons render', () => {
+    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 4);
   });
 
   check('version pill in header matches CHANGELOG top entry', () => {
@@ -228,6 +228,38 @@ dom.window.addEventListener('load', () => {
     label = document.getElementById('w-plan').textContent;
     assert.ok(label.includes('only') || label.includes('No exercises'),
       `expected restricted-pool copy, got "${label}"`);
+  });
+
+  check('summary tab shows empty state with no profile, populated once filled', () => {
+    // Activate Summary tab (force renderSummary to run)
+    const summaryBtn = Array.from(document.querySelectorAll('.tab-btn'))
+      .find(b => b.dataset.tab === 'summary');
+    assert.ok(summaryBtn, 'expected a Summary tab button');
+
+    // Fill a valid profile first (other tests may have set absurd values).
+    document.getElementById('p-name').value = 'Test User';
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+
+    summaryBtn.click();
+
+    assert.strictEqual(document.getElementById('s-empty').style.display, 'none',
+      'empty state should be hidden when profile is filled');
+    assert.ok(document.getElementById('s-name').textContent.includes('Test User'),
+      `expected name "Test User" in summary, got "${document.getElementById('s-name').textContent}"`);
+    assert.strictEqual(document.getElementById('s-c-bmi').textContent,
+      document.getElementById('r-bmi').textContent,
+      'summary BMI should match profile-tab BMI');
+
+    const exportBtn = document.getElementById('s-export');
+    assert.ok(exportBtn, 'expected an Export to PDF button');
+    assert.ok(exportBtn.textContent.toLowerCase().includes('pdf'),
+      `export button should mention PDF, got "${exportBtn.textContent}"`);
   });
 
   check('every exercise card has a demo toggle (button or search link)', () => {

@@ -2,6 +2,13 @@
 
 All notable user-facing changes to Gym Buddy. The version shown in the app header matches the most recent entry.
 
+## v0.5.0 — 2026-05-20
+
+### Added
+- **Summary tab** — a one-page snapshot of your profile and daily targets (BMI, BMR, TDEE, calorie target, macros, water).
+- **Export to PDF** — button on the Summary tab opens your browser's print dialog; pick "Save as PDF" from the printer dropdown to get a clean black-on-white printable file. Useful to share with a coach or dietitian, or keep as a personal snapshot.
+- Print stylesheet hides the nav, headers, and other tabs so the PDF is just the Summary content.
+
 ## v0.4.0 — 2026-05-20
 
 ### Added
