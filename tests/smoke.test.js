@@ -171,14 +171,49 @@ dom.window.addEventListener('load', () => {
       'negative age should hide the results card');
   });
 
-  check('every info icon has a non-trivial title', () => {
-    const icons = document.querySelectorAll('.info');
+  check('every info icon is a button with a non-trivial data-tip', () => {
+    const icons = document.querySelectorAll('button.info');
     assert.ok(icons.length >= 8, `expected ≥8 info icons, got ${icons.length}`);
-    icons.forEach((i, idx) => {
-      const title = i.getAttribute('title') || '';
-      assert.ok(title.length >= 30,
-        `info icon #${idx} should have a descriptive title, got "${title}"`);
+    icons.forEach((b, idx) => {
+      const tip = b.getAttribute('data-tip') || '';
+      assert.ok(tip.length >= 30,
+        `info icon #${idx} should have a descriptive data-tip, got "${tip}"`);
     });
+  });
+
+  check('absurd-but-positive profile inputs surface a hint and hide results', () => {
+    document.getElementById('p-age').value = '200';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-save').click();
+    const hint = document.getElementById('p-input-hint');
+    assert.strictEqual(hint.style.display, 'block', 'expected hint visible for age=200');
+    assert.ok(hint.textContent.includes('double-check'),
+      `expected double-check copy, got "${hint.textContent}"`);
+    assert.strictEqual(document.getElementById('p-results').style.display, 'none',
+      'results card should stay hidden for absurd inputs');
+  });
+
+  check('build-a-session label adapts to filtered pool', () => {
+    // Reset to "all" filter to see the 5-exercise label
+    document.querySelectorAll('#loc-filter button').forEach(b => {
+      if (b.dataset.loc === 'all') b.click();
+    });
+    document.querySelectorAll('#muscle-filter button').forEach(b => {
+      if (b.dataset.muscle === 'all') b.click();
+    });
+    let label = document.getElementById('w-plan').textContent;
+    assert.ok(label.includes('5 exercises'),
+      `expected "5 exercises" in label, got "${label}"`);
+
+    // Filter to chest (only ~2 chest exercises) → label should reflect smaller pool
+    document.querySelectorAll('#muscle-filter button').forEach(b => {
+      if (b.dataset.muscle === 'chest') b.click();
+    });
+    label = document.getElementById('w-plan').textContent;
+    assert.ok(label.includes('only') || label.includes('No exercises'),
+      `expected restricted-pool copy, got "${label}"`);
   });
 
   check('build-a-session always returns up to 5 distinct picks across rapid clicks', () => {
