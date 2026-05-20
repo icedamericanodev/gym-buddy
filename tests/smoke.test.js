@@ -230,6 +230,44 @@ dom.window.addEventListener('load', () => {
       `expected restricted-pool copy, got "${label}"`);
   });
 
+  check('hydration tracker shows once profile is saved and quick-add works', () => {
+    // Clear any prior hydration state from earlier tests in this run.
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyftHydro:')) dom.window.localStorage.removeItem(k);
+    });
+
+    // Ensure profile is saved so the water target exists.
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+
+    const card = document.getElementById('h-card');
+    assert.notStrictEqual(card.style.display, 'none',
+      'expected hydration card visible after profile saved');
+    assert.strictEqual(document.getElementById('h-current').textContent, '0.0',
+      'expected initial intake 0.0 L');
+
+    // +Cup (250 ml) twice → 0.5 L
+    const cupBtn = document.querySelector('.hydro-btn[data-ml="250"]');
+    cupBtn.click(); cupBtn.click();
+    assert.strictEqual(document.getElementById('h-current').textContent, '0.5',
+      `expected 0.5 L after two cups, got ${document.getElementById('h-current').textContent}`);
+
+    // +Bottle (500 ml) → 1.0 L total
+    document.querySelector('.hydro-btn[data-ml="500"]').click();
+    assert.strictEqual(document.getElementById('h-current').textContent, '1.0',
+      `expected 1.0 L after a bottle, got ${document.getElementById('h-current').textContent}`);
+
+    // Undo → 0.5 L
+    document.getElementById('h-undo').click();
+    assert.strictEqual(document.getElementById('h-current').textContent, '0.5',
+      `expected 0.5 L after undo, got ${document.getElementById('h-current').textContent}`);
+  });
+
   check('flexibility muscle filter and 8 stretches are present', () => {
     // Click the Flexibility filter and verify ≥6 stretches show up.
     const flexBtn = Array.from(document.querySelectorAll('#muscle-filter button'))

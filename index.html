@@ -378,6 +378,57 @@
     font-weight: 500;
   }
   .summary-block .muted { color: var(--muted); font-weight: 400; font-size: 12px; }
+  /* HYDRATION TRACKER */
+  .hydro-num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 4px 0 10px;
+  }
+  .hydro-num .muted { color: var(--muted); font-size: 14px; font-weight: 500; }
+  .hydro-pct {
+    float: right;
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .hydro-bar {
+    background: var(--panel-2);
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .hydro-fill {
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    height: 100%;
+    width: 0%;
+    transition: width 0.25s ease;
+    border-radius: 999px;
+  }
+  .hydro-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .hydro-btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 12px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    font-family: inherit;
+  }
+  .hydro-btn:hover { background: var(--border-strong); border-color: var(--accent); }
+  .hydro-btn .ml { font-weight: 400; font-size: 11px; color: var(--muted); }
+  .hydro-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .hydro-btn.hydro-undo { background: transparent; color: var(--muted); }
+  .hydro-btn.hydro-undo:hover { color: var(--text); }
+
   .summary-recs { grid-column: 1 / -1; margin-top: 8px; }
   .rec-list { display: flex; flex-direction: column; gap: 8px; }
   .rec-item {
@@ -407,6 +458,7 @@
     .form-row { grid-template-columns: 1fr; }
     nav button { font-size: 13px; padding: 12px 6px; }
     .summary-grid { grid-template-columns: 1fr; gap: 16px; }
+    .hydro-buttons { grid-template-columns: repeat(2, 1fr); }
   }
 
   /* PRINT — used by 'Export to PDF'. Force a clean white-on-black layout
@@ -456,7 +508,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v0.7.1</span>
+    <span class="version">v0.8.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
 </header>
@@ -608,6 +660,23 @@
         <p class="disclaimer">These are general adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations, especially if you have a medical condition.</p>
       </details>
     </div>
+
+    <div class="card" id="h-card" style="display:none;">
+      <h2>Today's hydration <span id="h-pct" class="hydro-pct">0%</span></h2>
+      <p class="hint">Tap a button each time you drink. Resets at midnight.</p>
+
+      <div class="hydro-num">
+        <span id="h-current">0.0</span> / <span id="h-target">2.6</span> <span class="muted">L</span>
+      </div>
+      <div class="hydro-bar"><div class="hydro-fill" id="h-fill"></div></div>
+
+      <div class="hydro-buttons">
+        <button type="button" class="hydro-btn" data-ml="250">+ Cup<br><span class="ml">250 ml</span></button>
+        <button type="button" class="hydro-btn" data-ml="500">+ Bottle<br><span class="ml">500 ml</span></button>
+        <button type="button" class="hydro-btn" data-ml="750">+ Large<br><span class="ml">750 ml</span></button>
+        <button type="button" class="hydro-btn hydro-undo" id="h-undo">↶ Undo</button>
+      </div>
+    </div>
   </section>
 
   <!-- ============ MEALS TAB ============ -->
@@ -675,7 +744,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.7.1</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.8.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1073,6 +1142,7 @@ function calculate() {
   document.getElementById('r-carbs').textContent = Math.max(0, carbs);
   document.getElementById('r-fat').textContent = fat;
   document.getElementById('r-water').textContent = water;
+  renderHydration();
 }
 
 document.getElementById('p-save').addEventListener('click', () => {
@@ -1091,6 +1161,66 @@ document.getElementById('p-save').addEventListener('click', () => {
   const flash = document.getElementById('p-saved');
   flash.classList.add('show');
   setTimeout(() => flash.classList.remove('show'), 1500);
+});
+
+/* ============================================================
+   HYDRATION — track today's water intake against the target.
+   Stored per-day in localStorage so it auto-resets at midnight and
+   the history is available for future progress charts.
+   ============================================================ */
+function todayKey() {
+  return `herlyftHydro:${new Date().toISOString().slice(0, 10)}`;
+}
+
+function getTodayEntries() {
+  try {
+    const raw = localStorage.getItem(todayKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(todayKey(), JSON.stringify(entries));
+}
+
+function renderHydration() {
+  const card = document.getElementById('h-card');
+  const targetText = document.getElementById('r-water').textContent;
+  const target = parseFloat(targetText);
+  if (!target || isNaN(target)) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  const entries = getTodayEntries();
+  const totalMl = entries.reduce((s, e) => s + (e.ml || 0), 0);
+  const totalL = totalMl / 1000;
+  const pct = Math.min(100, Math.round((totalL / target) * 100));
+
+  document.getElementById('h-current').textContent = totalL.toFixed(1);
+  document.getElementById('h-target').textContent = target.toFixed(1);
+  document.getElementById('h-pct').textContent = pct + '%';
+  document.getElementById('h-fill').style.width = pct + '%';
+  document.getElementById('h-undo').disabled = entries.length === 0;
+}
+
+document.querySelectorAll('.hydro-btn[data-ml]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const ml = parseInt(btn.dataset.ml, 10);
+    const entries = getTodayEntries();
+    entries.push({ ml, t: new Date().toISOString() });
+    saveEntries(entries);
+    renderHydration();
+  });
+});
+document.getElementById('h-undo').addEventListener('click', () => {
+  const entries = getTodayEntries();
+  entries.pop();
+  saveEntries(entries);
+  renderHydration();
 });
 
 /* ============================================================
@@ -1384,6 +1514,7 @@ document.getElementById('s-export').addEventListener('click', () => {
 loadProfile();
 renderExercises();
 findMeals();
+renderHydration();
 renderSummary();
 </script>
 

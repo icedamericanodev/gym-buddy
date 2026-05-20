@@ -2,6 +2,13 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v0.8.0 — 2026-05-20
+
+### Added
+- **Hydration tracker** on the Profile tab. A new "Today's hydration" card shows your current intake against your daily target (e.g. *1.5 / 2.6 L · 58%*) with a progress bar that gradients from teal to gold as you approach the target.
+- **Quick-add buttons**: + Cup (250 ml), + Bottle (500 ml), + Large (750 ml), plus an Undo button.
+- **Persists per day** — each day's entries are stored separately in `localStorage`, so the tracker auto-resets at midnight and the history is kept for future progress-chart features.
+
 ## v0.7.1 — 2026-05-20
 
 ### Changed
