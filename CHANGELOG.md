@@ -6,7 +6,8 @@ All notable user-facing changes to Gym Buddy. The version shown in the app heade
 
 ### Added
 - **Embedded exercise demos** — each exercise card has a "▶ Show demo" button that expands an inline YouTube video. Videos autoplay muted and loop, so they behave like GIFs. Click "✕ Hide demo" or open another to close.
-- For exercises without a curated video, a "▶ Search YouTube" link opens a search in a new tab.
+- **All 24 starter exercises** ship with a curated form-tutorial video from a reputable channel (ATHLEAN-X, Squat University, Bowflex, Jeff Nippard, Renaissance Periodization, and others).
+- For any exercise without a curated video, a "▶ Search YouTube" link opens a search in a new tab as a fallback.
 
 ## v0.3.0 — 2026-05-20
 
