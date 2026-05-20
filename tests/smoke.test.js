@@ -230,6 +230,47 @@ dom.window.addEventListener('load', () => {
       `expected restricted-pool copy, got "${label}"`);
   });
 
+  check('flexibility muscle filter and 8 stretches are present', () => {
+    // Click the Flexibility filter and verify ≥6 stretches show up.
+    const flexBtn = Array.from(document.querySelectorAll('#muscle-filter button'))
+      .find(b => b.dataset.muscle === 'flexibility');
+    assert.ok(flexBtn, 'expected a Flexibility muscle filter button');
+    flexBtn.click();
+    const stretches = document.querySelectorAll('#w-results .exercise');
+    assert.ok(stretches.length >= 6,
+      `expected ≥6 stretches under Flexibility, got ${stretches.length}`);
+
+    // Reset to "all" so later tests don't inherit this filter.
+    document.querySelectorAll('#muscle-filter button').forEach(b => {
+      if (b.dataset.muscle === 'all') b.click();
+    });
+  });
+
+  check('summary recommendations adapt to BMI and preferred style', () => {
+    // Healthy-BMI profile → balanced meal range; preferred style 'bodyweight'.
+    document.getElementById('p-name').value = 'RecsCheck';
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-style').value = 'bodyweight';
+    document.getElementById('p-save').click();
+
+    const summaryBtn = Array.from(document.querySelectorAll('.tab-btn'))
+      .find(b => b.dataset.tab === 'summary');
+    summaryBtn.click();
+
+    const mealsHtml = document.getElementById('s-rec-meals').textContent;
+    assert.ok(mealsHtml.length > 0, 'expected recommended meals to render');
+    const exHtml = document.getElementById('s-rec-exercises').textContent;
+    assert.ok(exHtml.length > 0, 'expected recommended exercises to render');
+    // Bodyweight style → no gym-only entries like "Bench press"
+    assert.ok(!exHtml.includes('Bench press'),
+      'bodyweight style should not surface gym-only exercises');
+  });
+
   check('summary tab shows empty state with no profile, populated once filled', () => {
     // Activate Summary tab (force renderSummary to run)
     const summaryBtn = Array.from(document.querySelectorAll('.tab-btn'))

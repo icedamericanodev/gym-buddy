@@ -336,6 +336,17 @@
     font-weight: 500;
   }
   .summary-block .muted { color: var(--muted); font-weight: 400; font-size: 12px; }
+  .summary-recs { grid-column: 1 / -1; margin-top: 8px; }
+  .rec-list { display: flex; flex-direction: column; gap: 8px; }
+  .rec-item {
+    background: var(--panel-2);
+    padding: 10px 12px;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent);
+  }
+  .rec-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .rec-body { font-size: 13px; color: #cbd5e1; margin-top: 4px; line-height: 1.5; }
+
   .summary-footer {
     margin-top: 20px;
     padding-top: 12px;
@@ -379,13 +390,23 @@
     .summary-block dt, .summary-block dd, .summary-block .muted, .summary-footer { color: #111 !important; }
     .summary-footer { border-top-color: #999 !important; }
     .summary-grid { gap: 32px; }
+    .rec-item {
+      background: white !important;
+      border-left: 3px solid #444 !important;
+      border-radius: 0 !important;
+      padding: 8px 10px !important;
+      page-break-inside: avoid;
+    }
+    .rec-title, .rec-body { color: #111 !important; }
+    .rec-title .muted, .summary-block .muted { color: #555 !important; }
+    .summary-recs { page-break-before: auto; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Gym Buddy <span class="version">v0.5.0</span></h1>
+  <h1>Gym Buddy <span class="version">v0.6.0</span></h1>
   <p>Your personal gym + nutrition assistant</p>
 </header>
 
@@ -455,7 +476,20 @@
             <option value="300">Gain muscle (+300 kcal/day)</option>
           </select>
         </div>
-        <div style="display:flex; align-items:flex-end;">
+        <div>
+          <label>Preferred training style</label>
+          <select id="p-style">
+            <option value="mixed" selected>Mixed (anything)</option>
+            <option value="bodyweight">Bodyweight only</option>
+            <option value="home">Home (light equipment)</option>
+            <option value="gym">Gym</option>
+            <option value="stretching">Stretching / mobility focus</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div style="grid-column: 1 / -1;">
           <button class="primary" id="p-save">Save & Calculate</button>
         </div>
       </div>
@@ -579,8 +613,18 @@
           </div>
         </div>
 
+        <div class="summary-block summary-recs">
+          <h3>Recommended meals <span class="muted" id="s-rec-meals-why"></span></h3>
+          <div id="s-rec-meals" class="rec-list"></div>
+        </div>
+
+        <div class="summary-block summary-recs">
+          <h3>Recommended exercises <span class="muted" id="s-rec-ex-why"></span></h3>
+          <div id="s-rec-exercises" class="rec-list"></div>
+        </div>
+
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Gym Buddy <span class="version-inline">v0.5.0</span><br>
+          Generated: <span id="s-date">—</span> · Gym Buddy <span class="version-inline">v0.6.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -611,6 +655,7 @@
         <button data-muscle="arms">Arms</button>
         <button data-muscle="core">Core</button>
         <button data-muscle="cardio">Cardio</button>
+        <button data-muscle="flexibility">Flexibility</button>
       </div>
 
       <button class="primary" id="w-plan">Build me a quick session</button>
@@ -773,6 +818,25 @@ const EXERCISES = [
     sets: "3 × 8–12", desc: "Dumbbells in front of thighs, soft knees, hinge at the hips pushing them back, lower until you feel a hamstring stretch (~mid-shin), drive hips forward to stand. Don't round your lower back — stop the descent the moment your back starts to bend." },
   { name: "Farmer's walk", loc: "home", muscle: "core", emoji: "🚶",
     sets: "3 × 30–40 m", desc: "Heavy dumbbell in each hand, stand tall, walk in a straight line at a normal pace. Ribs down, shoulders back, breathe steadily — don't shrug, don't lean to one side, don't let the weights swing." },
+  // Stretches (mobility / flexibility): static holds, no equipment.
+  // ACSM recommends 2–4 reps of 10–30 s for static stretching after a warmup
+  // or workout (ACSM Position Stand on Flexibility, 2011).
+  { name: "Hamstring stretch (seated)", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2 per leg", desc: "Sit with one leg extended, foot flexed; hinge from the hips with a flat back, reach toward your foot. Stop at mild tension — never bounce, never force." },
+  { name: "Hip flexor stretch (kneeling)", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2 per side", desc: "Half-kneeling, back foot tucked; push hips forward gently and squeeze the back glute. Don't lean back to fake range — drive forward instead." },
+  { name: "Cat-cow", loc: "bodyweight", muscle: "flexibility", emoji: "🐈",
+    sets: "10 slow reps × 2", desc: "On hands and knees. Inhale: arch back, look up (cow). Exhale: round spine, tuck chin (cat). Move with breath; never yank into either extreme." },
+  { name: "Child's pose", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 30–60 sec", desc: "Kneel and sit hips back to heels, arms reaching forward, forehead to floor. Breathe deeply. Skip or use a pillow under your hips if your knees protest." },
+  { name: "Standing quad stretch", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2 per leg", desc: "Stand, grab one ankle behind you and gently pull heel toward glute, knees together. Hold a wall for balance. Don't yank the foot or arch the back." },
+  { name: "Doorway chest stretch", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2", desc: "Stand in a doorway, forearm against the frame with elbow at ~90°, step gently forward until you feel the chest open. Ease in — the shoulder doesn't like force." },
+  { name: "Cross-body shoulder stretch", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2 per side", desc: "Pull one arm across your chest, supporting at the elbow (NOT the wrist). Light pressure only — the shoulder joint is easily aggravated by leverage." },
+  { name: "Standing forward fold", loc: "bodyweight", muscle: "flexibility", emoji: "🧘",
+    sets: "Hold 20–30 sec × 2", desc: "Stand tall, hinge at the hips with soft knees, let the upper body hang heavy. Don't force the hands down — relax into the stretch and breathe." },
   { name: "Bench press", loc: "gym", muscle: "chest", emoji: "🏋️",
     sets: "4 × 6–10", desc: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up. Always use a spotter or safety arms; keep feet planted and don't bounce the bar off your chest." },
   { name: "Deadlift", loc: "gym", muscle: "legs", emoji: "🏋️",
@@ -863,6 +927,7 @@ function loadProfile() {
   document.getElementById('p-weight').value = p.weight || '';
   document.getElementById('p-activity').value = p.activity || '1.55';
   document.getElementById('p-goal').value = p.goal || '0';
+  document.getElementById('p-style').value = p.style || 'mixed';
   calculate();
 }
 
@@ -968,6 +1033,7 @@ document.getElementById('p-save').addEventListener('click', () => {
     weight: document.getElementById('p-weight').value,
     activity: document.getElementById('p-activity').value,
     goal: document.getElementById('p-goal').value,
+    style: document.getElementById('p-style').value,
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   calculate();
@@ -1188,6 +1254,72 @@ function renderSummary() {
   document.getElementById('s-c-water').textContent = document.getElementById('r-water').textContent;
 
   document.getElementById('s-date').textContent = new Date().toLocaleDateString();
+
+  // Recommended meals — by BMI category. Underweight → highest-kcal,
+  // healthy → balanced mid-range, overweight/obese → highest protein per kcal.
+  const bmiNum = parseFloat(bmi);
+  let mealPool, mealsWhy;
+  if (bmiNum < 18.5) {
+    mealPool = [...RECIPES].sort((a, b) => b.kcal - a.kcal).slice(0, 4);
+    mealsWhy = '(higher-calorie picks for healthy weight gain)';
+  } else if (bmiNum < 25) {
+    mealPool = [...RECIPES]
+      .filter(r => r.kcal >= 350 && r.kcal <= 600)
+      .sort((a, b) => b.protein - a.protein)
+      .slice(0, 4);
+    mealsWhy = '(balanced 350–600 kcal options, protein-forward)';
+  } else {
+    mealPool = [...RECIPES]
+      .filter(r => r.kcal <= 500)
+      .sort((a, b) => (b.protein / b.kcal) - (a.protein / a.kcal))
+      .slice(0, 4);
+    mealsWhy = '(higher protein per calorie, satiating)';
+  }
+  document.getElementById('s-rec-meals-why').textContent = mealsWhy;
+  document.getElementById('s-rec-meals').innerHTML = mealPool.map(r => `
+    <div class="rec-item">
+      <div class="rec-title">${esc(r.name)} <span class="muted">· ${r.kcal} kcal · ${r.protein} g protein</span></div>
+      <div class="rec-body">${esc(r.steps)}</div>
+    </div>`).join('');
+
+  // Recommended exercises — filtered by preferred training style. Pick a
+  // balanced selection (one per muscle group) up to 5 items.
+  const style = document.getElementById('p-style').value || 'mixed';
+  let exPool;
+  if (style === 'stretching') {
+    exPool = EXERCISES.filter(e => e.muscle === 'flexibility');
+  } else if (style === 'mixed') {
+    exPool = EXERCISES.filter(e => e.muscle !== 'flexibility');
+  } else {
+    exPool = EXERCISES.filter(e => e.loc === style && e.muscle !== 'flexibility');
+  }
+  const byMuscle = {};
+  exPool.forEach(e => { (byMuscle[e.muscle] ||= []).push(e); });
+  const exPicks = [];
+  for (const m of Object.keys(byMuscle)) {
+    exPicks.push(byMuscle[m][0]);
+    if (exPicks.length >= 5) break;
+  }
+  while (exPicks.length < 5 && exPool.length > exPicks.length) {
+    const next = exPool.find(e => !exPicks.includes(e));
+    if (!next) break;
+    exPicks.push(next);
+  }
+  const styleLabel = {
+    bodyweight: 'bodyweight only',
+    home: 'home (light equipment)',
+    gym: 'gym',
+    stretching: 'stretching / mobility',
+    mixed: 'mixed',
+  }[style] || style;
+  document.getElementById('s-rec-ex-why').textContent = `(${styleLabel})`;
+  document.getElementById('s-rec-exercises').innerHTML = exPicks.length
+    ? exPicks.map(e => `
+        <div class="rec-item">
+          <div class="rec-title">${esc(e.name)} <span class="muted">· ${esc(e.muscle)} · ${esc(e.sets)}</span></div>
+          <div class="rec-body">${esc(e.desc)}</div>
+        </div>`).join('')
+    : '<p class="muted">No exercises match this style yet.</p>';
 }
 
 document.getElementById('s-export').addEventListener('click', () => {
