@@ -15,11 +15,12 @@ This repo follows **separation of duties**. You (the human owner) review and app
 
 ## Specialized agents
 
-Five project agents live in `.claude/agents/`:
+Six project agents live in `.claude/agents/`:
 
 | Agent | When to spawn |
 |-------|---------------|
-| `gym-coach` | Anything that touches the `RECIPES` or `EXERCISES` arrays in `index.html` |
+| `dietitian` | Anything that touches recipes, calorie/macro math, water targets, or future meal-related features |
+| `gym-coach` | Anything that touches the `EXERCISES` array or workout programming/session-generation logic |
 | `senior-dev` | New features or non-trivial refactors |
 | `ui-ux` | Any user-visible change |
 | `code-reviewer` | Before declaring a feature done — read-only review of the branch diff |
@@ -30,7 +31,8 @@ Five project agents live in `.claude/agents/`:
 When a "feature step" finishes (e.g. Step 2 — real exercise GIFs, Step 3 — daily log), before reporting **done** to the user, Claude must spawn the relevant agents in parallel:
 
 - Always: `code-reviewer` + `qa` + `ui-ux`
-- If content (recipes / exercises) was added or edited: also `gym-coach`
+- If recipe or macro content was touched: also `dietitian`
+- If exercise or workout-programming content was touched: also `gym-coach`
 
 Address any `Must fix` / `P0` / `P1` items from the agents' reports, re-run the local checks, then push. Surface remaining `Should fix` / `P2` items in the PR description or the message to the user — don't silently swallow them.
 
@@ -60,5 +62,5 @@ gym-buddy/
 │   └── ci.yml              ← runs lint + test on every PR
 └── .claude/
     ├── settings.json       ← project-level Claude rules
-    └── agents/             ← specialized subagents (gym-coach, senior-dev, ui-ux, code-reviewer, qa)
+    └── agents/             ← specialized subagents (dietitian, gym-coach, senior-dev, ui-ux, code-reviewer, qa)
 ```
