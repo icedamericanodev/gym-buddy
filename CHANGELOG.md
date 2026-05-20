@@ -2,6 +2,18 @@
 
 All notable user-facing changes to Gym Buddy. The version shown in the app header matches the most recent entry.
 
+## v0.6.0 — 2026-05-20
+
+### Added
+- **Personalized recommendations in the Summary tab** — alongside your profile and daily targets:
+  - **Recommended meals** picked from the library based on your BMI category: higher-calorie picks if you're underweight, balanced 350–600 kcal protein-forward picks if you're in the healthy range, and high-protein-per-calorie satiating picks if you're overweight or obese.
+  - **Recommended exercises** filtered by your **new "Preferred training style"** field on the Profile (Bodyweight / Home / Gym / Stretching / Mixed). Picks 5 movements covering different muscle groups for balance.
+- **Stretching is now a real option** — 8 common stretches added (hamstring, hip flexor, cat-cow, child's pose, quad, doorway chest, cross-body shoulder, standing forward fold), tagged `muscle: flexibility`. A new **Flexibility** filter button on the Workouts tab.
+
+### Changed
+- Profile form now has a fifth row for "Preferred training style" (default: Mixed).
+- The Save button moved to its own full-width row to make room.
+
 ## v0.5.0 — 2026-05-20
 
 ### Added
