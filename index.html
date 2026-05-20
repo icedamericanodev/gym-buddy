@@ -378,6 +378,83 @@
     font-weight: 500;
   }
   .summary-block .muted { color: var(--muted); font-weight: 400; font-size: 12px; }
+  /* DASHBOARD */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .dash-stat {
+    background: var(--panel-2);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .dash-num { font-size: 22px; font-weight: 700; color: var(--text); }
+  .dash-num.up { color: var(--danger); }
+  .dash-num.down { color: var(--accent-2); }
+  .dash-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .dash-chart {
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 4px;
+  }
+  .dash-chart svg {
+    width: 100%;
+    height: 220px;
+    display: block;
+  }
+  .dash-axis-line { stroke: var(--border); stroke-width: 1; }
+  .dash-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 2 4; }
+  .dash-line {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .dash-fill { fill: var(--accent); fill-opacity: 0.1; }
+  .dash-point { fill: var(--accent-2); }
+  .dash-label-text { fill: var(--muted); font-size: 10px; }
+
+  /* BACKUP & RESTORE */
+  .data-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .data-buttons > .primary { flex: 1 1 200px; text-align: center; }
+  .primary.secondary,
+  label.primary {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .primary.secondary:hover,
+  label.primary:hover {
+    background: var(--border-strong);
+    color: var(--text);
+  }
+  #d-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-2);
+    color: var(--text);
+  }
+  #d-status.error { border-left-color: var(--danger); color: var(--danger); }
+
   /* HYDRATION TRACKER */
   .hydro-num {
     font-size: 24px;
@@ -508,7 +585,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v0.8.0</span>
+    <span class="version">v0.9.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
 </header>
@@ -517,6 +594,7 @@
   <button class="tab-btn active" data-tab="profile">Profile</button>
   <button class="tab-btn" data-tab="meals">Meals</button>
   <button class="tab-btn" data-tab="workouts">Workouts</button>
+  <button class="tab-btn" data-tab="dashboard">Dashboard</button>
   <button class="tab-btn" data-tab="summary">Summary</button>
 </nav>
 
@@ -677,6 +755,67 @@
         <button type="button" class="hydro-btn hydro-undo" id="h-undo">↶ Undo</button>
       </div>
     </div>
+
+    <div class="card" id="data-card">
+      <h2>Backup & Restore</h2>
+      <p class="hint">Your data only lives in this browser. Download a backup before clearing your cookies, switching devices, or shipping a major app update.</p>
+      <div class="data-buttons">
+        <button class="primary" id="d-export">Download backup (.json)</button>
+        <label for="d-restore-input" class="primary secondary">Restore from file…</label>
+        <input type="file" id="d-restore-input" accept="application/json,.json" style="display:none;">
+      </div>
+      <p id="d-status" class="hint" style="display:none;"></p>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD TAB ============ -->
+  <section id="dashboard" class="tab">
+    <div class="card">
+      <h2>Your progress</h2>
+      <p class="hint">Each time you save your profile with a new weight, today's value is logged. Chart shows the trend over the time range you pick.</p>
+
+      <div id="dash-empty" class="empty" style="display:none;">
+        No weight history yet. Save your profile on the Profile tab to log today's weight.
+      </div>
+
+      <div id="dash-content" style="display:none;">
+        <div class="dash-stats">
+          <div class="dash-stat">
+            <div class="dash-num" id="dash-current">—</div>
+            <div class="dash-label">Current (kg)</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-num" id="dash-7d">—</div>
+            <div class="dash-label">vs 7 days ago</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-num" id="dash-30d">—</div>
+            <div class="dash-label">vs 30 days ago</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-num" id="dash-90d">—</div>
+            <div class="dash-label">vs 90 days ago</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-num" id="dash-1y">—</div>
+            <div class="dash-label">vs 1 year ago</div>
+          </div>
+        </div>
+
+        <div class="filter-bar" id="dash-range">
+          <button data-range="7" class="">1 week</button>
+          <button data-range="30" class="on">1 month</button>
+          <button data-range="90" class="">3 months</button>
+          <button data-range="365" class="">1 year</button>
+          <button data-range="0" class="">All</button>
+        </div>
+
+        <div class="dash-chart">
+          <svg id="dash-svg" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+        </div>
+        <p class="hint" id="dash-meta"></p>
+      </div>
+    </div>
   </section>
 
   <!-- ============ MEALS TAB ============ -->
@@ -744,7 +883,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.8.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.9.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1020,16 +1159,30 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
+    if (btn.dataset.tab === 'dashboard') renderDashboard();
   });
 });
 
 /* ============================================================
    PROFILE — BMI / BMR / TDEE / macros
    ============================================================ */
-const PROFILE_KEY = 'gymBuddyProfile';
+// `herlyftProfile` is the canonical key. `gymBuddyProfile` is the legacy
+// key from versions ≤ 0.7.0 — read once on first run as a transparent
+// migration. The legacy entry is kept after migration so reverting to
+// an older app version doesn't lose the user's data.
+const PROFILE_KEY = 'herlyftProfile';
+const LEGACY_PROFILE_KEY = 'gymBuddyProfile';
+const PROFILE_SCHEMA = 1;
 
 function loadProfile() {
-  const raw = localStorage.getItem(PROFILE_KEY);
+  let raw = localStorage.getItem(PROFILE_KEY);
+  if (!raw) {
+    const legacy = localStorage.getItem(LEGACY_PROFILE_KEY);
+    if (legacy) {
+      try { localStorage.setItem(PROFILE_KEY, legacy); } catch {}
+      raw = legacy;
+    }
+  }
   if (!raw) return;
   let p;
   try {
@@ -1147,6 +1300,7 @@ function calculate() {
 
 document.getElementById('p-save').addEventListener('click', () => {
   const profile = {
+    schema: PROFILE_SCHEMA,
     name: document.getElementById('p-name').value,
     age: document.getElementById('p-age').value,
     sex: document.getElementById('p-sex').value,
@@ -1157,10 +1311,251 @@ document.getElementById('p-save').addEventListener('click', () => {
     style: document.getElementById('p-style').value,
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  // Log today's weight to history (last value wins per day) — powers the
+  // Dashboard tab's weight-progress chart.
+  const w = parseFloat(profile.weight);
+  if (w && w > 0 && w <= 400) logWeight(w);
   calculate();
+  renderDashboard();
   const flash = document.getElementById('p-saved');
   flash.classList.add('show');
   setTimeout(() => flash.classList.remove('show'), 1500);
+});
+
+/* ============================================================
+   WEIGHT HISTORY & DASHBOARD
+   ============================================================ */
+const WEIGHTS_KEY = 'herlyftWeights';
+
+function getWeights() {
+  try {
+    const raw = localStorage.getItem(WEIGHTS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+
+function saveWeights(arr) {
+  localStorage.setItem(WEIGHTS_KEY, JSON.stringify(arr));
+}
+
+function logWeight(kg) {
+  const today = new Date().toISOString().slice(0, 10);
+  const arr = getWeights();
+  const idx = arr.findIndex(e => e.date === today);
+  if (idx >= 0) arr[idx].kg = kg;
+  else arr.push({ date: today, kg });
+  arr.sort((a, b) => a.date.localeCompare(b.date));
+  saveWeights(arr);
+}
+
+function findClosestPriorWeight(daysAgo) {
+  const arr = getWeights();
+  if (!arr.length) return null;
+  const target = new Date();
+  target.setDate(target.getDate() - daysAgo);
+  const targetStr = target.toISOString().slice(0, 10);
+  // The entry whose date is closest to but ≤ target.
+  let best = null;
+  for (const e of arr) {
+    if (e.date <= targetStr) best = e;
+    else break;
+  }
+  return best;
+}
+
+function fmtDiff(diffKg) {
+  if (diffKg === 0) return { text: '0.0', cls: '' };
+  const sign = diffKg > 0 ? '+' : '−';
+  return {
+    text: `${sign}${Math.abs(diffKg).toFixed(1)}`,
+    cls: diffKg > 0 ? 'up' : 'down',
+  };
+}
+
+let dashRangeDays = 30;
+
+function renderDashboard() {
+  const arr = getWeights();
+  document.getElementById('dash-empty').style.display = arr.length ? 'none' : '';
+  document.getElementById('dash-content').style.display = arr.length ? '' : 'none';
+  if (!arr.length) return;
+
+  const current = arr[arr.length - 1].kg;
+  document.getElementById('dash-current').textContent = current.toFixed(1);
+
+  const buckets = [[7, 'dash-7d'], [30, 'dash-30d'], [90, 'dash-90d'], [365, 'dash-1y']];
+  for (const [days, elId] of buckets) {
+    const prev = findClosestPriorWeight(days);
+    const el = document.getElementById(elId);
+    if (!prev || prev.kg === current) {
+      el.textContent = prev ? '0.0' : '—';
+      el.className = 'dash-num';
+    } else {
+      const diff = current - prev.kg;
+      const f = fmtDiff(diff);
+      el.textContent = f.text;
+      el.className = 'dash-num ' + f.cls;
+    }
+  }
+
+  renderWeightChart(arr, dashRangeDays);
+}
+
+function renderWeightChart(arr, rangeDays) {
+  // Filter to range
+  let pts = arr;
+  if (rangeDays > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - rangeDays);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    pts = arr.filter(e => e.date >= cutoffStr);
+  }
+  const svg = document.getElementById('dash-svg');
+  const meta = document.getElementById('dash-meta');
+  if (pts.length < 1) {
+    svg.innerHTML = '';
+    meta.textContent = 'No entries in this range yet.';
+    return;
+  }
+
+  const W = 600, H = 220, padL = 40, padR = 12, padT = 14, padB = 28;
+  const minKg = Math.min(...pts.map(p => p.kg));
+  const maxKg = Math.max(...pts.map(p => p.kg));
+  const range = Math.max(1, maxKg - minKg);
+  const yMin = minKg - range * 0.15;
+  const yMax = maxKg + range * 0.15;
+  const yScale = v => padT + (H - padT - padB) * (1 - (v - yMin) / (yMax - yMin));
+  const dates = pts.map(p => new Date(p.date).getTime());
+  const t0 = dates[0], t1 = dates[dates.length - 1] || dates[0] + 1;
+  const xScale = t => padL + (W - padL - padR) * (pts.length === 1 ? 0.5 : (t - t0) / Math.max(1, t1 - t0));
+
+  // Build polyline and area
+  const line = pts.map((p, i) => `${xScale(dates[i])},${yScale(p.kg)}`).join(' ');
+  const areaPath = pts.length > 1
+    ? `M ${xScale(dates[0])},${yScale(yMin)} L ${pts.map((p, i) => `${xScale(dates[i])},${yScale(p.kg)}`).join(' L ')} L ${xScale(dates[dates.length - 1])},${yScale(yMin)} Z`
+    : '';
+
+  // Y-axis gridlines (3 ticks)
+  const ticks = [yMin, (yMin + yMax) / 2, yMax];
+  const gridLines = ticks.map(v => {
+    const y = yScale(v);
+    return `<line class="dash-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
+            <text class="dash-label-text" x="${padL - 6}" y="${y + 3}" text-anchor="end">${v.toFixed(1)}</text>`;
+  }).join('');
+
+  // X-axis labels (first and last)
+  const fmtDate = d => d.slice(5); // "MM-DD"
+  const xLabels = `
+    <text class="dash-label-text" x="${xScale(t0)}" y="${H - padB + 16}" text-anchor="start">${fmtDate(pts[0].date)}</text>
+    <text class="dash-label-text" x="${xScale(t1)}" y="${H - padB + 16}" text-anchor="end">${fmtDate(pts[pts.length - 1].date)}</text>
+  `;
+
+  const points = pts.map((p, i) =>
+    `<circle class="dash-point" cx="${xScale(dates[i])}" cy="${yScale(p.kg)}" r="3"/>`
+  ).join('');
+
+  svg.innerHTML = `
+    ${gridLines}
+    ${areaPath ? `<path class="dash-fill" d="${areaPath}"/>` : ''}
+    ${pts.length > 1 ? `<polyline class="dash-line" points="${line}"/>` : ''}
+    ${points}
+    <line class="dash-axis-line" x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}"/>
+    ${xLabels}
+  `;
+
+  meta.textContent = `${pts.length} entr${pts.length === 1 ? 'y' : 'ies'} · range ${minKg.toFixed(1)}–${maxKg.toFixed(1)} kg`;
+}
+
+document.querySelectorAll('#dash-range button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#dash-range button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    dashRangeDays = parseInt(b.dataset.range, 10);
+    renderDashboard();
+  });
+});
+
+/* ============================================================
+   BACKUP & RESTORE — let the user download all their data as a
+   single JSON file, and import it on a new browser/device.
+   ============================================================ */
+function buildBackup() {
+  const profileRaw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+  const data = {
+    app: 'herlyft',
+    schema: PROFILE_SCHEMA,
+    exportedAt: new Date().toISOString(),
+    profile: profileRaw ? JSON.parse(profileRaw) : null,
+    weights: getWeights(),
+    hydration: {},
+  };
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('herlyftHydro:')) {
+      try { data.hydration[k.slice('herlyftHydro:'.length)] = JSON.parse(localStorage.getItem(k)); } catch {}
+    }
+  }
+  return data;
+}
+
+function applyBackup(data) {
+  if (!data || data.app !== 'herlyft') throw new Error('Not a Herlyft backup file.');
+  if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
+  if (Array.isArray(data.weights)) saveWeights(data.weights);
+  if (data.hydration && typeof data.hydration === 'object') {
+    for (const [date, entries] of Object.entries(data.hydration)) {
+      if (Array.isArray(entries)) {
+        localStorage.setItem(`herlyftHydro:${date}`, JSON.stringify(entries));
+      }
+    }
+  }
+}
+
+function showDataStatus(msg, isError) {
+  const el = document.getElementById('d-status');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+document.getElementById('d-export').addEventListener('click', () => {
+  const data = buildBackup();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `herlyft-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showDataStatus('Backup downloaded. Keep it somewhere safe.');
+});
+
+document.getElementById('d-restore-input').addEventListener('change', (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const ok = window.confirm('Replace all current Herlyft data with this backup? Your existing profile, weights, and hydration log will be overwritten.');
+  if (!ok) { ev.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyBackup(data);
+      loadProfile();
+      renderHydration();
+      renderDashboard();
+      showDataStatus('Backup restored.');
+    } catch (err) {
+      showDataStatus('Could not restore: ' + err.message, true);
+    } finally {
+      ev.target.value = '';
+    }
+  };
+  reader.onerror = () => showDataStatus('Could not read the file.', true);
+  reader.readAsText(file);
 });
 
 /* ============================================================
@@ -1516,6 +1911,7 @@ renderExercises();
 findMeals();
 renderHydration();
 renderSummary();
+renderDashboard();
 </script>
 
 </body>

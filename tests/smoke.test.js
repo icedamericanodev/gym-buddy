@@ -31,8 +31,8 @@ function check(name, fn) {
 dom.window.addEventListener('load', () => {
   console.log('Running smoke tests...');
 
-  check('four tab buttons render', () => {
-    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 4);
+  check('five tab buttons render', () => {
+    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 5);
   });
 
   check('version pill in header matches CHANGELOG top entry', () => {
@@ -228,6 +228,88 @@ dom.window.addEventListener('load', () => {
     label = document.getElementById('w-plan').textContent;
     assert.ok(label.includes('only') || label.includes('No exercises'),
       `expected restricted-pool copy, got "${label}"`);
+  });
+
+  check('legacy gymBuddyProfile key migrates to herlyftProfile on load', () => {
+    // Simulate a user who upgraded from v0.7 (or earlier) — their data is
+    // under the old key. Loading the page should transparently copy it
+    // forward; subsequent saves write only to the new key.
+    dom.window.localStorage.removeItem('herlyftProfile');
+    dom.window.localStorage.setItem('gymBuddyProfile', JSON.stringify({
+      name: 'Legacy', age: '35', sex: 'female', height: '165',
+      weight: '60', activity: '1.55', goal: '0', style: 'mixed',
+    }));
+    // Manually invoke loadProfile via the global scope.
+    dom.window.loadProfile && dom.window.loadProfile();
+    // After loadProfile, the new key should now contain the data too.
+    const newRaw = dom.window.localStorage.getItem('herlyftProfile');
+    assert.ok(newRaw, 'expected legacy profile migrated to herlyftProfile');
+    const newP = JSON.parse(newRaw);
+    assert.strictEqual(newP.name, 'Legacy', 'migrated profile should retain name');
+  });
+
+  check('corrupt profile JSON does not crash and is discarded', () => {
+    dom.window.localStorage.removeItem('herlyftProfile');
+    dom.window.localStorage.removeItem('gymBuddyProfile');
+    dom.window.localStorage.setItem('herlyftProfile', '{this is not json');
+    dom.window.loadProfile && dom.window.loadProfile();
+    // Should have been removed by the defensive try/catch.
+    assert.strictEqual(dom.window.localStorage.getItem('herlyftProfile'), null,
+      'expected corrupt herlyftProfile to be cleared after a failed parse');
+  });
+
+  check('dashboard logs weight on profile save and shows the chart', () => {
+    // Clear any prior weight log.
+    dom.window.localStorage.removeItem('herlyftWeights');
+
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '78.4';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+
+    const dashBtn = Array.from(document.querySelectorAll('.tab-btn'))
+      .find(b => b.dataset.tab === 'dashboard');
+    dashBtn.click();
+
+    assert.strictEqual(document.getElementById('dash-empty').style.display, 'none',
+      'expected dash-empty hidden once a weight is logged');
+    assert.strictEqual(document.getElementById('dash-current').textContent, '78.4',
+      `expected current weight 78.4, got ${document.getElementById('dash-current').textContent}`);
+
+    const svg = document.getElementById('dash-svg');
+    assert.ok(svg.innerHTML.length > 0, 'expected the chart SVG to be populated');
+  });
+
+  check('backup builds a JSON object covering profile + weights + hydration', () => {
+    // Seed some data.
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify({ name: 'Test', weight: '72' }));
+    dom.window.localStorage.setItem('herlyftWeights', JSON.stringify([{ date: '2026-05-19', kg: 72 }]));
+    dom.window.localStorage.setItem('herlyftHydro:2026-05-20', JSON.stringify([{ ml: 500, t: 'x' }]));
+    const backup = dom.window.buildBackup();
+    assert.strictEqual(backup.app, 'herlyft', 'backup.app should identify the source app');
+    assert.ok(backup.profile && backup.profile.name === 'Test', 'backup should include profile');
+    assert.ok(Array.isArray(backup.weights) && backup.weights.length >= 1, 'backup should include weights');
+    assert.ok(backup.hydration['2026-05-20'], 'backup should include today\'s hydration');
+  });
+
+  check('restore from a backup overwrites localStorage', () => {
+    dom.window.localStorage.removeItem('herlyftProfile');
+    dom.window.localStorage.removeItem('herlyftWeights');
+    const data = {
+      app: 'herlyft',
+      schema: 1,
+      profile: { name: 'Restored', weight: '69' },
+      weights: [{ date: '2026-01-01', kg: 70 }],
+      hydration: { '2026-05-20': [{ ml: 1000 }] },
+    };
+    dom.window.applyBackup(data);
+    const p = JSON.parse(dom.window.localStorage.getItem('herlyftProfile'));
+    assert.strictEqual(p.name, 'Restored', 'profile should be restored from backup');
+    const w = JSON.parse(dom.window.localStorage.getItem('herlyftWeights'));
+    assert.strictEqual(w[0].kg, 70, 'weights should be restored from backup');
   });
 
   check('hydration tracker shows once profile is saved and quick-add works', () => {
