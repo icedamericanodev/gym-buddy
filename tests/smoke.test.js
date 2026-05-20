@@ -332,6 +332,67 @@ dom.window.addEventListener('load', () => {
       `expected the cooldown to suppress the second pop, got ${pops.length}`);
   });
 
+  check('switching to imperial converts displayed values and updates labels', () => {
+    // Start clean.
+    dom.window.localStorage.removeItem('herlyftProfile');
+    dom.window.localStorage.removeItem('herlyftWeights');
+
+    // Type a known metric profile.
+    document.getElementById('p-units').value = 'metric';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+    document.getElementById('p-age').value = '30';
+    document.getElementById('p-sex').value = 'male';
+    document.getElementById('p-height').value = '175';
+    document.getElementById('p-weight').value = '75';
+    document.getElementById('p-activity').value = '1.55';
+    document.getElementById('p-goal').value = '0';
+
+    // Flip to imperial — the displayed numbers should auto-convert.
+    document.getElementById('p-units').value = 'imperial';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+
+    assert.strictEqual(document.getElementById('p-height-label').textContent, 'Height (in)',
+      'expected height label to switch to in');
+    assert.strictEqual(document.getElementById('p-weight-label').textContent, 'Weight (lbs)',
+      'expected weight label to switch to lbs');
+
+    const inches = parseInt(document.getElementById('p-height').value, 10);
+    assert.ok(Math.abs(inches - 69) <= 1,
+      `175 cm should display as ~69 in, got ${inches}`);
+    const pounds = parseFloat(document.getElementById('p-weight').value);
+    assert.ok(Math.abs(pounds - 165.3) < 0.5,
+      `75 kg should display as ~165.3 lbs, got ${pounds}`);
+  });
+
+  check('profile saved while in imperial mode stores values in metric', () => {
+    // Continuing from the previous test — we're still in imperial mode.
+    document.getElementById('p-save').click();
+    const saved = JSON.parse(dom.window.localStorage.getItem('herlyftProfile'));
+    // height was ~69 in (round-trip from 175 cm), saved should be ~175 cm.
+    assert.ok(Math.abs(saved.height - 175) <= 3,
+      `expected stored height ≈175 cm, got ${saved.height}`);
+    assert.ok(Math.abs(saved.weight - 75) <= 0.5,
+      `expected stored weight ≈75 kg, got ${saved.weight}`);
+    assert.strictEqual(saved.units, 'imperial',
+      `expected stored units 'imperial', got ${saved.units}`);
+    assert.strictEqual(saved.schema, 2,
+      `expected schema 2, got ${saved.schema}`);
+  });
+
+  check('legacy schema-1 profile loads with metric default', () => {
+    // Old profile (no units field, no schema field, metric values).
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify({
+      name: 'Old', age: '30', sex: 'male',
+      height: '170', weight: '70',
+      activity: '1.55', goal: '0', style: 'mixed',
+    }));
+    dom.window.loadProfile && dom.window.loadProfile();
+    assert.strictEqual(document.getElementById('p-units').value, 'metric',
+      'legacy profile (no units) should default to metric');
+    assert.strictEqual(document.getElementById('p-height-label').textContent, 'Height (cm)',
+      'labels should reflect metric default');
+  });
+
   check('hydration tracker shows once profile is saved and quick-add works', () => {
     // Clear any prior hydration state from earlier tests in this run.
     Object.keys(dom.window.localStorage).forEach(k => {
