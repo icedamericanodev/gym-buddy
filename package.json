@@ -1,0 +1,14 @@
+{
+  "name": "gym-buddy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal gym + nutrition assistant — runs as a single static HTML page.",
+  "scripts": {
+    "lint": "htmlhint index.html",
+    "test": "node tests/smoke.test.js"
+  },
+  "devDependencies": {
+    "htmlhint": "^1.1.4",
+    "jsdom": "^24.1.0"
+  }
+}
