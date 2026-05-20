@@ -312,6 +312,26 @@ dom.window.addEventListener('load', () => {
     assert.strictEqual(w[0].kg, 70, 'weights should be restored from backup');
   });
 
+  check('tapping the wordmark spawns a lowkey love note 💛', () => {
+    // Clear any prior pops left by other interactions.
+    document.querySelectorAll('.love-pop').forEach(p => p.remove());
+
+    const h1 = document.querySelector('header h1');
+    assert.ok(h1, 'expected the Herlyft wordmark in the header');
+    h1.click();
+
+    const pop = document.querySelector('.love-pop');
+    assert.ok(pop, 'expected a .love-pop after tapping the wordmark');
+    assert.ok(pop.textContent.includes('💛'),
+      `expected a heart in the love note, got "${pop.textContent}"`);
+
+    // Rate-limit: a second immediate click should NOT spawn a second pop.
+    h1.click();
+    const pops = document.querySelectorAll('.love-pop');
+    assert.strictEqual(pops.length, 1,
+      `expected the cooldown to suppress the second pop, got ${pops.length}`);
+  });
+
   check('hydration tracker shows once profile is saved and quick-add works', () => {
     // Clear any prior hydration state from earlier tests in this run.
     Object.keys(dom.window.localStorage).forEach(k => {
