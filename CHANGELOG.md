@@ -2,6 +2,14 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v0.7.1 — 2026-05-20
+
+### Changed
+- **Wordmark recreated in HTML/SVG** instead of cropping the brand mockup PNG. The header now reads "HERL[figure-Y]FT" where the figure-Y is a stylized standing person with arms raised holding a heart, drawn as inline SVG in champagne gold. Scales sharply at any size, no image dependency.
+- **Heavy geometric typography** — Inter / Arial Black, 900 weight, wide letter-spacing — to match the visual feel of the brand sheet.
+- **Favicon** swapped from the multi-panel mockup to a clean SVG of just the figure-Y mark on the navy background.
+- **`logo.png`** stays in the repo as a brand-reference asset but is no longer embedded in the app UI.
+
 ## v0.7.0 — 2026-05-20
 
 ### Changed
