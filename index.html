@@ -197,23 +197,49 @@
   }
   .saved-flash.show { opacity: 1; }
 
-  .info {
-    display: inline-block;
+  .warn-hint {
+    color: var(--warn);
+    font-size: 13px;
+    margin: 8px 0 0;
+  }
+
+  button.info {
+    /* visible glyph kept ~16px so layout doesn't shift; padding around it
+       expands the actual tap target toward the WCAG 44px guideline.
+       Negative margin keeps surrounding text alignment unchanged. */
     width: 16px;
     height: 16px;
     line-height: 16px;
-    margin-left: 4px;
+    padding: 8px;
+    margin: -8px -4px -8px 0;
+    border: none;
     border-radius: 50%;
     background: #475569;
     color: #f1f5f9;
     font-size: 11px;
     font-weight: 700;
     text-align: center;
-    cursor: help;
+    cursor: pointer;
     font-style: normal;
     vertical-align: middle;
+    box-sizing: content-box;
   }
-  .info:hover, .info:focus { background: var(--accent); color: #0f172a; outline: none; }
+  button.info:hover, button.info:focus { background: var(--accent); color: #0f172a; outline: none; }
+
+  .info-popover {
+    position: absolute;
+    background: #0b1220;
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.45;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    border: 1px solid #334155;
+    max-width: 280px;
+    pointer-events: none;
+  }
 
   details.sources {
     margin-top: 16px;
@@ -322,6 +348,7 @@
         </div>
       </div>
       <span id="p-saved" class="saved-flash">Saved!</span>
+      <p id="p-input-hint" class="warn-hint" style="display:none;"></p>
     </div>
 
     <div class="card" id="p-results" style="display:none;">
@@ -329,22 +356,22 @@
       <div class="stats">
         <div class="stat">
           <div class="num" id="r-bmi">–</div>
-          <div class="label">BMI <i class="info" title="Body Mass Index = weight (kg) / height (m)². Categories per World Health Organization.">i</i></div>
+          <div class="label">BMI <button type="button" class="info" aria-label="More info" data-tip="Body Mass Index = weight (kg) / height (m)². Categories per World Health Organization.">i</button></div>
           <div class="sub" id="r-bmi-cat"></div>
         </div>
         <div class="stat">
           <div class="num" id="r-bmr">–</div>
-          <div class="label">BMR (kcal) <i class="info" title="Basal Metabolic Rate — calories burned at complete rest. Mifflin-St Jeor equation (1990), validated by Frankenfield ADA meta-analysis (2005) as the most accurate predictive formula.">i</i></div>
+          <div class="label">BMR (kcal) <button type="button" class="info" aria-label="More info" data-tip="Basal Metabolic Rate — calories burned at complete rest. Mifflin-St Jeor equation (1990), validated by Frankenfield ADA meta-analysis (2005) as the most accurate predictive formula.">i</button></div>
           <div class="sub">at rest</div>
         </div>
         <div class="stat">
           <div class="num" id="r-tdee">–</div>
-          <div class="label">TDEE (kcal) <i class="info" title="Total Daily Energy Expenditure = BMR × activity factor. Multipliers 1.2–1.9 per Harris-Benedict / FAO.">i</i></div>
+          <div class="label">TDEE (kcal) <button type="button" class="info" aria-label="More info" data-tip="Total Daily Energy Expenditure = BMR × activity factor. Multipliers 1.2–1.9 per Harris-Benedict / FAO.">i</button></div>
           <div class="sub">maintain</div>
         </div>
         <div class="stat">
           <div class="num" id="r-target">–</div>
-          <div class="label">Daily target <i class="info" title="TDEE adjusted for your goal. −500 kcal/day ≈ 0.5 kg/week loss (NIH guidance for sustainable loss); +300 kcal/day for gradual lean gain.">i</i></div>
+          <div class="label">Daily target <button type="button" class="info" aria-label="More info" data-tip="TDEE adjusted for your goal. −500 kcal/day ≈ 0.5 kg/week loss (NIH guidance for sustainable loss); +300 kcal/day for gradual lean gain.">i</button></div>
           <div class="sub" id="r-goal-sub"></div>
         </div>
       </div>
@@ -353,19 +380,19 @@
       <div class="stats">
         <div class="stat">
           <div class="num" id="r-protein">–</div>
-          <div class="label">Protein (g) <i class="info" title="Cut: 2.0 g/kg. Maintain: 1.6 g/kg. Gain: 1.8 g/kg. Based on ISSN Position Stand (Jäger et al., 2017) and Morton et al. meta-analysis (2018).">i</i></div>
+          <div class="label">Protein (g) <button type="button" class="info" aria-label="More info" data-tip="Cut: 2.2 g/kg. Maintain: 1.6 g/kg. Gain: 1.8 g/kg. Based on ISSN Position Stand (Jäger et al., 2017) and Morton et al. meta-analysis (2018); cut value upper-end of the range to spare lean mass in deficit (Helms et al., 2014).">i</button></div>
         </div>
         <div class="stat">
           <div class="num" id="r-carbs">–</div>
-          <div class="label">Carbs (g) <i class="info" title="Remainder of daily calories after protein and fat. Typically within the IOM Acceptable Macronutrient Distribution Range (AMDR) of 45–65% of calories; aggressive cuts may dip lower.">i</i></div>
+          <div class="label">Carbs (g) <button type="button" class="info" aria-label="More info" data-tip="Remainder of daily calories after protein and fat. Typically within the IOM Acceptable Macronutrient Distribution Range (AMDR) of 45–65% of calories; aggressive cuts may dip lower.">i</button></div>
         </div>
         <div class="stat">
           <div class="num" id="r-fat">–</div>
-          <div class="label">Fat (g) <i class="info" title="25% of daily calories — middle of the IOM AMDR (20–35%).">i</i></div>
+          <div class="label">Fat (g) <button type="button" class="info" aria-label="More info" data-tip="25% of daily calories — middle of the IOM AMDR (20–35%).">i</button></div>
         </div>
         <div class="stat">
           <div class="num" id="r-water">–</div>
-          <div class="label">Water (L) <i class="info" title="35 mL per kg body weight (EFSA 2010 adult reference). The IOM (2005) suggests ~3.7 L/day total water for men and ~2.7 L for women — about 20% comes from food.">i</i></div>
+          <div class="label">Water (L) <button type="button" class="info" aria-label="More info" data-tip="35 mL per kg body weight (EFSA 2010 adult reference). The IOM (2005) suggests ~3.7 L/day total water for men and ~2.7 L for women — about 20% comes from food.">i</button></div>
         </div>
       </div>
 
@@ -376,7 +403,7 @@
           <li><strong>BMR</strong> — Mifflin-St Jeor equation: 10·weight + 6.25·height − 5·age + (5 for men, −161 for women). Source: Mifflin et al. (1990); validated as most accurate by Frankenfield et al., American Dietetic Association (2005).</li>
           <li><strong>TDEE</strong> — BMR × activity factor (1.2 sedentary → 1.9 athlete). Harris-Benedict multipliers; same convention used by the FAO/WHO/UNU.</li>
           <li><strong>Daily target</strong> — −500 kcal/day for a ~0.5 kg/week cut (NIH guidance on sustainable weight loss); +300 kcal/day for gradual lean gain (Iraki et al., 2019; Aragon et al., 2017).</li>
-          <li><strong>Protein</strong> — goal-dependent: 2.0 g/kg cut, 1.6 g/kg maintain, 1.8 g/kg gain. Sources: ISSN Position Stand (Jäger et al., 2017); Morton et al. meta-analysis (2018) identified ~1.6 g/kg as the point of diminishing returns for hypertrophy.</li>
+          <li><strong>Protein</strong> — goal-dependent: 2.2 g/kg cut, 1.6 g/kg maintain, 1.8 g/kg gain. Sources: ISSN Position Stand (Jäger et al., 2017); Morton et al. meta-analysis (2018) identified ~1.6 g/kg as the point of diminishing returns for hypertrophy; cut value sits at the upper end of the range to spare lean mass in deficit (Helms et al., 2014).</li>
           <li><strong>Fat</strong> — 25% of daily calories. Within the Institute of Medicine Acceptable Macronutrient Distribution Range (AMDR: 20–35%).</li>
           <li><strong>Carbs</strong> — remainder of calories after protein and fat. Typically within the IOM AMDR (45–65%); aggressive cuts may fall below.</li>
           <li><strong>Water</strong> — 35 mL per kg body weight (EFSA 2010 adult reference; consistent with the Holliday-Segar derivation of 30–40 mL/kg). The IOM (2005) Dietary Reference Intake suggests ~3.7 L/day total water for men and ~2.7 L for women, of which ~20% comes from food.</li>
@@ -424,7 +451,7 @@
         <button data-muscle="cardio">Cardio</button>
       </div>
 
-      <button class="primary" id="w-plan">Build me a quick session (5 exercises)</button>
+      <button class="primary" id="w-plan">Build me a quick session</button>
     </div>
 
     <div id="w-results"></div>
@@ -499,6 +526,21 @@ const RECIPES = [
   { name: "Egg fried rice", kcal: 580, protein: 19,
     ingredients: ["rice", "eggs", "onion", "soy sauce", "oil", "pepper"],
     steps: "Use 200 g cold cooked rice. Stir-fry half an onion + 1 bell pepper in 1 tbsp oil, push aside, scramble 2 eggs, mix in rice + a splash of soy sauce." },
+  { name: "Lentil curry with rice (vegan)", kcal: 590, protein: 22,
+    ingredients: ["lentils", "rice", "onion", "garlic", "tomato", "curry powder", "oil"],
+    steps: "Sauté half an onion + 1 clove garlic in 1 tbsp oil. Add 1 tbsp curry powder, 100 g chopped tomato, 100 g dry red lentils (rinsed), and 350 mL water. Simmer 18 min until lentils break down. Serve over 80 g (dry) rice." },
+  { name: "Tofu stir-fry with rice (vegan)", kcal: 570, protein: 26,
+    ingredients: ["tofu", "rice", "onion", "pepper", "soy sauce", "garlic", "oil"],
+    steps: "Press and cube 200 g firm tofu. Sear in 1 tbsp oil with 1 clove garlic, half an onion, 1 bell pepper. Add a splash of soy sauce. Serve over 80 g (dry) rice." },
+  { name: "Chickpea pasta with tomato (vegan)", kcal: 560, protein: 28,
+    ingredients: ["chickpea pasta", "tomato", "garlic", "onion", "oil", "salt"],
+    steps: "Boil 100 g (dry) chickpea pasta (most brands ~330 kcal & 23 g protein/100 g dry). Sauté half an onion + 1 clove garlic in 1 tbsp olive oil, add 150 g chopped tomato, simmer 10 min, season, toss with pasta." },
+  { name: "Baked salmon with rice and greens", kcal: 620, protein: 42,
+    ingredients: ["salmon", "rice", "broccoli", "lemon", "oil", "salt"],
+    steps: "Bake 150 g salmon fillet at 200 °C / 400 °F for 12 min with salt, pepper, and lemon. Cook 80 g (dry) rice. Steam 150 g broccoli florets 5 min. Drizzle 1 tsp olive oil over the plate." },
+  { name: "Cottage cheese with berries (snack)", kcal: 200, protein: 24,
+    ingredients: ["cottage cheese", "berries", "honey"],
+    steps: "200 g low-fat (2%) cottage cheese topped with 80 g mixed berries and 1 tsp (~7 g) honey." },
 ];
 
 // Sets × rep ranges per ACSM resistance-training progression model (2009)
@@ -535,9 +577,13 @@ const EXERCISES = [
     sets: "3 × 15", desc: "Hold band at chest height, pull arms apart squeezing shoulder blades, return slowly. Keep shoulders down — don't shrug them up to your ears." },
   { name: "Goblet squat (dumbbell)", loc: "home", muscle: "legs", emoji: "🏋️",
     sets: "3 × 10–12", desc: "Hold one dumbbell at chest. Squat down keeping chest up, drive through heels to stand. Don't let knees cave in or heels lift off the floor." },
+  { name: "Dumbbell Romanian deadlift", loc: "home", muscle: "legs", emoji: "🏋️",
+    sets: "3 × 8–12", desc: "Dumbbells in front of thighs, soft knees, hinge at the hips pushing them back, lower until you feel a hamstring stretch (~mid-shin), drive hips forward to stand. Don't round your lower back — stop the descent the moment your back starts to bend." },
+  { name: "Farmer's walk", loc: "home", muscle: "core", emoji: "🚶",
+    sets: "3 × 30–40 m", desc: "Heavy dumbbell in each hand, stand tall, walk in a straight line at a normal pace. Ribs down, shoulders back, breathe steadily — don't shrug, don't lean to one side, don't let the weights swing." },
   { name: "Bench press", loc: "gym", muscle: "chest", emoji: "🏋️",
     sets: "4 × 6–10", desc: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up. Always use a spotter or safety arms; keep feet planted and don't bounce the bar off your chest." },
-  { name: "Deadlift", loc: "gym", muscle: "back", emoji: "🏋️",
+  { name: "Deadlift", loc: "gym", muscle: "legs", emoji: "🏋️",
     sets: "3 × 5", desc: "Bar over mid-foot, neutral spine, drive through floor to stand tall. Lower with control. Don't let your lower back round at any point — drop the weight and reset if form breaks." },
   { name: "Barbell back squat", loc: "gym", muscle: "legs", emoji: "🏋️",
     sets: "4 × 6–10", desc: "Bar on upper back, feet shoulder-width, squat down keeping chest up, drive up. Use a rack with safety bars set just below the bottom of your squat. Don't let knees cave in." },
@@ -550,6 +596,43 @@ const EXERCISES = [
   { name: "Overhead barbell press", loc: "gym", muscle: "shoulders", emoji: "🏋️",
     sets: "3 × 6–10", desc: "Bar at shoulders, brace core and squeeze glutes, press overhead until elbows lock, lower to shoulders. Don't arch your lower back to push the weight up." },
 ];
+
+/* ============================================================
+   INFO ICON POPOVERS — click/tap to toggle a description bubble.
+   ============================================================ */
+let openPopover = null;
+function closePopover() {
+  if (openPopover) { openPopover.remove(); openPopover = null; }
+}
+document.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button.info[data-tip]');
+  if (!btn) { closePopover(); return; }
+
+  // Toggle: click same icon again closes.
+  if (openPopover && openPopover.dataset.anchor === btn.dataset.tip) {
+    closePopover();
+    return;
+  }
+  closePopover();
+
+  const pop = document.createElement('div');
+  pop.className = 'info-popover';
+  pop.textContent = btn.getAttribute('data-tip');
+  pop.dataset.anchor = btn.dataset.tip;
+  document.body.appendChild(pop);
+
+  const rect = btn.getBoundingClientRect();
+  const popWidth = pop.offsetWidth;
+  const viewportW = document.documentElement.clientWidth;
+  // Anchor below the icon; clamp inside viewport with 8 px margin.
+  let left = window.scrollX + rect.left + rect.width / 2 - popWidth / 2;
+  left = Math.max(8, Math.min(left, window.scrollX + viewportW - popWidth - 8));
+  pop.style.left = `${left}px`;
+  pop.style.top = `${window.scrollY + rect.bottom + 6}px`;
+  openPopover = pop;
+  ev.stopPropagation();
+});
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closePopover(); });
 
 /* ============================================================
    TAB NAVIGATION
@@ -605,8 +688,25 @@ function calculate() {
   const activity = +document.getElementById('p-activity').value;
   const goalAdj = +document.getElementById('p-goal').value;
 
+  const hintEl = document.getElementById('p-input-hint');
+  hintEl.style.display = 'none';
+
+  // Hide results if any required field is missing or non-positive.
   if (!age || age <= 0 || !height || height <= 0 || !weight || weight <= 0) {
     document.getElementById('p-results').style.display = 'none';
+    return;
+  }
+
+  // Soft-clamp absurd-but-positive inputs. Sane adult ranges; the form's
+  // HTML min/max is advisory only — browsers still submit out-of-range
+  // values, so the real guard lives here.
+  const inRange = age >= 10 && age <= 120 &&
+                  height >= 80 && height <= 250 &&
+                  weight >= 20 && weight <= 400;
+  if (!inRange) {
+    document.getElementById('p-results').style.display = 'none';
+    hintEl.textContent = 'Please double-check your inputs: age 10–120, height 80–250 cm, weight 20–400 kg.';
+    hintEl.style.display = 'block';
     return;
   }
 
@@ -627,7 +727,7 @@ function calculate() {
   // Protein: goal-dependent per ISSN Position Stand (Jäger 2017) and
   // Morton et al. meta-analysis (2018). Cut needs more to spare lean mass;
   // maintain sits at the point of diminishing returns; gain a touch above.
-  const proteinPerKg = goalAdj < 0 ? 2.0 : goalAdj > 0 ? 1.8 : 1.6;
+  const proteinPerKg = goalAdj < 0 ? 2.2 : goalAdj > 0 ? 1.8 : 1.6;
   const protein = Math.round(weight * proteinPerKg);
 
   // Fat: 25% of calories — middle of IOM AMDR (20–35%).
@@ -776,7 +876,20 @@ function exerciseCard(e) {
     </div>`;
 }
 
+function updatePlanButtonLabel() {
+  const planBtn = document.getElementById('w-plan');
+  const count = Math.min(5, filteredExercises().length);
+  if (count >= 5) {
+    planBtn.textContent = 'Build me a quick session (5 exercises)';
+  } else if (count > 0) {
+    planBtn.textContent = `Build me a quick session (only ${count} match these filters)`;
+  } else {
+    planBtn.textContent = 'No exercises match these filters';
+  }
+}
+
 function renderExercises() {
+  updatePlanButtonLabel();
   const list = filteredExercises();
   const out = document.getElementById('w-results');
   if (list.length === 0) {
