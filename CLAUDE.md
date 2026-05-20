@@ -38,6 +38,18 @@ Address any `Must fix` / `P0` / `P1` items from the agents' reports, re-run the 
 
 For ad-hoc questions ("does this button feel right?", "is this recipe realistic?"), the user can also spawn an agent manually at any time.
 
+## Versioning
+
+The app displays a version pill in the header (e.g. `v0.3.0`) and ships a `CHANGELOG.md`. When a PR adds user-visible behavior, Claude bumps the version in `index.html` and adds a CHANGELOG entry as part of the same PR. Semantic-ish:
+
+- `MAJOR` — breaking change for users (rare; we're pre-1.0)
+- `MINOR` — new features
+- `PATCH` — bug fixes / polish
+
+## Deployment
+
+CI runs on every PR. On merge to `main`, the `deploy` job in `.github/workflows/ci.yml` publishes the site to GitHub Pages. Don't push directly to `main` (the push-to-main approval rule still applies); deployment follows merges.
+
 ## Local commands
 
 ```bash
