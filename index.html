@@ -304,16 +304,88 @@
   details.sources li strong { color: var(--text); }
   details.sources .disclaimer { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
 
+  /* SUMMARY TAB */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .summary-block h3 {
+    margin: 0 0 8px;
+    color: var(--accent);
+    font-size: 15px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 4px;
+  }
+  .summary-block dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 0;
+  }
+  .summary-block dt {
+    color: var(--muted);
+    font-size: 13px;
+    align-self: center;
+  }
+  .summary-block dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .summary-block .muted { color: var(--muted); font-weight: 400; font-size: 12px; }
+  .summary-footer {
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #334155;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .version-inline {
+    font-family: monospace;
+    color: var(--text);
+  }
+  button.export-btn { margin-top: 16px; }
+
   @media (max-width: 600px) {
     .form-row { grid-template-columns: 1fr; }
     nav button { font-size: 13px; padding: 12px 6px; }
+    .summary-grid { grid-template-columns: 1fr; gap: 16px; }
+  }
+
+  /* PRINT — used by 'Export to PDF'. Force a clean white-on-black layout
+     and hide everything except the Summary section's content. */
+  @media print {
+    body { background: white !important; color: #111 !important; font-family: Georgia, serif; }
+    header { background: white !important; color: #111 !important; padding: 0 0 12px !important; text-align: left !important; border-bottom: 2px solid #111; margin-bottom: 16px; }
+    header h1 { color: #111 !important; font-size: 22px !important; }
+    header p { color: #444 !important; }
+    header .version { background: none !important; color: #444 !important; padding: 0 !important; }
+    nav, .tab:not(#summary), .export-btn, #s-empty { display: none !important; }
+    #summary { display: block !important; }
+    main { padding: 0 !important; max-width: none !important; }
+    .card, .card.summary-card {
+      background: white !important;
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+    .summary-card h2 { color: #111 !important; margin-top: 0; font-size: 18px; }
+    .summary-card .hint { display: none; }
+    .summary-block h3 { color: #111 !important; border-bottom-color: #999 !important; }
+    .summary-block dt, .summary-block dd, .summary-block .muted, .summary-footer { color: #111 !important; }
+    .summary-footer { border-top-color: #999 !important; }
+    .summary-grid { gap: 32px; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Gym Buddy <span class="version">v0.4.0</span></h1>
+  <h1>Gym Buddy <span class="version">v0.5.0</span></h1>
   <p>Your personal gym + nutrition assistant</p>
 </header>
 
@@ -321,6 +393,7 @@
   <button class="tab-btn active" data-tab="profile">Profile</button>
   <button class="tab-btn" data-tab="meals">Meals</button>
   <button class="tab-btn" data-tab="workouts">Workouts</button>
+  <button class="tab-btn" data-tab="summary">Summary</button>
 </nav>
 
 <main>
@@ -464,6 +537,56 @@
     </div>
 
     <div id="m-results"></div>
+  </section>
+
+  <!-- ============ SUMMARY TAB ============ -->
+  <section id="summary" class="tab">
+    <div class="card summary-card">
+      <h2>Your Summary</h2>
+      <p class="hint">A one-page snapshot of your profile and daily targets. Print it for the gym, save as PDF, or share with your coach or dietitian.</p>
+
+      <div id="s-empty" class="empty" style="display:none;">
+        Fill in your profile first (Profile tab), then come back here.
+      </div>
+
+      <div id="s-content">
+        <div class="summary-grid">
+          <div class="summary-block">
+            <h3>Profile</h3>
+            <dl>
+              <dt>Name</dt><dd id="s-name">—</dd>
+              <dt>Age</dt><dd id="s-age">—</dd>
+              <dt>Sex</dt><dd id="s-sex">—</dd>
+              <dt>Height</dt><dd id="s-height">—</dd>
+              <dt>Weight</dt><dd id="s-weight">—</dd>
+              <dt>Activity</dt><dd id="s-activity">—</dd>
+              <dt>Goal</dt><dd id="s-goal">—</dd>
+            </dl>
+          </div>
+
+          <div class="summary-block">
+            <h3>Daily targets</h3>
+            <dl>
+              <dt>BMI</dt><dd><span id="s-c-bmi">—</span> <span id="s-c-bmi-cat" class="muted"></span></dd>
+              <dt>BMR (at rest)</dt><dd><span id="s-c-bmr">—</span> kcal</dd>
+              <dt>TDEE (maintain)</dt><dd><span id="s-c-tdee">—</span> kcal</dd>
+              <dt>Calorie target</dt><dd><span id="s-c-target">—</span> kcal <span id="s-c-target-sub" class="muted"></span></dd>
+              <dt>Protein</dt><dd><span id="s-c-protein">—</span> g</dd>
+              <dt>Carbs</dt><dd><span id="s-c-carbs">—</span> g</dd>
+              <dt>Fat</dt><dd><span id="s-c-fat">—</span> g</dd>
+              <dt>Water</dt><dd><span id="s-c-water">—</span> L</dd>
+            </dl>
+          </div>
+        </div>
+
+        <p class="summary-footer">
+          Generated: <span id="s-date">—</span> · Gym Buddy <span class="version-inline">v0.5.0</span><br>
+          General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
+        </p>
+      </div>
+
+      <button class="primary export-btn" id="s-export">Export to PDF (print → Save as PDF)</button>
+    </div>
   </section>
 
   <!-- ============ WORKOUTS TAB ============ -->
@@ -712,6 +835,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'summary') renderSummary();
   });
 });
 
@@ -1024,11 +1148,60 @@ document.getElementById('w-plan').addEventListener('click', () => {
 });
 
 /* ============================================================
+   SUMMARY — printable one-page snapshot of profile + targets
+   ============================================================ */
+function renderSummary() {
+  const ageVal = document.getElementById('p-age').value;
+  const heightVal = document.getElementById('p-height').value;
+  const weightVal = document.getElementById('p-weight').value;
+  const bmi = document.getElementById('r-bmi').textContent;
+
+  // Empty state when no profile or no successful calc yet.
+  const hasData = !!(ageVal && heightVal && weightVal && bmi && bmi !== '–');
+  document.getElementById('s-empty').style.display = hasData ? 'none' : 'block';
+  document.getElementById('s-content').style.display = hasData ? '' : 'none';
+  if (!hasData) return;
+
+  const sexVal = document.getElementById('p-sex').value;
+  const activitySelect = document.getElementById('p-activity');
+  const goalSelect = document.getElementById('p-goal');
+
+  // Profile fields
+  document.getElementById('s-name').textContent = document.getElementById('p-name').value || '(not set)';
+  document.getElementById('s-age').textContent = `${ageVal} years`;
+  document.getElementById('s-sex').textContent = sexVal === 'male' ? 'Male' : 'Female';
+  document.getElementById('s-height').textContent = `${heightVal} cm`;
+  document.getElementById('s-weight').textContent = `${weightVal} kg`;
+  document.getElementById('s-activity').textContent = activitySelect.options[activitySelect.selectedIndex].text;
+  document.getElementById('s-goal').textContent = goalSelect.options[goalSelect.selectedIndex].text;
+
+  // Computed values — pull from the already-rendered profile display
+  document.getElementById('s-c-bmi').textContent = bmi;
+  document.getElementById('s-c-bmi-cat').textContent = document.getElementById('r-bmi-cat').textContent.trim();
+  document.getElementById('s-c-bmr').textContent = document.getElementById('r-bmr').textContent;
+  document.getElementById('s-c-tdee').textContent = document.getElementById('r-tdee').textContent;
+  document.getElementById('s-c-target').textContent = document.getElementById('r-target').textContent;
+  document.getElementById('s-c-target-sub').textContent = `(${document.getElementById('r-goal-sub').textContent.trim()})`;
+  document.getElementById('s-c-protein').textContent = document.getElementById('r-protein').textContent;
+  document.getElementById('s-c-carbs').textContent = document.getElementById('r-carbs').textContent;
+  document.getElementById('s-c-fat').textContent = document.getElementById('r-fat').textContent;
+  document.getElementById('s-c-water').textContent = document.getElementById('r-water').textContent;
+
+  document.getElementById('s-date').textContent = new Date().toLocaleDateString();
+}
+
+document.getElementById('s-export').addEventListener('click', () => {
+  renderSummary();
+  window.print();
+});
+
+/* ============================================================
    STARTUP
    ============================================================ */
 loadProfile();
 renderExercises();
 findMeals();
+renderSummary();
 </script>
 
 </body>
