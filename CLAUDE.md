@@ -44,11 +44,48 @@ For ad-hoc questions ("does this button feel right?", "is this recipe realistic?
 
 ## Versioning
 
-The app displays a version pill in the header (e.g. `v0.3.0`) and ships a `CHANGELOG.md`. When a PR adds user-visible behavior, Claude bumps the version in `index.html` and adds a CHANGELOG entry as part of the same PR. Semantic-ish:
+The app displays a version pill in the header (e.g. `v0.9.0`) and ships a `CHANGELOG.md`. When a PR adds user-visible change, Claude bumps the version in `index.html` and adds a CHANGELOG entry as part of the same PR.
 
-- `MAJOR` — breaking change for users (rare; we're pre-1.0)
-- `MINOR` — new features
-- `PATCH` — bug fixes / polish
+Pick the **smallest bump that fits**. New feature is always at least MINOR; bug fix is always at least PATCH. Pure internal refactors with no user-visible change don't bump.
+
+### MAJOR — `X.0.0`
+
+Significant new features or improvements that change how users interact with the app. The kind of release worth telling someone about.
+
+- A new tab or major section (e.g. *Summary*, *Dashboard*, *Hydration*)
+- A new core capability (e.g. PDF export, backup/restore, sign-in, PWA install)
+- A rebrand, redesign, or new product direction
+- A breaking change to user data (rare — pair with a migration path)
+
+### MINOR — `0.X.0`
+
+Smaller user-visible enhancements that build on existing features.
+
+- New options or settings inside an existing tab (a new filter, a new profile field, a new sort)
+- A handful of new recipes or exercises (not a wholesale library swap)
+- New non-blocking content (info popovers, in-app guidance, citation footers)
+- UX improvements that don't add a new capability (better empty states, card re-orderings, copy edits)
+
+### PATCH — `0.0.X`
+
+Bug fixes, small content corrections, and polish that doesn't add new capability.
+
+- Fixing wrong calorie / protein numbers on a recipe
+- Tightening an exercise form cue
+- Visual / contrast / accessibility tweaks to an existing feature
+- Hot-fixes to a previously-shipped PR
+
+### Quick rubric
+
+| Question | Answer |
+|---|---|
+| Did the user get a **new way to do something**? | **MAJOR** |
+| Did **existing things get more / better**? | **MINOR** |
+| Did something **broken get less broken**? | **PATCH** |
+
+### When NOT to bump
+
+Pure internal changes that ship no user-visible difference — subagent prompt tweaks, README polish, CI tweaks, test-only changes, dependency bumps with no behaviour change. Skip the version bump and skip the CHANGELOG entry.
 
 ## Deployment
 
