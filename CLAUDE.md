@@ -15,7 +15,7 @@ This repo follows **separation of duties**. You (the human owner) review and app
 
 ## Specialized agents
 
-Six project agents live in `.claude/agents/`:
+Eight project agents live in `.claude/agents/`:
 
 | Agent | When to spawn |
 |-------|---------------|
@@ -25,6 +25,8 @@ Six project agents live in `.claude/agents/`:
 | `ui-ux` | Any user-visible change |
 | `code-reviewer` | Before declaring a feature done — read-only review of the branch diff |
 | `qa` | Before declaring a feature done — exercises the app, finds and fixes small bugs |
+| `end-user` | Manual / periodic. Simulates a real non-technical user and reports friction, wishes, delights — "would a real person actually want to keep using this?" |
+| `product-manager` | Manual / periodic. Strategic review — what to build next, what to cut, prioritized by user value and effort, grounded in the current codebase |
 
 ### Auto-run at end of each feature step
 
@@ -33,6 +35,8 @@ When a "feature step" finishes (e.g. Step 2 — real exercise GIFs, Step 3 — d
 - Always: `code-reviewer` + `qa` + `ui-ux`
 - If recipe or macro content was touched: also `dietitian`
 - If exercise or workout-programming content was touched: also `gym-coach`
+
+`end-user` and `product-manager` are **not part of the auto-run set** — they're advisory and run too long for every PR. The user invokes them manually when they want fresh eyes or strategic input ("/end-user couch starter persona", "/product-manager what should we build next?"). Claude can also suggest invoking them when stuck on a direction question.
 
 Address any `Must fix` / `P0` / `P1` items from the agents' reports, re-run the local checks, then push. Surface remaining `Should fix` / `P2` items in the PR description or the message to the user — don't silently swallow them.
 
@@ -74,5 +78,5 @@ gym-buddy/
 │   └── ci.yml              ← runs lint + test on every PR
 └── .claude/
     ├── settings.json       ← project-level Claude rules
-    └── agents/             ← specialized subagents (dietitian, gym-coach, senior-dev, ui-ux, code-reviewer, qa)
+    └── agents/             ← specialized subagents (dietitian, gym-coach, senior-dev, ui-ux, code-reviewer, qa, end-user, product-manager)
 ```
