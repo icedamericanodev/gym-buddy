@@ -230,6 +230,35 @@ dom.window.addEventListener('load', () => {
       `expected restricted-pool copy, got "${label}"`);
   });
 
+  check('every exercise card has a demo toggle (button or search link)', () => {
+    const cards = document.querySelectorAll('#w-results .exercise');
+    assert.ok(cards.length > 0, 'expected exercises rendered');
+    cards.forEach((card, i) => {
+      const toggle = card.querySelector('.demo-toggle');
+      assert.ok(toggle, `card #${i} should have a .demo-toggle element`);
+    });
+  });
+
+  check('clicking a demo button with a videoId embeds a YouTube iframe', () => {
+    // Find a card whose toggle is a real button (videoId present).
+    const btn = document.querySelector('button.demo-toggle[data-vid]');
+    if (!btn) {
+      // No videoIds yet — that's a valid state at v0.4.0 launch. Skip.
+      console.log('     (skipped — no videoId entries to test against)');
+      return;
+    }
+    const card = btn.closest('.exercise');
+    assert.ok(!card.querySelector('.demo-frame'), 'demo frame should start hidden');
+    btn.click();
+    const iframe = card.querySelector('.demo-frame iframe');
+    assert.ok(iframe, 'expected iframe after click');
+    assert.ok(iframe.getAttribute('src').includes('youtube-nocookie.com/embed/'),
+      `iframe src should use youtube-nocookie embed, got ${iframe.getAttribute('src')}`);
+    // Toggle again hides it.
+    btn.click();
+    assert.ok(!card.querySelector('.demo-frame'), 'demo frame should be removed on second click');
+  });
+
   check('build-a-session always returns up to 5 distinct picks across rapid clicks', () => {
     // Reset to "all" filters
     document.querySelectorAll('#loc-filter button').forEach(b => {

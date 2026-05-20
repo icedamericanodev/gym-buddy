@@ -196,6 +196,34 @@
     margin-bottom: 10px;
   }
 
+  .demo-toggle {
+    background: var(--panel);
+    color: var(--accent);
+    border: 1px solid #475569;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .demo-toggle:hover { background: var(--panel-2); }
+  .demo-frame {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+  }
+  .demo-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
   .empty { color: var(--muted); text-align: center; padding: 20px; font-style: italic; }
   .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
   .saved-flash {
@@ -285,7 +313,7 @@
 <body>
 
 <header>
-  <h1>Gym Buddy <span class="version">v0.3.0</span></h1>
+  <h1>Gym Buddy <span class="version">v0.4.0</span></h1>
   <p>Your personal gym + nutrition assistant</p>
 </header>
 
@@ -553,6 +581,36 @@ const RECIPES = [
     ingredients: ["cottage cheese", "berries", "honey"],
     steps: "200 g low-fat (2%) cottage cheese topped with 80 g mixed berries and 1 tsp (~7 g) honey." },
 ];
+
+// YouTube video IDs for each exercise's form-tutorial demo, keyed by name.
+// Embedded inline (autoplay+mute+loop, GIF-like) when the user clicks
+// "▶ Show demo". Missing entries fall back to a "Search YouTube" link.
+const EXERCISE_VIDEOS = {
+  "Push-ups": "Zi6c09DRGxk",
+  "Squats (bodyweight)": "aclHkVaku9U",
+  "Lunges": "QOVaHwm-Q6U",
+  "Plank": "ASdvN_XEl_c",
+  "Sit-ups": "iL06z9PWYs8",
+  "Glute bridges": "wPM8icPu6H8",
+  "Mountain climbers": "hZb6jTbCLeE",
+  "Burpees": "dZgVxmf6jkA",
+  "Jumping jacks": "Q4QnlZs9PqI",
+  "Tricep dips (chair)": "jDafIn0WMUw",
+  "Dumbbell rows": "gfUg6qWohTk",
+  "Dumbbell shoulder press": "kGooAJM3294",
+  "Dumbbell bicep curls": "Nkl8WnH6tDU",
+  "Resistance band pull-apart": "2fmxGGtdbog",
+  "Goblet squat (dumbbell)": "YpYG-pTeaeA",
+  "Dumbbell Romanian deadlift": "hQgFixeXdZo",
+  "Farmer's walk": "NH7Xv-7NQNQ",
+  "Bench press": "676GkswmHRY",
+  "Deadlift": "A9HvO-2dfG0",
+  "Barbell back squat": "SbgHegC6lEs",
+  "Lat pulldown": "5Hjhg43P5vE",
+  "Leg press": "B6rGDcfyPto",
+  "Pull-ups": "sIvJTfGxdFo",
+  "Overhead barbell press": "_RlRDWO2jfg",
+};
 
 // Sets × rep ranges per ACSM resistance-training progression model (2009)
 // and NSCA Essentials of Strength Training (2016): hypertrophy 6–12, strength
@@ -874,6 +932,11 @@ function filteredExercises() {
 }
 
 function exerciseCard(e) {
+  const videoId = EXERCISE_VIDEOS[e.name];
+  const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(e.name + ' form tutorial')}`;
+  const demoBtn = videoId
+    ? `<button type="button" class="demo-toggle" data-vid="${esc(videoId)}">▶ Show demo</button>`
+    : `<a class="demo-toggle" href="${esc(searchUrl)}" target="_blank" rel="noopener">▶ Search YouTube</a>`;
   return `
     <div class="exercise">
       <div class="visual">${esc(e.emoji)}</div>
@@ -884,8 +947,33 @@ function exerciseCard(e) {
         <span class="pill good">${esc(e.sets)}</span>
       </div>
       <div class="desc">${esc(e.desc)}</div>
+      ${demoBtn}
     </div>`;
 }
+
+// Click-to-expand inline YouTube demo. Autoplay + mute + loop so it
+// behaves like a GIF; mute is required for autoplay in all browsers.
+document.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button.demo-toggle[data-vid]');
+  if (!btn) return;
+  const card = btn.closest('.exercise');
+  const existing = card.querySelector('.demo-frame');
+  if (existing) {
+    existing.remove();
+    btn.textContent = '▶ Show demo';
+    return;
+  }
+  const vid = btn.dataset.vid;
+  const frame = document.createElement('div');
+  frame.className = 'demo-frame';
+  frame.innerHTML = `<iframe
+    src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(vid)}?autoplay=1&mute=1&loop=1&playlist=${encodeURIComponent(vid)}&controls=1&rel=0&modestbranding=1&playsinline=1"
+    allow="autoplay; encrypted-media; picture-in-picture"
+    allowfullscreen
+    title="Exercise demo"></iframe>`;
+  card.appendChild(frame);
+  btn.textContent = '✕ Hide demo';
+});
 
 function updatePlanButtonLabel() {
   const planBtn = document.getElementById('w-plan');
