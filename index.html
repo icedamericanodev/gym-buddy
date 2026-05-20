@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Herlyft — Lift with her</title>
-<link rel="icon" type="image/png" href="logo.png">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 75'><rect width='40' height='75' rx='8' fill='%230a0e1a'/><path d='M20 7C17 3 13 3 13 9C13 13 20 17 20 17C20 17 27 13 27 9C27 3 23 3 20 7Z' fill='%23e8b962'/><line x1='20' y1='14' x2='7' y2='30' stroke='%23e8b962' stroke-width='5.5' stroke-linecap='round'/><line x1='20' y1='14' x2='33' y2='30' stroke='%23e8b962' stroke-width='5.5' stroke-linecap='round'/><circle cx='20' cy='37' r='5' fill='%23e8b962'/><line x1='20' y1='44' x2='20' y2='68' stroke='%23e8b962' stroke-width='6.5' stroke-linecap='round'/></svg>">
 <style>
   :root {
     --bg: #0a0e1a;
@@ -37,48 +37,52 @@
     text-align: center;
     border-bottom: 1px solid var(--border);
   }
-  header .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-  }
-  header .brand img {
-    width: 44px;
-    height: 44px;
-    object-fit: cover;
-    object-position: 6% 8%;  /* crop to the H/wordmark area of the mockup */
-    border-radius: 10px;
-    border: 1px solid var(--border-strong);
-    background: var(--panel-2);
-  }
   header h1 {
     margin: 0;
-    font-size: 30px;
-    letter-spacing: 0.18em;
-    font-weight: 700;
+    /* Heavy geometric sans to match the wordmark on the brand sheet. Avoids
+       a Google Fonts dependency — Inter / Arial Black is on every device. */
+    font-family: Inter, 'Helvetica Neue', 'Arial Black', 'Segoe UI Black', system-ui, sans-serif;
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
     color: var(--text);
-    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
   }
-  header h1 .accent-letter { color: var(--accent); }
+  header h1 .word { display: inline-block; }
+  header h1 .y-mark {
+    width: 26px;
+    height: 49px;        /* preserves the SVG 40:75 aspect ratio */
+    color: var(--accent);
+    margin: 0 1px -4px;  /* slight negative bottom margin so the figure sits on the baseline */
+    flex-shrink: 0;
+  }
   header .tagline {
-    margin: 6px 0 0;
+    margin: 10px 0 0;
     font-size: 11px;
-    letter-spacing: 0.32em;
+    letter-spacing: 0.42em;
     color: var(--accent);
     text-transform: uppercase;
-    font-weight: 500;
+    font-weight: 600;
   }
   header .version {
     display: inline-block;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--muted);
     background: rgba(0, 0, 0, 0.35);
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
     vertical-align: middle;
-    margin-left: 10px;
-    letter-spacing: 0.05em;
+    margin-left: 12px;
+    letter-spacing: 0.06em;
+    align-self: center;
+  }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 30px; letter-spacing: 0.04em; }
+    header h1 .y-mark { width: 21px; height: 39px; }
   }
 
   nav {
@@ -444,10 +448,16 @@
 <body>
 
 <header>
-  <div class="brand">
-    <img src="logo.png" alt="Herlyft logo" />
-    <h1>Herl<span class="accent-letter">y</span>ft <span class="version">v0.7.0</span></h1>
-  </div>
+  <h1>
+    <span class="word">HERL</span><svg class="y-mark" viewBox="0 0 40 75" xmlns="http://www.w3.org/2000/svg" aria-label="Y">
+      <path d="M20 7C17 3 13 3 13 9C13 13 20 17 20 17C20 17 27 13 27 9C27 3 23 3 20 7Z" fill="currentColor"/>
+      <line x1="20" y1="14" x2="7" y2="30" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>
+      <line x1="20" y1="14" x2="33" y2="30" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>
+      <circle cx="20" cy="37" r="5" fill="currentColor"/>
+      <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
+    </svg><span class="word">FT</span>
+    <span class="version">v0.7.1</span>
+  </h1>
   <p class="tagline">Lift with her</p>
 </header>
 
@@ -665,7 +675,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.7.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.7.1</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
