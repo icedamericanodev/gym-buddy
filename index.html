@@ -197,6 +197,48 @@
   }
   .saved-flash.show { opacity: 1; }
 
+  .info {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: #475569;
+    color: #f1f5f9;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    cursor: help;
+    font-style: normal;
+    vertical-align: middle;
+  }
+  .info:hover, .info:focus { background: var(--accent); color: #0f172a; outline: none; }
+
+  details.sources {
+    margin-top: 16px;
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  details.sources summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+    list-style: none;
+  }
+  details.sources summary::before {
+    content: "▸ ";
+    display: inline-block;
+    transition: transform 0.15s;
+  }
+  details.sources[open] summary::before { content: "▾ "; }
+  details.sources ul { padding-left: 18px; margin: 10px 0 4px; }
+  details.sources li { font-size: 13px; line-height: 1.6; margin-bottom: 6px; color: #cbd5e1; }
+  details.sources li strong { color: var(--text); }
+  details.sources .disclaimer { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
   @media (max-width: 600px) {
     .form-row { grid-template-columns: 1fr; }
     nav button { font-size: 13px; padding: 12px 6px; }
@@ -287,22 +329,22 @@
       <div class="stats">
         <div class="stat">
           <div class="num" id="r-bmi">–</div>
-          <div class="label">BMI</div>
+          <div class="label">BMI <i class="info" title="Body Mass Index = weight (kg) / height (m)². Categories per World Health Organization.">i</i></div>
           <div class="sub" id="r-bmi-cat"></div>
         </div>
         <div class="stat">
           <div class="num" id="r-bmr">–</div>
-          <div class="label">BMR (kcal)</div>
+          <div class="label">BMR (kcal) <i class="info" title="Basal Metabolic Rate — calories burned at complete rest. Mifflin-St Jeor equation (1990), validated by Frankenfield ADA meta-analysis (2005) as the most accurate predictive formula.">i</i></div>
           <div class="sub">at rest</div>
         </div>
         <div class="stat">
           <div class="num" id="r-tdee">–</div>
-          <div class="label">TDEE (kcal)</div>
+          <div class="label">TDEE (kcal) <i class="info" title="Total Daily Energy Expenditure = BMR × activity factor. Multipliers 1.2–1.9 per Harris-Benedict / FAO.">i</i></div>
           <div class="sub">maintain</div>
         </div>
         <div class="stat">
           <div class="num" id="r-target">–</div>
-          <div class="label">Daily target</div>
+          <div class="label">Daily target <i class="info" title="TDEE adjusted for your goal. −500 kcal/day ≈ 0.5 kg/week loss (NIH guidance for sustainable loss); +300 kcal/day for gradual lean gain.">i</i></div>
           <div class="sub" id="r-goal-sub"></div>
         </div>
       </div>
@@ -311,21 +353,36 @@
       <div class="stats">
         <div class="stat">
           <div class="num" id="r-protein">–</div>
-          <div class="label">Protein (g)</div>
+          <div class="label">Protein (g) <i class="info" title="Cut: 2.0 g/kg. Maintain: 1.6 g/kg. Gain: 1.8 g/kg. Based on ISSN Position Stand (Jäger et al., 2017) and Morton et al. meta-analysis (2018).">i</i></div>
         </div>
         <div class="stat">
           <div class="num" id="r-carbs">–</div>
-          <div class="label">Carbs (g)</div>
+          <div class="label">Carbs (g) <i class="info" title="Remainder of daily calories after protein and fat. Within the IOM Acceptable Macronutrient Distribution Range (AMDR) of 45–65% of calories.">i</i></div>
         </div>
         <div class="stat">
           <div class="num" id="r-fat">–</div>
-          <div class="label">Fat (g)</div>
+          <div class="label">Fat (g) <i class="info" title="25% of daily calories — middle of the IOM AMDR (20–35%).">i</i></div>
         </div>
         <div class="stat">
           <div class="num" id="r-water">–</div>
-          <div class="label">Water (L)</div>
+          <div class="label">Water (L) <i class="info" title="35 mL per kg body weight (ESPEN 2018 guideline). The IOM (2005) suggests ~3.7 L/day total water for men and ~2.7 L for women — about 20% comes from food.">i</i></div>
         </div>
       </div>
+
+      <details class="sources">
+        <summary>How is this calculated? (sources)</summary>
+        <ul>
+          <li><strong>BMI</strong> — weight (kg) / height (m)². Categories: underweight &lt;18.5, healthy 18.5–24.9, overweight 25–29.9, obese ≥30. Source: World Health Organization.</li>
+          <li><strong>BMR</strong> — Mifflin-St Jeor equation: 10·weight + 6.25·height − 5·age + (5 for men, −161 for women). Source: Mifflin et al. (1990); validated as most accurate by Frankenfield et al., American Dietetic Association (2005).</li>
+          <li><strong>TDEE</strong> — BMR × activity factor (1.2 sedentary → 1.9 athlete). Harris-Benedict multipliers; same convention used by the FAO/WHO/UNU.</li>
+          <li><strong>Daily target</strong> — −500 kcal/day for a ~0.5 kg/week cut (NIH guidance on sustainable weight loss); +300 kcal/day for gradual lean gain (Iraki et al., 2019; Aragon et al., 2017).</li>
+          <li><strong>Protein</strong> — goal-dependent: 2.0 g/kg cut, 1.6 g/kg maintain, 1.8 g/kg gain. Sources: ISSN Position Stand (Jäger et al., 2017); Morton et al. meta-analysis (2018) identified ~1.6 g/kg as the point of diminishing returns for hypertrophy.</li>
+          <li><strong>Fat</strong> — 25% of daily calories. Within the Institute of Medicine Acceptable Macronutrient Distribution Range (AMDR: 20–35%).</li>
+          <li><strong>Carbs</strong> — remainder of calories after protein and fat. Within the IOM AMDR (45–65%).</li>
+          <li><strong>Water</strong> — 35 mL per kg body weight (ESPEN 2018 hydration guideline). The IOM (2005) Dietary Reference Intake suggests ~3.7 L/day total water for men and ~2.7 L for women, of which ~20% comes from food.</li>
+        </ul>
+        <p class="disclaimer">These are general adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations, especially if you have a medical condition.</p>
+      </details>
     </div>
   </section>
 
@@ -380,99 +437,104 @@
    DATA: recipes & exercises (small starter sets)
    ============================================================ */
 
+// Recipe macros estimated from USDA FoodData Central reference values for the
+// portions described in `steps`. kcal rounded to nearest 10, protein to nearest 1 g.
 const RECIPES = [
-  { name: "Scrambled eggs on toast", kcal: 350, protein: 22,
+  { name: "Scrambled eggs on toast", kcal: 460, protein: 24,
     ingredients: ["eggs", "bread", "butter", "salt"],
-    steps: "Whisk 3 eggs with salt. Cook in butter on low heat, stirring slowly. Serve on 2 slices of toast." },
-  { name: "Oatmeal with banana", kcal: 420, protein: 12,
+    steps: "Whisk 3 large eggs (~150 g) with a pinch of salt. Cook in 10 g butter on low heat, stirring slowly. Serve on 2 slices of white bread (~60 g)." },
+  { name: "Oatmeal with banana", kcal: 550, protein: 17,
     ingredients: ["oats", "banana", "milk", "honey"],
-    steps: "Simmer 60g oats in 250ml milk for 4 min. Top with sliced banana and a drizzle of honey." },
-  { name: "Greek yogurt bowl", kcal: 300, protein: 20,
+    steps: "Simmer 60 g rolled oats in 250 mL whole milk for 4 min. Top with 1 sliced medium banana (~120 g) and 1 tbsp (~21 g) honey." },
+  { name: "Greek yogurt bowl", kcal: 270, protein: 24,
     ingredients: ["yogurt", "berries", "honey", "nuts"],
-    steps: "200g Greek yogurt, top with berries, a teaspoon of honey, and a small handful of nuts." },
-  { name: "Chicken stir-fry with rice", kcal: 550, protein: 40,
+    steps: "200 g plain low-fat Greek yogurt. Top with 80 g mixed berries, 1 tsp (~7 g) honey, and a 15 g handful of almonds." },
+  { name: "Chicken stir-fry with rice", kcal: 640, protein: 41,
     ingredients: ["chicken", "rice", "onion", "pepper", "soy sauce", "garlic", "oil"],
-    steps: "Cook 80g rice. Stir-fry diced chicken in oil with garlic, onion, and peppers. Add soy sauce. Serve over rice." },
-  { name: "Pasta with tomato sauce", kcal: 480, protein: 14,
+    steps: "Cook 80 g (dry weight) white rice. Stir-fry 150 g diced chicken breast in 1 tbsp (14 g) oil with 1 clove garlic, half an onion, and 1 bell pepper. Splash of soy sauce. Serve over rice." },
+  { name: "Pasta with tomato sauce", kcal: 540, protein: 14,
     ingredients: ["pasta", "tomato", "garlic", "onion", "oil", "salt"],
-    steps: "Boil 100g pasta. Sauté onion + garlic, add chopped tomato, simmer 10 min, season, toss with pasta." },
-  { name: "Grilled chicken salad", kcal: 380, protein: 35,
+    steps: "Boil 100 g (dry) pasta. Sauté half an onion + 1 clove garlic in 1 tbsp olive oil, add 150 g chopped tomato, simmer 10 min, season, toss with pasta." },
+  { name: "Grilled chicken salad", kcal: 340, protein: 35,
     ingredients: ["chicken", "lettuce", "tomato", "cucumber", "oil", "lemon"],
-    steps: "Grill seasoned chicken breast. Slice over lettuce, tomato, cucumber. Dress with olive oil + lemon." },
-  { name: "Tuna sandwich", kcal: 400, protein: 28,
+    steps: "Grill 150 g seasoned chicken breast. Slice over 50 g lettuce, 100 g tomato, 80 g cucumber. Dress with 1 tbsp olive oil + lemon juice." },
+  { name: "Tuna sandwich", kcal: 350, protein: 27,
     ingredients: ["tuna", "bread", "mayo", "lettuce"],
-    steps: "Mix tuna with a spoon of mayo. Spread on 2 slices of bread with lettuce." },
-  { name: "Bean burrito", kcal: 500, protein: 20,
+    steps: "Mix 80 g drained canned tuna (in water) with 1 tbsp (~14 g) mayo. Spread on 2 slices of white bread (~60 g) with a few lettuce leaves." },
+  { name: "Bean burrito", kcal: 470, protein: 22,
     ingredients: ["beans", "tortilla", "cheese", "tomato", "onion"],
-    steps: "Warm tortilla. Fill with mashed beans, diced tomato + onion, grated cheese. Roll up." },
-  { name: "Veggie omelette", kcal: 320, protein: 22,
+    steps: "Warm 1 medium flour tortilla (~60 g, 8-inch). Fill with 100 g cooked black beans (lightly mashed), 80 g diced tomato + onion, 30 g grated cheddar. Roll up." },
+  { name: "Veggie omelette", kcal: 380, protein: 25,
     ingredients: ["eggs", "pepper", "onion", "cheese", "oil"],
-    steps: "Beat 3 eggs. Sauté diced pepper + onion, pour eggs in, top with cheese, fold." },
-  { name: "Rice and beans", kcal: 460, protein: 16,
+    steps: "Beat 3 large eggs (~150 g). Sauté 80 g diced pepper + onion in 1 tsp oil, pour eggs in, top with 20 g grated cheese, fold." },
+  { name: "Rice and beans", kcal: 570, protein: 19,
     ingredients: ["rice", "beans", "onion", "garlic", "oil"],
-    steps: "Cook 80g rice. Sauté onion + garlic, add beans, warm through. Serve over rice." },
-  { name: "Spaghetti bolognese", kcal: 620, protein: 35,
+    steps: "Cook 80 g (dry) white rice. Sauté half an onion + 1 clove garlic in 1 tbsp oil, add 150 g cooked beans, warm through. Serve over rice." },
+  { name: "Spaghetti bolognese", kcal: 610, protein: 35,
     ingredients: ["pasta", "beef", "tomato", "onion", "garlic", "oil"],
-    steps: "Brown beef with onion + garlic. Add chopped tomato, simmer 15 min. Serve over boiled pasta." },
-  { name: "Chicken curry with rice", kcal: 580, protein: 38,
+    steps: "Brown 100 g lean ground beef (5–10% fat) with half an onion + 1 clove garlic. Add 200 g chopped tomato, simmer 15 min. Serve over 100 g (dry) boiled spaghetti." },
+  { name: "Chicken curry with rice", kcal: 630, protein: 41,
     ingredients: ["chicken", "rice", "onion", "garlic", "tomato", "curry powder", "oil"],
-    steps: "Sauté onion + garlic, add chicken, brown, stir in curry powder + tomato, simmer 15 min. Serve over rice." },
-  { name: "Peanut butter banana smoothie", kcal: 380, protein: 18,
+    steps: "Sauté half an onion + 1 clove garlic in 1 tbsp oil, add 150 g diced chicken breast, brown, stir in 1 tbsp curry powder + 100 g chopped tomato, simmer 15 min. Serve over 80 g (dry) rice." },
+  { name: "Peanut butter banana smoothie", kcal: 400, protein: 15,
     ingredients: ["banana", "milk", "peanut butter", "oats"],
-    steps: "Blend 1 banana, 250ml milk, 1 tbsp peanut butter, 2 tbsp oats. Drink cold." },
-  { name: "Tuna pasta", kcal: 520, protein: 30,
+    steps: "Blend 1 medium banana (~120 g), 250 mL whole milk, 1 tbsp (~16 g) peanut butter, 2 tbsp (~12 g) rolled oats. Drink cold." },
+  { name: "Tuna pasta", kcal: 610, protein: 37,
     ingredients: ["pasta", "tuna", "tomato", "garlic", "oil"],
-    steps: "Boil 100g pasta. Sauté garlic, add tomato + tuna, warm, toss with pasta." },
-  { name: "Egg fried rice", kcal: 510, protein: 18,
+    steps: "Boil 100 g (dry) pasta. Sauté 1 clove garlic in 1 tbsp olive oil, add 200 g chopped tomato + 80 g drained canned tuna, warm, toss with pasta." },
+  { name: "Egg fried rice", kcal: 580, protein: 19,
     ingredients: ["rice", "eggs", "onion", "soy sauce", "oil", "pepper"],
-    steps: "Use cold cooked rice. Stir-fry onion + pepper, push aside, scramble eggs, mix in rice + soy sauce." },
+    steps: "Use 200 g cold cooked rice. Stir-fry half an onion + 1 bell pepper in 1 tbsp oil, push aside, scramble 2 eggs, mix in rice + a splash of soy sauce." },
 ];
 
+// Sets × rep ranges per ACSM resistance-training progression model (2009)
+// and NSCA Essentials of Strength Training (2016): hypertrophy 6–12, strength
+// 1–6, endurance ≥15. Every form cue mentions the common failure mode.
 const EXERCISES = [
   { name: "Push-ups", loc: "bodyweight", muscle: "chest", emoji: "🙇",
-    sets: "3 × 8–15", desc: "Hands shoulder-width, body straight, lower chest to floor, push back up." },
+    sets: "3 × 8–15", desc: "Hands shoulder-width, body straight, lower chest to floor, push back up. Don't let hips sag or pike." },
   { name: "Squats (bodyweight)", loc: "bodyweight", muscle: "legs", emoji: "🦵",
-    sets: "3 × 12–20", desc: "Feet shoulder-width, sit back like into a chair, knees track over toes, stand up." },
+    sets: "3 × 12–20", desc: "Feet shoulder-width, sit back like into a chair, stand up. Keep knees tracking over toes — don't let them cave inward." },
   { name: "Lunges", loc: "bodyweight", muscle: "legs", emoji: "🚶",
-    sets: "3 × 10 per leg", desc: "Step forward, lower back knee toward floor, push back to start. Alternate legs." },
+    sets: "3 × 10 per leg", desc: "Step forward, lower back knee toward floor, push back to start. Front knee stays over the ankle, not collapsed inward." },
   { name: "Plank", loc: "bodyweight", muscle: "core", emoji: "🧘",
-    sets: "3 × 30–60 sec", desc: "Forearms on ground, body straight from head to heels, brace core. Don't sag." },
+    sets: "3 × 30–60 sec", desc: "Forearms on ground, body straight from head to heels, brace core. Don't let hips sag or pike up." },
   { name: "Sit-ups", loc: "bodyweight", muscle: "core", emoji: "🤸",
-    sets: "3 × 15–25", desc: "Lie on back, knees bent, hands by ears, sit up curling forward, lower with control." },
+    sets: "3 × 15–25", desc: "Lie on back, knees bent, hands lightly by ears, sit up curling forward, lower with control. Don't yank on your neck — keep elbows wide." },
   { name: "Glute bridges", loc: "bodyweight", muscle: "legs", emoji: "🍑",
-    sets: "3 × 15", desc: "Lie on back, knees bent, drive heels into floor, lift hips, squeeze glutes at the top." },
+    sets: "3 × 15", desc: "Lie on back, knees bent, drive heels into floor, lift hips, squeeze glutes at the top with a 2-second hold. Don't overarch your lower back — finish in a straight line from knee to shoulder." },
   { name: "Mountain climbers", loc: "bodyweight", muscle: "cardio", emoji: "⛰️",
-    sets: "3 × 30 sec", desc: "Plank position, alternate driving knees toward chest fast. Keep hips low." },
+    sets: "3 × 30 sec", desc: "Plank position, alternate driving knees toward chest fast. Keep hips low and steady — don't bounce them up." },
   { name: "Burpees", loc: "bodyweight", muscle: "cardio", emoji: "💥",
-    sets: "3 × 8–12", desc: "Squat down, kick feet back to plank, push-up, jump feet forward, jump up with hands overhead." },
+    sets: "3 × 10 or 40 sec", desc: "Squat down, kick feet back to plank, push-up, jump feet forward, jump up with hands overhead. Land softly on the balls of your feet with a braced core to protect knees and lower back." },
   { name: "Jumping jacks", loc: "bodyweight", muscle: "cardio", emoji: "🤾",
-    sets: "3 × 60 sec", desc: "Jump feet wide while raising arms overhead, then back. Keep a steady rhythm." },
+    sets: "3 × 60 sec", desc: "Jump feet wide while raising arms overhead, then back. Land softly on the midfoot — avoid stiff-legged landings." },
   { name: "Tricep dips (chair)", loc: "bodyweight", muscle: "arms", emoji: "💪",
-    sets: "3 × 10", desc: "Hands on edge of sturdy chair, legs out, lower body by bending elbows, push back up." },
+    sets: "3 × 10", desc: "Hands on edge of a sturdy chair, legs out, lower body by bending elbows, push back up. Keep elbows pointing straight back — flared elbows stress the shoulder." },
   { name: "Dumbbell rows", loc: "home", muscle: "back", emoji: "🏋️",
-    sets: "3 × 10 per arm", desc: "One knee + hand on bench, dumbbell in other hand. Pull weight to hip, squeeze shoulder blade." },
+    sets: "3 × 10 per arm", desc: "One knee + hand on bench, dumbbell in other hand. Pull weight to hip, squeeze shoulder blade. Keep your back flat — don't twist or hunch." },
   { name: "Dumbbell shoulder press", loc: "home", muscle: "shoulders", emoji: "🏋️",
-    sets: "3 × 8–12", desc: "Sit or stand. Press dumbbells from shoulders to overhead, lower with control." },
+    sets: "3 × 8–12", desc: "Sit or stand. Press dumbbells from shoulders to overhead, lower with control. Brace your core and don't arch your lower back to push the weight up." },
   { name: "Dumbbell bicep curls", loc: "home", muscle: "arms", emoji: "💪",
-    sets: "3 × 10–12", desc: "Stand with dumbbells, elbows pinned to sides, curl up by bending elbows, lower slowly." },
+    sets: "3 × 10–12", desc: "Stand with dumbbells, elbows pinned to sides, curl up by bending elbows, lower slowly. Don't swing the weight or let elbows drift forward." },
   { name: "Resistance band pull-apart", loc: "home", muscle: "back", emoji: "🎯",
-    sets: "3 × 15", desc: "Hold band at chest height, pull arms apart squeezing shoulder blades, return slowly." },
+    sets: "3 × 15", desc: "Hold band at chest height, pull arms apart squeezing shoulder blades, return slowly. Keep shoulders down — don't shrug them up to your ears." },
   { name: "Goblet squat (dumbbell)", loc: "home", muscle: "legs", emoji: "🏋️",
-    sets: "3 × 10–12", desc: "Hold one dumbbell at chest. Squat down keeping chest up, drive through heels to stand." },
+    sets: "3 × 10–12", desc: "Hold one dumbbell at chest. Squat down keeping chest up, drive through heels to stand. Don't let knees cave in or heels lift off the floor." },
   { name: "Bench press", loc: "gym", muscle: "chest", emoji: "🏋️",
-    sets: "4 × 6–10", desc: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up. Use a spotter." },
+    sets: "4 × 6–10", desc: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up. Always use a spotter or safety arms; keep feet planted and don't bounce the bar off your chest." },
   { name: "Deadlift", loc: "gym", muscle: "back", emoji: "🏋️",
-    sets: "3 × 5", desc: "Bar over mid-foot, neutral spine, drive through floor to stand tall. Lower with control." },
+    sets: "3 × 5", desc: "Bar over mid-foot, neutral spine, drive through floor to stand tall. Lower with control. Don't let your lower back round at any point — drop the weight and reset if form breaks." },
   { name: "Barbell back squat", loc: "gym", muscle: "legs", emoji: "🏋️",
-    sets: "4 × 6–10", desc: "Bar on upper back, feet shoulder-width, squat down keeping chest up, drive up." },
+    sets: "4 × 6–10", desc: "Bar on upper back, feet shoulder-width, squat down keeping chest up, drive up. Use a rack with safety bars set just below the bottom of your squat. Don't let knees cave in." },
   { name: "Lat pulldown", loc: "gym", muscle: "back", emoji: "💺",
-    sets: "3 × 10–12", desc: "Wide grip on bar, pull down to upper chest, squeeze lats, control the return." },
+    sets: "3 × 10–12", desc: "Wide grip on bar, pull down to upper chest, squeeze lats, control the return. Don't lean back excessively or use bodyweight momentum to pull the bar." },
   { name: "Leg press", loc: "gym", muscle: "legs", emoji: "💺",
-    sets: "3 × 10–15", desc: "Feet shoulder-width on platform, lower until knees are ~90°, press back up without locking knees." },
+    sets: "3 × 10–15", desc: "Feet shoulder-width on platform, lower until knees are ~90°, press back up without locking knees at the top. Don't let your lower back round off the seat." },
   { name: "Pull-ups", loc: "gym", muscle: "back", emoji: "🤸",
-    sets: "3 × max", desc: "Hang from bar, pull chest toward bar, lower under control. Use band if needed." },
+    sets: "3 × AMRAP (as many reps as possible)", desc: "Hang from bar, pull chest toward bar, lower under control. Use an assist band if needed. Don't kip or swing — controlled negatives protect the shoulders." },
   { name: "Overhead barbell press", loc: "gym", muscle: "shoulders", emoji: "🏋️",
-    sets: "3 × 6–10", desc: "Bar at shoulders, brace core, press overhead until elbows lock, lower to shoulders." },
+    sets: "3 × 6–10", desc: "Bar at shoulders, brace core and squeeze glutes, press overhead until elbows lock, lower to shoulders. Don't arch your lower back to push the weight up." },
 ];
 
 /* ============================================================
@@ -495,7 +557,15 @@ const PROFILE_KEY = 'gymBuddyProfile';
 function loadProfile() {
   const raw = localStorage.getItem(PROFILE_KEY);
   if (!raw) return;
-  const p = JSON.parse(raw);
+  let p;
+  try {
+    p = JSON.parse(raw);
+  } catch (e) {
+    // Corrupted profile — discard and start fresh rather than crash the app.
+    localStorage.removeItem(PROFILE_KEY);
+    return;
+  }
+  if (!p || typeof p !== 'object') return;
   document.getElementById('p-name').value = p.name || '';
   document.getElementById('p-age').value = p.age || '';
   document.getElementById('p-sex').value = p.sex || 'male';
@@ -526,21 +596,34 @@ function calculate() {
     return;
   }
 
+  // BMI: WHO standard (weight kg / height m²)
   const bmi = weight / Math.pow(height / 100, 2);
   const cat = bmiCategory(bmi);
 
-  // Mifflin-St Jeor
+  // BMR: Mifflin-St Jeor (1990). Validated as most accurate predictive
+  // equation by Frankenfield et al., ADA meta-analysis (2005).
   const bmr = sex === 'male'
     ? 10 * weight + 6.25 * height - 5 * age + 5
     : 10 * weight + 6.25 * height - 5 * age - 161;
 
+  // TDEE: Harris-Benedict activity multipliers (1.2–1.9).
   const tdee = bmr * activity;
   const target = tdee + goalAdj;
 
-  // Macros: 1.8 g protein/kg, 25% fat, rest carbs
-  const protein = Math.round(weight * 1.8);
+  // Protein: goal-dependent per ISSN Position Stand (Jäger 2017) and
+  // Morton et al. meta-analysis (2018). Cut needs more to spare lean mass;
+  // maintain sits at the point of diminishing returns; gain a touch above.
+  const proteinPerKg = goalAdj < 0 ? 2.0 : goalAdj > 0 ? 1.8 : 1.6;
+  const protein = Math.round(weight * proteinPerKg);
+
+  // Fat: 25% of calories — middle of IOM AMDR (20–35%).
   const fat = Math.round((target * 0.25) / 9);
+
+  // Carbs: remainder. Within IOM AMDR (45–65%).
   const carbs = Math.round((target - protein * 4 - fat * 9) / 4);
+
+  // Water: 35 mL/kg (ESPEN 2018). IOM total-water intake (3.7 L men / 2.7 L
+  // women) includes ~20% from food, so a fluids target is lower.
   const water = (weight * 0.035).toFixed(1);
 
   document.getElementById('p-results').style.display = 'block';

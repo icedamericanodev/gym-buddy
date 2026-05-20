@@ -70,6 +70,43 @@ dom.window.addEventListener('load', () => {
     assert.ok(exercises.length >= 5, `expected ≥5 exercises, got ${exercises.length}`);
   });
 
+  check('sources panel is rendered with citations', () => {
+    const sources = document.querySelector('details.sources');
+    assert.ok(sources, 'expected a details.sources element');
+    const text = sources.textContent;
+    assert.ok(text.includes('Mifflin-St Jeor'), 'expected Mifflin-St Jeor citation');
+    assert.ok(text.includes('AMDR'), 'expected AMDR citation');
+    assert.ok(text.includes('ISSN'), 'expected ISSN citation');
+  });
+
+  check('protein target adapts to goal (cut > maintain)', () => {
+    // Same body, cut goal first
+    document.getElementById('p-goal').value = '-500';
+    document.getElementById('p-save').click();
+    const cutProtein = parseInt(document.getElementById('r-protein').textContent, 10);
+
+    // Now maintain
+    document.getElementById('p-goal').value = '0';
+    document.getElementById('p-save').click();
+    const maintainProtein = parseInt(document.getElementById('r-protein').textContent, 10);
+
+    assert.ok(cutProtein > maintainProtein,
+      `expected cut protein (${cutProtein}) > maintain protein (${maintainProtein})`);
+  });
+
+  check('calorie target shifts with goal', () => {
+    document.getElementById('p-goal').value = '-500';
+    document.getElementById('p-save').click();
+    const cutTarget = parseInt(document.getElementById('r-target').textContent, 10);
+
+    document.getElementById('p-goal').value = '300';
+    document.getElementById('p-save').click();
+    const gainTarget = parseInt(document.getElementById('r-target').textContent, 10);
+
+    assert.strictEqual(gainTarget - cutTarget, 800,
+      `expected gain − cut to be 800 kcal, got ${gainTarget - cutTarget}`);
+  });
+
   if (process.exitCode) {
     console.error('\nSome smoke tests FAILED.');
   } else {
