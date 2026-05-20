@@ -2,6 +2,11 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v0.10.0 — 2026-05-20
+
+### Added
+- **Tiny love note easter egg** 💛 — tap the **HERLYFT** wordmark in the header and a small floating message rises and fades. Pulls from a pool of soft notes (including `mahal kita`). Lowkey by design: no banner, no sound, just a brief golden glow. Rate-limited so a triple-tap doesn't stack pops.
+
 ## v0.9.0 — 2026-05-20
 
 ### Added

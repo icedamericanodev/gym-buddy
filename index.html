@@ -49,6 +49,8 @@
     display: inline-flex;
     align-items: center;
     line-height: 1;
+    cursor: pointer;
+    user-select: none;
   }
   header h1 .word { display: inline-block; }
   header h1 .y-mark {
@@ -83,6 +85,26 @@
   @media (max-width: 480px) {
     header h1 { font-size: 30px; letter-spacing: 0.04em; }
     header h1 .y-mark { width: 21px; height: 39px; }
+  }
+
+  /* Easter egg: tap the wordmark for a lowkey love note 💛 */
+  .love-pop {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-family: 'Brush Script MT', 'Lucida Handwriting', 'Snell Roundhand', cursive;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    text-shadow: 0 2px 12px rgba(232, 185, 98, 0.55), 0 0 4px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    transform: translate(-50%, 0);
+    animation: lovefloat 2.4s ease-out forwards;
+  }
+  @keyframes lovefloat {
+    0%   { opacity: 0; transform: translate(-50%, 4px) scale(0.85); }
+    15%  { opacity: 1; transform: translate(-50%, -10px) scale(1.05); }
+    100% { opacity: 0; transform: translate(-50%, -68px) scale(0.95); }
   }
 
   nav {
@@ -585,7 +607,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v0.9.0</span>
+    <span class="version">v0.10.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
 </header>
@@ -883,7 +905,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.9.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.10.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1148,6 +1170,42 @@ document.addEventListener('click', (ev) => {
   ev.stopPropagation();
 });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closePopover(); });
+
+/* ============================================================
+   EASTER EGG — tap the wordmark for a tiny love note 💛
+   Lowkey: a single floating message rises and fades over ~2.4 s.
+   Rate-limited so a triple-tap doesn't stack pops.
+   ============================================================ */
+(function setupLoveEgg() {
+  const messages = [
+    'i love you 💛',
+    'mahal kita 💛',
+    'thinking of you 💛',
+    'proud of you 💛',
+    'you got this 💛',
+    'lift with love 💛',
+  ];
+  let cooldown = false;
+  const wordmark = document.querySelector('header h1');
+  if (!wordmark) return;
+  wordmark.addEventListener('click', (ev) => {
+    if (cooldown) return;
+    cooldown = true;
+    setTimeout(() => { cooldown = false; }, 350);
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    const el = document.createElement('div');
+    el.className = 'love-pop';
+    el.textContent = msg;
+    // Clamp inside the viewport so the message never lands off-screen.
+    const margin = 80;
+    const w = window.innerWidth || 360;
+    const x = Math.max(margin, Math.min(w - margin, ev.clientX || w / 2));
+    el.style.left = `${x}px`;
+    el.style.top = `${(ev.clientY || 80) - 12}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  });
+})();
 
 /* ============================================================
    TAB NAVIGATION
