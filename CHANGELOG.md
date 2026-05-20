@@ -1,6 +1,14 @@
 # Changelog
 
-All notable user-facing changes to Gym Buddy. The version shown in the app header matches the most recent entry.
+All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
+
+## v0.7.0 — 2026-05-20
+
+### Changed
+- **Rebranded to Herlyft** (tagline: *Lift with her*). New header with logo asset and stylized wordmark.
+- **New color palette** — champagne gold (`#e8b962`) + deep teal (`#14b8a6`) accents on a deep navy (`#0a0e1a`) base with warm-cream body text. No pink. Header gets a subtle gold/teal radial-gradient ambient lighting.
+- README, CLAUDE.md, CHANGELOG, and all six project subagents updated with the new brand name.
+- Deploy workflow now ships `logo.png` alongside `index.html`.
 
 ## v0.6.0 — 2026-05-20
 

@@ -1,4 +1,4 @@
-# Gym Buddy — working agreement
+# Herlyft — working agreement
 
 This repo follows **separation of duties**. You (the human owner) review and approve; Claude builds, verifies, and keeps CI green.
 
