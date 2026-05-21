@@ -607,7 +607,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v0.10.0</span>
+    <span class="version">v0.11.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
 </header>
@@ -641,23 +641,33 @@
 
       <div class="form-row">
         <div>
+          <label>Units</label>
+          <select id="p-units">
+            <option value="metric" selected>Metric (cm, kg)</option>
+            <option value="imperial">Imperial (in, lbs)</option>
+          </select>
+        </div>
+        <div>
           <label>Sex</label>
           <select id="p-sex">
             <option value="male">Male</option>
             <option value="female">Female</option>
           </select>
         </div>
-        <div>
-          <label>Height (cm)</label>
-          <input id="p-height" type="number" min="100" max="250" placeholder="175">
-        </div>
       </div>
 
       <div class="form-row">
         <div>
-          <label>Weight (kg)</label>
-          <input id="p-weight" type="number" min="30" max="300" step="0.1" placeholder="75">
+          <label id="p-height-label">Height (cm)</label>
+          <input id="p-height" type="number" step="0.1" placeholder="175">
         </div>
+        <div>
+          <label id="p-weight-label">Weight (kg)</label>
+          <input id="p-weight" type="number" step="0.1" placeholder="75">
+        </div>
+      </div>
+
+      <div class="form-row">
         <div>
           <label>Activity level</label>
           <select id="p-activity">
@@ -668,9 +678,6 @@
             <option value="1.9">Extra active (athlete / physical job)</option>
           </select>
         </div>
-      </div>
-
-      <div class="form-row">
         <div>
           <label>Goal</label>
           <select id="p-goal">
@@ -679,7 +686,10 @@
             <option value="300">Gain muscle (+300 kcal/day)</option>
           </select>
         </div>
-        <div>
+      </div>
+
+      <div class="form-row">
+        <div style="grid-column: 1 / -1;">
           <label>Preferred training style</label>
           <select id="p-style">
             <option value="mixed" selected>Mixed (anything)</option>
@@ -804,7 +814,7 @@
         <div class="dash-stats">
           <div class="dash-stat">
             <div class="dash-num" id="dash-current">—</div>
-            <div class="dash-label">Current (kg)</div>
+            <div class="dash-label" id="dash-current-label">Current (kg)</div>
           </div>
           <div class="dash-stat">
             <div class="dash-num" id="dash-7d">—</div>
@@ -905,7 +915,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.10.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.11.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1230,7 +1240,65 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // an older app version doesn't lose the user's data.
 const PROFILE_KEY = 'herlyftProfile';
 const LEGACY_PROFILE_KEY = 'gymBuddyProfile';
-const PROFILE_SCHEMA = 1;
+const PROFILE_SCHEMA = 2;  // schema 2 added `units` preference
+
+// Units state. Storage is ALWAYS metric (cm + kg) — `currentUnits` only
+// changes what the user sees in inputs and read-outs.
+let currentUnits = 'metric';
+const CM_PER_IN = 2.54;
+const KG_PER_LB = 0.45359237;
+function cmToIn(cm) { return cm / CM_PER_IN; }
+function inToCm(inches) { return inches * CM_PER_IN; }
+function kgToLb(kg) { return kg / KG_PER_LB; }
+function lbToKg(lb) { return lb * KG_PER_LB; }
+function readHeightCm() {
+  const v = +document.getElementById('p-height').value;
+  if (!v) return v;
+  return currentUnits === 'imperial' ? inToCm(v) : v;
+}
+function readWeightKg() {
+  const v = +document.getElementById('p-weight').value;
+  if (!v) return v;
+  return currentUnits === 'imperial' ? lbToKg(v) : v;
+}
+function fmtKg(kg) {
+  return currentUnits === 'imperial' ? kgToLb(kg).toFixed(1) : kg.toFixed(1);
+}
+function wUnitLabel() { return currentUnits === 'imperial' ? 'lbs' : 'kg'; }
+function hUnitLabel() { return currentUnits === 'imperial' ? 'in' : 'cm'; }
+
+function applyUnitLabels() {
+  document.getElementById('p-height-label').textContent = `Height (${hUnitLabel()})`;
+  document.getElementById('p-weight-label').textContent = `Weight (${wUnitLabel()})`;
+  const heightInput = document.getElementById('p-height');
+  const weightInput = document.getElementById('p-weight');
+  if (currentUnits === 'imperial') {
+    heightInput.min = 36; heightInput.max = 96; heightInput.placeholder = '69';
+    weightInput.min = 60; weightInput.max = 700; weightInput.placeholder = '165';
+  } else {
+    heightInput.min = 100; heightInput.max = 250; heightInput.placeholder = '175';
+    weightInput.min = 30; weightInput.max = 400; weightInput.placeholder = '75';
+  }
+}
+
+document.getElementById('p-units').addEventListener('change', (ev) => {
+  const next = ev.target.value;
+  if (next === currentUnits) return;
+  // Convert the currently-displayed numbers so the user doesn't have to retype.
+  const heightInput = document.getElementById('p-height');
+  const weightInput = document.getElementById('p-weight');
+  const h = +heightInput.value;
+  const w = +weightInput.value;
+  if (h) heightInput.value = next === 'imperial'
+    ? Math.round(cmToIn(h))
+    : Math.round(inToCm(h));
+  if (w) weightInput.value = next === 'imperial'
+    ? kgToLb(w).toFixed(1)
+    : lbToKg(w).toFixed(1);
+  currentUnits = next;
+  applyUnitLabels();
+  calculate();
+});
 
 function loadProfile() {
   let raw = localStorage.getItem(PROFILE_KEY);
@@ -1251,11 +1319,23 @@ function loadProfile() {
     return;
   }
   if (!p || typeof p !== 'object') return;
+  // Stored height/weight are always metric. Display in whatever unit
+  // the user prefers (defaults to metric for legacy profiles).
+  currentUnits = (p.units === 'imperial') ? 'imperial' : 'metric';
+  document.getElementById('p-units').value = currentUnits;
+  applyUnitLabels();
+
   document.getElementById('p-name').value = p.name || '';
   document.getElementById('p-age').value = p.age || '';
   document.getElementById('p-sex').value = p.sex || 'male';
-  document.getElementById('p-height').value = p.height || '';
-  document.getElementById('p-weight').value = p.weight || '';
+  const hCm = parseFloat(p.height);
+  const wKg = parseFloat(p.weight);
+  document.getElementById('p-height').value = hCm
+    ? (currentUnits === 'imperial' ? Math.round(cmToIn(hCm)) : hCm)
+    : '';
+  document.getElementById('p-weight').value = wKg
+    ? (currentUnits === 'imperial' ? kgToLb(wKg).toFixed(1) : wKg)
+    : '';
   document.getElementById('p-activity').value = p.activity || '1.55';
   document.getElementById('p-goal').value = p.goal || '0';
   document.getElementById('p-style').value = p.style || 'mixed';
@@ -1272,8 +1352,10 @@ function bmiCategory(bmi) {
 function calculate() {
   const age = +document.getElementById('p-age').value;
   const sex = document.getElementById('p-sex').value;
-  const height = +document.getElementById('p-height').value;
-  const weight = +document.getElementById('p-weight').value;
+  // readHeightCm / readWeightKg convert from the displayed unit to metric so
+  // every downstream formula (BMI, Mifflin-St Jeor, etc.) works in cm + kg.
+  const height = readHeightCm();
+  const weight = readWeightKg();
   const activity = +document.getElementById('p-activity').value;
   const goalAdj = +document.getElementById('p-goal').value;
 
@@ -1357,22 +1439,25 @@ function calculate() {
 }
 
 document.getElementById('p-save').addEventListener('click', () => {
+  // Convert displayed values to metric before persisting so storage stays
+  // canonical regardless of the units the user prefers to see.
+  const heightCm = readHeightCm();
+  const weightKg = readWeightKg();
   const profile = {
     schema: PROFILE_SCHEMA,
     name: document.getElementById('p-name').value,
     age: document.getElementById('p-age').value,
     sex: document.getElementById('p-sex').value,
-    height: document.getElementById('p-height').value,
-    weight: document.getElementById('p-weight').value,
+    height: heightCm,                 // always cm
+    weight: weightKg,                 // always kg
+    units: currentUnits,              // 'metric' | 'imperial' (display only)
     activity: document.getElementById('p-activity').value,
     goal: document.getElementById('p-goal').value,
     style: document.getElementById('p-style').value,
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  // Log today's weight to history (last value wins per day) — powers the
-  // Dashboard tab's weight-progress chart.
-  const w = parseFloat(profile.weight);
-  if (w && w > 0 && w <= 400) logWeight(w);
+  // Log today's weight (always kg) to history — powers the Dashboard chart.
+  if (weightKg && weightKg > 0 && weightKg <= 400) logWeight(weightKg);
   calculate();
   renderDashboard();
   const flash = document.getElementById('p-saved');
@@ -1440,7 +1525,8 @@ function renderDashboard() {
   if (!arr.length) return;
 
   const current = arr[arr.length - 1].kg;
-  document.getElementById('dash-current').textContent = current.toFixed(1);
+  document.getElementById('dash-current').textContent = fmtKg(current);
+  document.getElementById('dash-current-label').textContent = `Current (${wUnitLabel()})`;
 
   const buckets = [[7, 'dash-7d'], [30, 'dash-30d'], [90, 'dash-90d'], [365, 'dash-1y']];
   for (const [days, elId] of buckets) {
@@ -1450,8 +1536,11 @@ function renderDashboard() {
       el.textContent = prev ? '0.0' : '—';
       el.className = 'dash-num';
     } else {
-      const diff = current - prev.kg;
-      const f = fmtDiff(diff);
+      // Convert the kg diff into the user's preferred unit before formatting.
+      const diffDisplay = currentUnits === 'imperial'
+        ? (current - prev.kg) * (1 / KG_PER_LB)
+        : (current - prev.kg);
+      const f = fmtDiff(diffDisplay);
       el.textContent = f.text;
       el.className = 'dash-num ' + f.cls;
     }
@@ -1494,12 +1583,13 @@ function renderWeightChart(arr, rangeDays) {
     ? `M ${xScale(dates[0])},${yScale(yMin)} L ${pts.map((p, i) => `${xScale(dates[i])},${yScale(p.kg)}`).join(' L ')} L ${xScale(dates[dates.length - 1])},${yScale(yMin)} Z`
     : '';
 
-  // Y-axis gridlines (3 ticks)
+  // Y-axis gridlines (3 ticks). Axis values are formatted in whatever
+  // unit the user has chosen; the underlying chart is plotted in kg.
   const ticks = [yMin, (yMin + yMax) / 2, yMax];
   const gridLines = ticks.map(v => {
     const y = yScale(v);
     return `<line class="dash-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
-            <text class="dash-label-text" x="${padL - 6}" y="${y + 3}" text-anchor="end">${v.toFixed(1)}</text>`;
+            <text class="dash-label-text" x="${padL - 6}" y="${y + 3}" text-anchor="end">${fmtKg(v)}</text>`;
   }).join('');
 
   // X-axis labels (first and last)
@@ -1522,7 +1612,7 @@ function renderWeightChart(arr, rangeDays) {
     ${xLabels}
   `;
 
-  meta.textContent = `${pts.length} entr${pts.length === 1 ? 'y' : 'ies'} · range ${minKg.toFixed(1)}–${maxKg.toFixed(1)} kg`;
+  meta.textContent = `${pts.length} entr${pts.length === 1 ? 'y' : 'ies'} · range ${fmtKg(minKg)}–${fmtKg(maxKg)} ${wUnitLabel()}`;
 }
 
 document.querySelectorAll('#dash-range button').forEach(b => {
@@ -1870,8 +1960,10 @@ function renderSummary() {
   document.getElementById('s-name').textContent = document.getElementById('p-name').value || '(not set)';
   document.getElementById('s-age').textContent = `${ageVal} years`;
   document.getElementById('s-sex').textContent = sexVal === 'male' ? 'Male' : 'Female';
-  document.getElementById('s-height').textContent = `${heightVal} cm`;
-  document.getElementById('s-weight').textContent = `${weightVal} kg`;
+  // heightVal / weightVal already reflect the user's chosen unit (since
+  // they're pulled from the visible inputs), so just append the right suffix.
+  document.getElementById('s-height').textContent = `${heightVal} ${hUnitLabel()}`;
+  document.getElementById('s-weight').textContent = `${weightVal} ${wUnitLabel()}`;
   document.getElementById('s-activity').textContent = activitySelect.options[activitySelect.selectedIndex].text;
   document.getElementById('s-goal').textContent = goalSelect.options[goalSelect.selectedIndex].text;
 

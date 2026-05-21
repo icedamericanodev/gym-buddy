@@ -2,6 +2,16 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v0.11.0 — 2026-05-20
+
+### Added
+- **Imperial units option** — new "Units" select on the Profile (Metric `cm, kg` ↔ Imperial `in, lbs`). Affects the Height and Weight inputs, the Summary tab's profile section, and the Dashboard tab's current/diff values + chart Y-axis labels. Internal storage stays in metric (cm + kg) so all the math is unchanged.
+- Switching units **converts the currently-typed values automatically** so you don't have to retype your height or weight.
+- Profile saves now include a `units: 'metric' | 'imperial'` preference; loaded back transparently on next visit.
+
+### Changed
+- Profile **schema bumped 1 → 2**. Schema 1 profiles (saved with v0.10 or earlier) load fine — they're treated as metric by default.
+
 ## v0.10.0 — 2026-05-20
 
 ### Added
