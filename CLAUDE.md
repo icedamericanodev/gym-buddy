@@ -15,12 +15,16 @@ This repo follows **separation of duties**. You (the human owner) review and app
 
 ## Specialized agents
 
-Eight project agents live in `.claude/agents/`:
+Twelve project agents live in `.claude/agents/`:
 
 | Agent | When to spawn |
 |-------|---------------|
 | `dietitian` | Anything that touches recipes, calorie/macro math, water targets, or future meal-related features |
 | `gym-coach` | Anything that touches the `EXERCISES` array or workout programming/session-generation logic |
+| `progress-analyst` | Anything that reads back the user's logged history — the Dashboard/Summary tabs, the weight-trend chart, streaks, trends, plateau detection |
+| `womens-health` | Women-specific guidance and safety copy — cycle-aware framing, bone/iron needs, pregnancy/postpartum-safe language |
+| `pwa-performance` | Making the app installable/offline (manifest, service worker, install prompt) or reviewing load time, payload size, and runtime performance |
+| `accessibility` | Interactive markup, forms, or navigation changes — keyboard flow, ARIA, screen-reader, focus, reduced-motion (deeper than `ui-ux`'s contrast pass) |
 | `senior-dev` | New features or non-trivial refactors |
 | `ui-ux` | Any user-visible change |
 | `code-reviewer` | Before declaring a feature done — read-only review of the branch diff |
@@ -35,6 +39,10 @@ When a "feature step" finishes (e.g. Step 2 — real exercise GIFs, Step 3 — d
 - Always: `code-reviewer` + `qa` + `ui-ux`
 - If recipe or macro content was touched: also `dietitian`
 - If exercise or workout-programming content was touched: also `gym-coach`
+- If the Dashboard/Summary, weight chart, or any logged-history read-back was touched: also `progress-analyst`
+- If women-specific guidance or safety copy was touched: also `womens-health`
+- If the manifest, service worker, offline behavior, or asset payload was touched: also `pwa-performance`
+- If interactive markup, forms, or navigation/focus behavior was touched: also `accessibility`
 
 `end-user` and `product-manager` are **not part of the auto-run set** — they're advisory and run too long for every PR. The user invokes them manually when they want fresh eyes or strategic input ("/end-user couch starter persona", "/product-manager what should we build next?"). Claude can also suggest invoking them when stuck on a direction question.
 
