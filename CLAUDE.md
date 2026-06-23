@@ -6,12 +6,13 @@ This repo follows **separation of duties**. You (the human owner) review and app
 
 1. **Branching** — never push directly to `main`. Always commit and push to the feature branch the user is on (e.g. `claude/gum-buddy-app-1GY2X`). The push-to-main approval rule in `.claude/settings.json` enforces this.
 2. **Pull requests** — Claude opens PRs as ready for review. **Only the human merges them.** Claude does not click Merge, even when CI is green.
-3. **Verify before push** — before any commit/push, Claude runs the local checks:
+3. **Always watch PRs** — immediately after opening any PR, Claude subscribes to its activity (`subscribe_pr_activity`) without asking first, and keeps watching until it is merged or closed — responding to CI failures and review comments per rule 4. Subscribing is an action only Claude can take (it's an MCP call, not something a settings.json hook can do), so this rule is what makes it automatic.
+4. **Verify before push** — before any commit/push, Claude runs the local checks:
    - `npm run lint` (HTML structure)
    - `npm test` (smoke test via jsdom)
    If either fails, fix the root cause and re-run before pushing.
-4. **Auto-fix CI** — when CI fails on a Claude-authored PR, Claude diagnoses and pushes fixes until it's green. No per-fix approval needed. If a fix would require an architectural change or is out of scope, stop and ask.
-5. **No backwards-compat hacks** — fix the real issue, don't paper over it with `|| true`, skipped tests, or disabled rules.
+5. **Auto-fix CI** — when CI fails on a Claude-authored PR, Claude diagnoses and pushes fixes until it's green. No per-fix approval needed. If a fix would require an architectural change or is out of scope, stop and ask.
+6. **No backwards-compat hacks** — fix the real issue, don't paper over it with `|| true`, skipped tests, or disabled rules.
 
 ## Specialized agents
 
