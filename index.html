@@ -462,7 +462,7 @@
   }
   .dash-axis-line { stroke: var(--border); stroke-width: 1; }
   .dash-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 2 4; }
-  .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: 0.8; }
+  .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 1; }
   .dash-goal-label { fill: var(--accent); font-size: 10px; font-weight: 600; }
   /* GOAL PROGRESS */
   .goal-card .hint { margin-top: 2px; }
@@ -484,7 +484,12 @@
   .goal-pct {
     font-size: 14px;
     font-weight: 600;
-    color: var(--muted);
+    color: var(--text);
+  }
+  /* On very narrow screens (long imperial strings, e.g. "Goal reached 🎉" + "100%"),
+     the flex-wrapped pct sits flush against the headline; nudge it down a hair. */
+  @media (max-width: 340px) {
+    .goal-pct { margin-top: 4px; }
   }
   .goal-bar {
     height: 10px;
@@ -971,7 +976,7 @@
       <p class="hint" id="goal-hint">Set a goal weight on the Profile tab to see how far you've come and how far's left.</p>
       <div id="goal-body" style="display:none;">
         <div class="goal-head">
-          <div class="goal-headline" id="goal-headline">—</div>
+          <p class="goal-headline" id="goal-headline" aria-live="polite">—</p>
           <div class="goal-pct" id="goal-pct"></div>
         </div>
         <div class="goal-bar" id="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progress toward your goal weight">
@@ -1699,7 +1704,7 @@ document.getElementById('p-save').addEventListener('click', () => {
     units: currentUnits,              // 'metric' | 'imperial' (display only)
     activity: document.getElementById('p-activity').value,
     goal: document.getElementById('p-goal').value,
-    goalWeight: goalWeightKg || 0,    // always kg; 0 means not set
+    goalWeight: goalWeightKg > 0 ? goalWeightKg : 0,  // kg; 0 = not set, clamp negatives/NaN
     style: document.getElementById('p-style').value,
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -1801,6 +1806,14 @@ function renderGoalProgress() {
     body.style.display = 'none';
     return;
   }
+  // A single weigh-in isn't a journey yet — one reading can swing a kilo from
+  // water alone. Hide the progress UI and explain rather than imply 0%.
+  if (arr.length === 1) {
+    hint.style.display = '';
+    hint.textContent = 'You\'ve logged one weigh-in so far. Save your weight again in a few days and progress starts showing — single readings swing a kilo or two from water alone.';
+    body.style.display = 'none';
+    return;
+  }
 
   hint.style.display = 'none';
   body.style.display = '';
@@ -1822,11 +1835,9 @@ function renderGoalProgress() {
   const fillEl = document.getElementById('goal-bar-fill');
   const noteEl = document.getElementById('goal-note');
 
+  const dispKg = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
   const remainingKg = currentKg - goalKg;
-  const remainingDisp = currentUnits === 'imperial'
-    ? Math.abs(remainingKg) / KG_PER_LB
-    : Math.abs(remainingKg);
-  const remainingTxt = `${remainingDisp.toFixed(1)} ${unit}`;
+  const remainingTxt = `${dispKg(Math.abs(remainingKg)).toFixed(1)} ${unit}`;
 
   // start vs goal sets the intended direction; the bar fills as the user
   // moves toward the goal, clamps at 100 once they cross it.
@@ -1834,24 +1845,42 @@ function renderGoalProgress() {
   let pct = 0;
   let reached = false;
   let overshootKg = 0;
+  // Signed progress before clamping — distinguishes "no movement" from
+  // "moved the wrong way" once we clamp pct at 0.
+  let signedProgress = 0;
 
   if (totalKg === 0) {
     reached = (currentKg === goalKg);
     pct = reached ? 100 : 0;
   } else if (startKg > goalKg) {
-    pct = ((startKg - currentKg) / totalKg) * 100;
+    signedProgress = startKg - currentKg;
+    pct = (signedProgress / totalKg) * 100;
     if (currentKg <= goalKg) {
       reached = true;
       overshootKg = goalKg - currentKg;
     }
   } else {
-    pct = ((currentKg - startKg) / totalKg) * 100;
+    signedProgress = currentKg - startKg;
+    pct = (signedProgress / totalKg) * 100;
     if (currentKg >= goalKg) {
       reached = true;
       overshootKg = currentKg - goalKg;
     }
   }
   pct = Math.max(0, Math.min(100, pct));
+
+  // Edge: user started already at their goal but has since drifted. The generic
+  // "X to go / 0%" framing is misleading here — they had no journey to begin.
+  if (totalKg === 0 && !reached) {
+    headEl.classList.remove('reached');
+    barEl.classList.remove('reached');
+    headEl.textContent = `${remainingTxt} from your goal`;
+    pctEl.textContent = '';
+    fillEl.style.width = '0%';
+    barEl.setAttribute('aria-valuenow', '0');
+    noteEl.textContent = 'You started at your goal weight. Switch your profile goal to "Maintain" to focus on staying here.';
+    return;
+  }
 
   if (reached) {
     headEl.textContent = 'Goal reached 🎉';
@@ -1861,10 +1890,12 @@ function renderGoalProgress() {
     barEl.classList.add('reached');
     barEl.setAttribute('aria-valuenow', '100');
     if (overshootKg > 0.05) {
-      const overDisp = currentUnits === 'imperial'
-        ? overshootKg / KG_PER_LB
-        : overshootKg;
-      noteEl.textContent = `You're ${overDisp.toFixed(1)} ${unit} past your goal. Nice work — consider whether to lock in maintenance.`;
+      const overTxt = `${dispKg(overshootKg).toFixed(1)} ${unit}`;
+      // No praise — losing more than planned (or gaining past the target) is a
+      // signal to revisit maintenance, not a reward moment.
+      noteEl.textContent = startKg > goalKg
+        ? `You're ${overTxt} below your goal. If that wasn't intentional, switch your profile goal to "Maintain" on the Profile tab.`
+        : `You're ${overTxt} above your goal. Switch your profile goal to "Maintain" on the Profile tab to focus on staying here.`;
     } else {
       noteEl.textContent = 'You\'re at your goal weight. Switch your profile goal to "Maintain" to lock it in.';
     }
@@ -1876,17 +1907,18 @@ function renderGoalProgress() {
     fillEl.style.width = `${pct}%`;
     barEl.setAttribute('aria-valuenow', String(Math.round(pct)));
 
-    if (arr.length === 1) {
-      noteEl.textContent = 'Save your weight again next week to start tracking progress.';
+    if (signedProgress < 0) {
+      // Below 4 entries, week-to-week noise dominates — stay neutral instead
+      // of telling someone they've "drifted" from a 2-point trend.
+      noteEl.textContent = arr.length < 4
+        ? 'Not much movement yet — log a few more weigh-ins and the trend will show.'
+        : 'Current weight is above where you started — week-to-week swings are normal; the chart trend is the signal to watch.';
     } else if (pct === 0) {
-      noteEl.textContent = 'You\'ve drifted from where you started — keep going, every week counts.';
+      noteEl.textContent = 'No change yet — keep going, every week counts.';
     } else {
-      // Show how much they've MOVED so far — that's net new info versus the
-      // start/now/goal trio above. Direction-aware, in the user's units.
-      const movedKg = Math.abs(startKg - currentKg);
-      const movedDisp = currentUnits === 'imperial' ? movedKg / KG_PER_LB : movedKg;
+      const movedTxt = `${dispKg(Math.abs(startKg - currentKg)).toFixed(1)} ${unit}`;
       const verb = startKg > goalKg ? 'down' : 'up';
-      noteEl.textContent = `You're ${movedDisp.toFixed(1)} ${unit} ${verb} from where you started.`;
+      noteEl.textContent = `You're ${movedTxt} ${verb} from where you started.`;
     }
   }
 }
@@ -1972,10 +2004,13 @@ function renderWeightChart(arr, rangeDays) {
   let goalLine = '';
   if (goalKg && goalKg >= yMin && goalKg <= yMax) {
     const y = yScale(goalKg);
+    // Label sits ABOVE the line normally; flip below when the line is near the
+    // top of the plot area (text would otherwise clip out of the SVG).
+    const labelY = y < padT + 12 ? y + 12 : y - 4;
     // Anchor the label to the LEFT edge of the plot area. The data line ends at
     // the right edge, and the previous right-anchored label collided with it.
     goalLine = `<line class="dash-goal-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
-                <text class="dash-goal-label" x="${padL + 4}" y="${y - 4}" text-anchor="start">goal ${fmtKg(goalKg)}</text>`;
+                <text class="dash-goal-label" x="${padL + 4}" y="${labelY}" text-anchor="start">goal ${fmtKg(goalKg)}</text>`;
   }
 
   // X-axis labels (first and last)

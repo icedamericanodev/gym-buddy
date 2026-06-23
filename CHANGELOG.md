@@ -11,6 +11,7 @@ All notable user-facing changes to Herlyft. The version shown in the app header 
 
 ### Notes
 - The goal weight is stored in kg internally and rendered in whatever unit you've picked on the Profile tab — switching units converts the value alongside your current weight, no retyping needed.
+- The progress copy stays honest: a single weigh-in shows an explainer (not "0% progress"), wrong-direction or no-movement notes are gentle and gated to enough data to mean something, and reaching the goal nudges you toward maintenance instead of praising further loss.
 
 ## v1.1.0 — 2026-06-23
 

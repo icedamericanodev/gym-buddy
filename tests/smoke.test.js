@@ -708,16 +708,18 @@ dom.window.addEventListener('load', async () => {
       'no goal and no weights should hide the goal card entirely');
   });
 
-  check('goal progress: single weigh-in shows 0% and honest "save again" copy', () => {
+  check('goal progress: single weigh-in suppresses progress UI and shows honest hint', () => {
     seedGoalScenario({
       weights: [{ date: '2026-06-20', kg: 80 }],
       goalKg: 70,
     });
-    assert.strictEqual(document.getElementById('goal-pct').textContent, '0%');
-    assert.strictEqual(document.getElementById('goal-bar-fill').style.width, '0%');
-    const note = document.getElementById('goal-note').textContent;
-    assert.ok(/save your weight again/i.test(note),
-      `expected single-entry "save again" copy, got "${note}"`);
+    // Single reading isn't a journey yet — body (headline/pct/bar/stops) hidden,
+    // hint explains why and asks for another weigh-in.
+    assert.strictEqual(document.getElementById('goal-body').style.display, 'none',
+      'goal body should be hidden with a single weigh-in');
+    const hint = document.getElementById('goal-hint').textContent;
+    assert.ok(/one weigh-in|water alone|save your weight again|few days/i.test(hint),
+      `expected single-entry honest hint, got "${hint}"`);
   });
 
   check('goal progress: wrong-direction clamps at 0% with encouraging copy (not negative)', () => {
@@ -730,10 +732,52 @@ dom.window.addEventListener('load', async () => {
     assert.ok(/^0%$/.test(pct), `expected 0% (clamped, not negative), got "${pct}"`);
     assert.strictEqual(document.getElementById('goal-bar-fill').style.width, '0%');
     const note = document.getElementById('goal-note').textContent;
-    assert.ok(/drifted|keep going|every week/i.test(note),
-      `expected encouraging wrong-direction copy, got "${note}"`);
+    // With only 2 entries we deliberately stay neutral — "not much movement
+    // yet" rather than telling the user they've "drifted" from 2-point noise.
+    assert.ok(/not much movement|few more weigh-ins|trend/i.test(note),
+      `expected neutral low-data wrong-direction copy, got "${note}"`);
     assert.ok(!/-\d|negative|−/.test(document.getElementById('goal-headline').textContent),
       'headline must not show a negative number');
+  });
+
+  check('goal progress: no-movement and wrong-direction get different notes (not conflated)', () => {
+    // Same clamped 0% — but very different stories. Bug guard from code review:
+    // earlier copy said "drifted from where you started" for BOTH cases.
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 80 }],
+      goalKg: 70,
+    });
+    const noMoveNote = document.getElementById('goal-note').textContent;
+    assert.ok(/no change|keep going/i.test(noMoveNote),
+      `flat-line should say "no change yet", got "${noMoveNote}"`);
+    assert.ok(!/above where you started|not much movement/i.test(noMoveNote),
+      `flat-line must NOT use wrong-direction copy: "${noMoveNote}"`);
+
+    // Wrong direction with the same clamped 0% pct — different note.
+    seedGoalScenario({
+      weights: [
+        { date: '2026-03-01', kg: 80 }, { date: '2026-04-01', kg: 81 },
+        { date: '2026-05-01', kg: 81 }, { date: '2026-06-20', kg: 82 },
+      ],
+      goalKg: 70,
+    });
+    const wrongWayNote = document.getElementById('goal-note').textContent;
+    assert.ok(/above where you started|chart trend/i.test(wrongWayNote),
+      `4+ entries wrong-way should mention being above start, got "${wrongWayNote}"`);
+  });
+
+  check('goal progress: write-time clamp drops negative goal weights', () => {
+    // The form would block this, but a tampered backup or stale localStorage
+    // could carry one in. saveProfile() must zero it out rather than persist.
+    dom.window.document.getElementById('p-age').value = '30';
+    dom.window.document.getElementById('p-sex').value = 'female';
+    dom.window.document.getElementById('p-height').value = '170';
+    dom.window.document.getElementById('p-weight').value = '70';
+    dom.window.document.getElementById('p-goal-weight').value = '-50';
+    dom.window.document.getElementById('p-save').click();
+    const saved = JSON.parse(dom.window.localStorage.getItem('herlyftProfile'));
+    assert.strictEqual(saved.goalWeight, 0,
+      `negative goal-weight must persist as 0, got ${saved.goalWeight}`);
   });
 
   check('goal progress: overshoot triggers reached state with overshoot copy', () => {
@@ -748,8 +792,14 @@ dom.window.addEventListener('load', async () => {
     assert.ok(document.getElementById('goal-bar').classList.contains('reached'),
       'bar should carry the .reached class');
     const note = document.getElementById('goal-note').textContent;
-    assert.ok(/past your goal/i.test(note),
-      `expected overshoot copy "past your goal", got "${note}"`);
+    // No praise for overshooting — neutral framing that points to maintenance.
+    // Also explicitly assert NO "nice work" / "great job" / "well done" copy.
+    assert.ok(/below your goal/i.test(note),
+      `expected loss-overshoot copy "below your goal", got "${note}"`);
+    assert.ok(/maintain/i.test(note),
+      `expected maintenance suggestion in overshoot copy, got "${note}"`);
+    assert.ok(!/nice work|great job|well done|amazing/i.test(note),
+      `overshoot copy must not praise — got "${note}"`);
     assert.ok(/2\.0\s*kg/.test(note), `expected the "2.0 kg" delta, got "${note}"`);
   });
 
