@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Herlyft — Lift with her</title>
 <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 75'><rect width='40' height='75' rx='8' fill='%230a0e1a'/><path d='M20 7C17 3 13 3 13 9C13 13 20 17 20 17C20 17 27 13 27 9C27 3 23 3 20 7Z' fill='%23e8b962'/><line x1='20' y1='14' x2='7' y2='30' stroke='%23e8b962' stroke-width='5.5' stroke-linecap='round'/><line x1='20' y1='14' x2='33' y2='30' stroke='%23e8b962' stroke-width='5.5' stroke-linecap='round'/><circle cx='20' cy='37' r='5' fill='%23e8b962'/><line x1='20' y1='44' x2='20' y2='68' stroke='%23e8b962' stroke-width='6.5' stroke-linecap='round'/></svg>">
+<meta name="description" content="Herlyft — your personal fitness & nutrition assistant. Lift with her.">
+<!-- PWA: installable + offline. Relative paths so it works under the GitHub Pages subpath. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Herlyft">
 <style>
   :root {
     --bg: #0a0e1a;
@@ -81,6 +90,26 @@
     letter-spacing: 0.06em;
     align-self: center;
   }
+  /* Install affordance — only shown when the browser offers an install prompt. */
+  .install-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    min-height: 44px;
+    padding: 0 18px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .install-btn:hover { background: var(--accent); color: var(--bg); }
+  .install-btn:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
 
   @media (max-width: 480px) {
     header h1 { font-size: 30px; letter-spacing: 0.04em; }
@@ -607,9 +636,10 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v0.11.0</span>
+    <span class="version">v1.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
+  <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app">⬇ Install app</button>
 </header>
 
 <nav>
@@ -915,7 +945,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v0.11.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -2051,6 +2081,40 @@ function renderSummary() {
 document.getElementById('s-export').addEventListener('click', () => {
   renderSummary();
   window.print();
+});
+
+/* ============================================================
+   PWA — offline support + install prompt
+   ============================================================ */
+// Service workers need a real http(s) origin. Guard registration so opening
+// index.html directly from disk (file://) doesn't throw.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* offline support unavailable; app still works */ });
+  });
+}
+
+// Custom install affordance: capture the browser's prompt and surface our own
+// button, so installing fits the app's look instead of a generic mini-infobar.
+let deferredInstallPrompt = null;
+const installBtn = document.getElementById('install-btn');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (installBtn) installBtn.hidden = false;
+});
+if (installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installBtn.hidden = true;   // a prompt can only be used once
+  });
+}
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  if (installBtn) installBtn.hidden = true;
 });
 
 /* ============================================================
