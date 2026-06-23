@@ -12,19 +12,13 @@ Owner is the first user. Goal: make the app excellent for *her own* journey
 (heaviest weight → ideal weight), then open it to the public. Work one item at
 a time, each as its own reviewed PR.
 
-## Next session — pick one to start
+## Queue — do one at a time, each its own PR
 
-Owner queued these at the end of the v2.0.0 session. **Do them one at a time,
-each as its own PR.** Owner said "we can do one by one. To maximize the
-enhancement."
-
-1. **Goal-weight suggestion from BMI** (recommended start — small, contained, MINOR)
-   Suggest an ideal goal weight using BMI 22 × height² (default) and offer a
-   one-click "Use this" alongside the existing Profile-tab `#p-goal-weight`
-   input. Show the suggestion as a hint under the field; recompute when height
-   changes. Both `dietitian` (BMI 22 health rationale) and `progress-analyst`
-   (framing — don't shame users above "healthy" BMI) must vet copy. No new
-   agent needed.
+1. ✅ **Goal-weight suggestion from BMI** — shipped in #28 (v2.1.0). Final
+   shape: healthy-range hint + "Use mid-range (BMI 23)" button + muscle caveat
+   + authorship note; clinical BMI numbers kept out of the visible line.
+   Open question surfaced to owner in the PR: whether to show the explicit
+   "BMI 18.5–24.9" band (currently hidden) — one-line change if they want it.
 
 2. **Theme refresh — aesthetic, dopamine-inducing** (MAJOR redesign)
    Trips rubric (redesign + product/UX direction). **Must escalate before

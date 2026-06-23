@@ -39,7 +39,27 @@ prevents it recurring. Keep entries short and actionable.
   can come from a hand-edited backup file (ids, dates) is untrusted input — run
   it through `esc()` even for a local-only, single-user app.
 
+## Testing (jsdom smoke tests)
+
+- **Top-level `let`/`const` in the inline script are NOT reachable via
+  `dom.window`.** `runScripts: 'dangerously'` only attaches `var` and function
+  declarations to `window`; module-scoped `let currentUnits` is a closure
+  variable. Setting `dom.window.currentUnits = 'imperial'` is a silent no-op —
+  the code keeps reading the real closure value. To flip such state in a test,
+  drive it through the real UI path (e.g. set the `<select>` value and
+  `dispatchEvent(new dom.window.Event('change'))`), not by poking `window`.
+  Symptom: a "metric" assertion passes by accident (default) while the
+  "imperial" one renders empty/unchanged.
+
 ## Git / branch hygiene
+
+- **After a squash-merge, the feature branch's remote ref diverges from `main`.**
+  The squashed commit on `main` is a different SHA than the branch's commits, so
+  reusing the same branch for the next feature needs a force-push (the stale
+  pre-squash commits block a fast-forward). Cleanest fix: start each feature on
+  a fresh branch off the freshly-pulled `main` (`git checkout -b claude/<feat>
+  origin/main`) rather than reusing/​resetting the old one. Avoids the
+  force-push-with-lease dance entirely.
 
 - **Sync the local `main` ref before diffing or opening a PR.**
   `git diff main...HEAD` against a stale local `main` shows already-merged
