@@ -716,8 +716,12 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
       'goal-mini must hide with arr.length < 2');
     const delta = document.getElementById('t-delta').textContent;
-    assert.ok(/no earlier weigh-in/i.test(delta),
-      `single-entry delta should say no earlier weigh-in, got "${delta}"`);
+    // The copy invites the next weigh-in instead of just reporting absence,
+    // but it MUST stay honest: no fake delta, no "kg vs ... ago" stat.
+    assert.ok(/log again/i.test(delta) && /trend/i.test(delta),
+      `single-entry delta should invite the next weigh-in, got "${delta}"`);
+    assert.ok(!/vs\s+\d+\s+days?\s+ago/i.test(delta),
+      `single-entry delta must not imply a delta, got "${delta}"`);
   });
 
   check('today: profile + weights + goal renders the goal-mini with pct and bar', () => {

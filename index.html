@@ -148,7 +148,10 @@
   }
   nav button {
     flex: 1;
-    padding: 14px;
+    /* 14px padding × 2 + 15px line-height = 43px; bump to 15px so every tab
+       clears the 44px touch-target minimum even on the smallest screens. */
+    padding: 15px 14px;
+    min-height: 44px;
     background: none;
     border: none;
     color: var(--muted);
@@ -537,9 +540,13 @@
   }
   .today-goal-bar.reached .today-goal-bar-fill { background: var(--accent); }
   .today-cta {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 8px 14px;
+    /* Always sit on its own line under the empty-state copy — at narrow widths
+       it was wrapping inline with "Save your weight... [Go to Profile]" and
+       looking ragged. Block + margin auto centers it cleanly. */
+    display: block;
+    margin: 14px auto 0;
+    padding: 10px 18px;
+    min-height: 44px;
     background: var(--accent);
     color: var(--bg);
     font-weight: 700;
@@ -549,6 +556,8 @@
     cursor: pointer;
     font-size: 14px;
   }
+  /* The empty state itself sits centred so the CTA centres under the copy. */
+  #t-empty { text-align: center; padding: 8px 0 4px; }
   /* GOAL PROGRESS */
   .goal-card .hint { margin-top: 2px; }
   .goal-head {
@@ -1945,7 +1954,9 @@ function renderToday() {
   const prior = findClosestPriorWeight(7);
   deltaEl.classList.remove('up', 'down');
   if (!prior) {
-    deltaEl.textContent = 'No earlier weigh-in to compare yet';
+    // Single-weigh-in: stay honest (no fake delta) but warmer than a flat
+    // negative — invite the next data point instead of just reporting absence.
+    deltaEl.textContent = 'Log again in a few days to see your trend';
   } else if (prior.kg === current) {
     deltaEl.textContent = 'No change vs 7 days ago';
   } else {
