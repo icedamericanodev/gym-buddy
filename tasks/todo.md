@@ -12,7 +12,26 @@ Owner is the first user. Goal: make the app excellent for *her own* journey
 (heaviest weight → ideal weight), then open it to the public. Work one item at
 a time, each as its own reviewed PR.
 
-## Current task: Progress-photo journey (item 1)
+## Current task: Goal weight + progress-to-goal (item 2)
+
+Capture an optional goal/ideal weight and show progress toward it — the
+motivational bookend to the before/now photo hero.
+
+**Plan:**
+- [ ] Optional "Goal weight" field on the Profile form (display units; stored in kg, additive/back-compat — no schema migration)
+- [ ] Wire it through load/save + the units-conversion handler + applyUnitLabels
+- [ ] New "Goal progress" card on the Dashboard: "X kg to go" (or "Goal reached 🎉"), a progress bar, and a "started → now → goal" caption
+- [ ] Progress math: baseline = first logged weight ("since you started"); pct = (start−current)/(start−goal), clamped; handle loss/gain/overshoot/single-weigh-in honestly (progress-analyst to vet framing)
+- [ ] Re-render the card on save / unit-switch / tab-switch / restore / startup
+- [ ] Verify (lint + test + real-browser drive), auto-run agents incl. progress-analyst, then approver gate → auto-merge if APPROVE
+- [ ] MINOR bump (additive feature) + CHANGELOG
+
+### Review
+_(fill in once shipped)_
+
+---
+
+## Done: Progress-photo journey (item 1) — shipped in #23 (v1.1.0)
 
 Attach progress photos across the weight journey — from heaviest weight until
 the goal is reached — so the owner can *see* the change, not just the line.
