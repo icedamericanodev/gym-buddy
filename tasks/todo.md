@@ -28,13 +28,29 @@ a time, each as its own reviewed PR.
    the weigh-in count-up + honey-particle delight (reduced-motion safe). New
    `brand-designer` agent created (`.claude/agents/brand-designer.md`).
 
-3. **Layout refresh — more appealing** (MAJOR redesign) — NEXT
-   Pairs with #2 now that Golden Honey tokens + the brand-designer agent
-   exist. Keep IA (six tabs) intact unless the exploration surfaces a stronger
-   structure. **Must escalate direction first** — "layout" is broad; ask the
-   owner which screens feel weakest and whether to explore card/spacing/
-   hierarchy refinements vs. a structural rethink, then mock up before shipping.
-   Run `brand-designer` (surface/spacing/rhythm) + `ui-ux` (usability/flow).
+3. **Layout refresh — more appealing** (MAJOR redesign) — NEXT (owner paused
+   2026-06-24; resume next session)
+   Pairs with #2 now that Golden Honey tokens + the brand-designer agent exist.
+   Keep IA (six tabs) intact unless the exploration surfaces a stronger
+   structure. **Flow: build 2-3 rendered mockups (brand-designer + ui-ux),
+   owner picks, then build** — same as the theme. Don't ship on a single "go".
+
+   **Owner's focus areas (selected 2026-06-24 — all four):**
+   - **Today / home density** — the single card may feel sparse for a "home";
+     consider a tasteful second glance (streak, hydration, today's workout
+     status). Ties to deferred Today-backlog items + queue items (hydration,
+     workout logging). Don't overcrowd the hero.
+   - **Profile form length** — long single-column form; explore grouping /
+     sectioning / progressive disclosure so it's less scrolly.
+   - **Dashboard / cards** — card spacing, the stat grid rhythm, chart framing,
+     goal-card hierarchy.
+   - **Global rhythm & spacing** — consistent vertical rhythm, card radii/
+     padding, section spacing across all tabs (polish layer, do this last so it
+     unifies whatever the per-screen work produces).
+
+   Suggested order: global spacing scale first (tokens/util classes) → then the
+   three per-screen passes on top. brand-designer owns surface/spacing/rhythm;
+   ui-ux owns usability/flow; accessibility for any focus/markup changes.
 
 ### Process notes
 - Redesigns: never ship on a single "go" — build rendered mockups (run-gym-buddy
