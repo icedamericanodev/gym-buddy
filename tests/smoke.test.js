@@ -1033,6 +1033,76 @@ dom.window.addEventListener('load', async () => {
       `negative goal-weight must persist as 0, got ${saved.goalWeight}`);
   });
 
+  // ---- GOAL-WEIGHT SUGGESTION (BMI 18.5–24.9 range + BMI 22 midpoint) ----
+  // currentUnits is a script-closure `let`, not reachable via dom.window — flip
+  // it through the real <select> change event the same way the app does.
+  function setUnits(next) {
+    const sel = document.getElementById('p-units');
+    if (sel.value === next) return;
+    sel.value = next;
+    sel.dispatchEvent(new dom.window.Event('change'));
+  }
+
+  check('goal suggestion: hidden until a plausible height is entered', () => {
+    setUnits('metric');
+    const hEl = document.getElementById('p-height');
+    const sEl = document.getElementById('p-goal-suggest');
+    hEl.value = '';
+    dom.window.renderGoalSuggestion();
+    assert.strictEqual(sEl.style.display, 'none', 'no height → suggestion hidden');
+    hEl.value = '10'; // below the 80cm sanity floor
+    dom.window.renderGoalSuggestion();
+    assert.strictEqual(sEl.style.display, 'none', 'implausible height → still hidden');
+  });
+
+  check('goal suggestion: shows mid-range (BMI 23) + 18.5–24.9 range for a valid height (metric)', () => {
+    setUnits('metric');
+    const sEl = document.getElementById('p-goal-suggest');
+    document.getElementById('p-height').value = '170'; // 1.7m → m²=2.89
+    dom.window.renderGoalSuggestion();
+    assert.notStrictEqual(sEl.style.display, 'none', 'valid height → suggestion shown');
+    // mid = round(23*2.89=66.5)=66; low=floor(18.5*2.89=53.4)=53; high=ceil(24.9*2.89=71.96)=72
+    const btn = document.getElementById('p-goal-use');
+    assert.ok(btn, 'Use button must render');
+    assert.strictEqual(btn.dataset.mid, '66', `mid should be 66 kg (BMI 23), got ${btn.dataset.mid}`);
+    assert.ok(/53–72 kg/.test(sEl.textContent), `expected "53–72 kg" range, got "${sEl.textContent}"`);
+    assert.ok(/mid-range/i.test(btn.textContent), 'button should say "mid-range", not "ideal"');
+    // Dietitian must-fix: name the muscle limitation for a strength-app audience.
+    assert.ok(/muscle/i.test(sEl.textContent), 'copy must name the muscle-mass caveat');
+    assert.ok(/rough guide|yours to set/i.test(sEl.textContent),
+      'copy must frame it as a guide, not a mandate');
+    // Progress-analyst: keep the clinical BMI numbers out of the visible line.
+    assert.ok(!/BMI/.test(sEl.textContent),
+      'visible copy should not lead with clinical BMI numbers');
+  });
+
+  check('goal suggestion: "Use" button fills the field + shows an authorship note', () => {
+    setUnits('metric');
+    document.getElementById('p-height').value = '170';
+    document.getElementById('p-goal-weight').value = '';
+    dom.window.renderGoalSuggestion();
+    document.getElementById('p-goal-use').click();
+    assert.strictEqual(document.getElementById('p-goal-weight').value, '66',
+      'clicking Use should fill the goal-weight input with the mid-range value');
+    const note = document.getElementById('p-goal-use-note');
+    assert.notStrictEqual(note.style.display, 'none', 'authorship note should appear after Use');
+    assert.ok(/your goal|change it anytime/i.test(note.textContent),
+      `note should affirm authorship, got "${note.textContent}"`);
+  });
+
+  check('goal suggestion: renders in lbs under imperial units', () => {
+    setUnits('metric');
+    document.getElementById('p-height').value = '170'; // set in cm first
+    setUnits('imperial'); // change handler converts 170cm → ~67in
+    const sEl = document.getElementById('p-goal-suggest');
+    dom.window.renderGoalSuggestion();
+    assert.ok(/lbs/.test(sEl.textContent), `imperial suggestion must use lbs, got "${sEl.textContent}"`);
+    const btn = document.getElementById('p-goal-use');
+    // mid ~ 23 * 1.7² = 66.5 kg → ~147 lb
+    assert.ok(/^1(46|47|48)$/.test(btn.dataset.mid), `expected ~147 lb, got ${btn.dataset.mid}`);
+    setUnits('metric'); // reset so later tests are unaffected
+  });
+
   check('goal progress: overshoot triggers reached state with overshoot copy', () => {
     seedGoalScenario({
       weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 68 }],

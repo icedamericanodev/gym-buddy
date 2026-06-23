@@ -340,6 +340,29 @@
     font-size: 13px;
     margin: 8px 0 0;
   }
+  /* Goal-weight suggestion hint under the optional goal-weight field. */
+  .goal-suggest {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 8px 0 0;
+  }
+  .goal-suggest .goal-suggest-range { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .goal-suggest-use {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 7px 14px;
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .goal-suggest-use:hover { background: var(--accent); color: var(--bg); }
+  .goal-suggest-use:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+  .goal-suggest-note { color: var(--accent-2); font-size: 12px; margin: 6px 0 0; }
 
   button.info {
     /* visible glyph kept ~16px so layout doesn't shift; padding around it
@@ -862,7 +885,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v2.0.0</span>
+    <span class="version">v2.1.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
@@ -979,6 +1002,8 @@
         <div style="grid-column: 1 / -1;">
           <label id="p-goal-weight-label">Goal weight (kg) — optional</label>
           <input id="p-goal-weight" type="number" step="0.1" min="0" placeholder="e.g. 68">
+          <p id="p-goal-suggest" class="goal-suggest" style="display:none;"></p>
+          <p id="p-goal-use-note" class="goal-suggest-note" role="status" aria-live="polite" style="display:none;"></p>
         </div>
       </div>
 
@@ -1268,7 +1293,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v2.0.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v2.1.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1615,6 +1640,39 @@ function readGoalWeightKg() {
   if (!v) return 0;
   return currentUnits === 'imperial' ? lbToKg(v) : v;
 }
+
+// Suggest a goal weight from the entered height. We show the WHO healthy-BMI
+// range (18.5–24.9) and a midpoint (BMI 22) as a one-click default — a guide,
+// not a verdict. Hidden until a plausible height is entered.
+function renderGoalSuggestion() {
+  const el = document.getElementById('p-goal-suggest');
+  if (!el) return;
+  const note = document.getElementById('p-goal-use-note');
+  if (note) note.style.display = 'none';  // clear any prior "filled in" note
+  const heightCm = readHeightCm();
+  if (!heightCm || heightCm < 80 || heightCm > 250) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  const m2 = Math.pow(heightCm / 100, 2);
+  const toDisp = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
+  const low = Math.floor(toDisp(18.5 * m2));
+  const high = Math.ceil(toDisp(24.9 * m2));
+  // BMI 23 midpoint (not 22): for a strength app, 22 quietly points lifters
+  // toward weight loss they don't need. The number is the middle of the
+  // healthy band, offered as a starting point — not an "ideal".
+  const mid = Math.round(toDisp(23 * m2));
+  const unit = wUnitLabel();
+  el.style.display = '';
+  el.innerHTML =
+    `A healthy weight for your height is often around ` +
+    `<span class="goal-suggest-range">${low}–${high} ${unit}</span>. ` +
+    `It's a rough guide that doesn't account for muscle, so lifters often sit ` +
+    `higher — your goal is yours to set.<br>` +
+    `<button type="button" class="goal-suggest-use" id="p-goal-use" data-mid="${mid}">` +
+    `Use mid-range (${mid} ${unit})</button>`;
+}
 function readWeightKg() {
   const v = +document.getElementById('p-weight').value;
   if (!v) return v;
@@ -1666,11 +1724,33 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   currentUnits = next;
   applyUnitLabels();
   calculate();
+  renderGoalSuggestion();
   // Refresh the dashboard so the goal card, "Current (kg)" label, deltas, and
   // chart y-axis all switch units without requiring another profile save.
   renderDashboard();
   renderToday();
   renderPhotos();
+});
+
+// Recompute the goal-weight suggestion as the user types their height.
+document.getElementById('p-height').addEventListener('input', renderGoalSuggestion);
+
+// One delegated listener for the (re-rendered) "Use" button — fills the
+// goal-weight field with the suggested mid-range value in the current display
+// unit, clamped to the field's own min/max so we never write an out-of-range
+// value the input would itself reject.
+document.getElementById('p-goal-suggest').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('.goal-suggest-use');
+  if (!btn) return;
+  const field = document.getElementById('p-goal-weight');
+  let val = +btn.dataset.mid;
+  const min = +field.min, max = +field.max;
+  if (min && val < min) val = min;
+  if (max && val > max) val = max;
+  field.value = val;
+  // Make authorship explicit — the goal is theirs, not the table's.
+  const note = document.getElementById('p-goal-use-note');
+  if (note) { note.textContent = 'Filled in — it\'s your goal, change it anytime.'; note.style.display = ''; }
 });
 
 function loadProfile() {
@@ -1717,6 +1797,7 @@ function loadProfile() {
   document.getElementById('p-goal').value = p.goal || '0';
   document.getElementById('p-style').value = p.style || 'mixed';
   calculate();
+  renderGoalSuggestion();
 }
 
 function bmiCategory(bmi) {
