@@ -362,6 +362,7 @@
   }
   .goal-suggest-use:hover { background: var(--accent); color: var(--bg); }
   .goal-suggest-use:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+  .goal-suggest-note { color: var(--accent-2); font-size: 12px; margin: 6px 0 0; }
 
   button.info {
     /* visible glyph kept ~16px so layout doesn't shift; padding around it
@@ -1002,6 +1003,7 @@
           <label id="p-goal-weight-label">Goal weight (kg) — optional</label>
           <input id="p-goal-weight" type="number" step="0.1" min="0" placeholder="e.g. 68">
           <p id="p-goal-suggest" class="goal-suggest" style="display:none;"></p>
+          <p id="p-goal-use-note" class="goal-suggest-note" role="status" aria-live="polite" style="display:none;"></p>
         </div>
       </div>
 
@@ -1645,6 +1647,8 @@ function readGoalWeightKg() {
 function renderGoalSuggestion() {
   const el = document.getElementById('p-goal-suggest');
   if (!el) return;
+  const note = document.getElementById('p-goal-use-note');
+  if (note) note.style.display = 'none';  // clear any prior "filled in" note
   const heightCm = readHeightCm();
   if (!heightCm || heightCm < 80 || heightCm > 250) {
     el.style.display = 'none';
@@ -1655,15 +1659,19 @@ function renderGoalSuggestion() {
   const toDisp = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
   const low = Math.floor(toDisp(18.5 * m2));
   const high = Math.ceil(toDisp(24.9 * m2));
-  const ideal = Math.round(toDisp(22 * m2));
+  // BMI 23 midpoint (not 22): for a strength app, 22 quietly points lifters
+  // toward weight loss they don't need. The number is the middle of the
+  // healthy band, offered as a starting point — not an "ideal".
+  const mid = Math.round(toDisp(23 * m2));
   const unit = wUnitLabel();
   el.style.display = '';
   el.innerHTML =
-    `A healthy weight for your height is roughly ` +
-    `<span class="goal-suggest-range">${low}–${high} ${unit}</span> ` +
-    `(BMI 18.5–24.9) — a rough guide, not a target you must hit.<br>` +
-    `<button type="button" class="goal-suggest-use" id="p-goal-use" data-ideal="${ideal}">` +
-    `Use ${ideal} ${unit}</button>`;
+    `A healthy weight for your height is often around ` +
+    `<span class="goal-suggest-range">${low}–${high} ${unit}</span>. ` +
+    `It's a rough guide that doesn't account for muscle, so lifters often sit ` +
+    `higher — your goal is yours to set.<br>` +
+    `<button type="button" class="goal-suggest-use" id="p-goal-use" data-mid="${mid}">` +
+    `Use mid-range (${mid} ${unit})</button>`;
 }
 function readWeightKg() {
   const v = +document.getElementById('p-weight').value;
@@ -1728,11 +1736,21 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
 document.getElementById('p-height').addEventListener('input', renderGoalSuggestion);
 
 // One delegated listener for the (re-rendered) "Use" button — fills the
-// goal-weight field with the suggested midpoint in the current display unit.
+// goal-weight field with the suggested mid-range value in the current display
+// unit, clamped to the field's own min/max so we never write an out-of-range
+// value the input would itself reject.
 document.getElementById('p-goal-suggest').addEventListener('click', (ev) => {
   const btn = ev.target.closest('.goal-suggest-use');
   if (!btn) return;
-  document.getElementById('p-goal-weight').value = btn.dataset.ideal;
+  const field = document.getElementById('p-goal-weight');
+  let val = +btn.dataset.mid;
+  const min = +field.min, max = +field.max;
+  if (min && val < min) val = min;
+  if (max && val > max) val = max;
+  field.value = val;
+  // Make authorship explicit — the goal is theirs, not the table's.
+  const note = document.getElementById('p-goal-use-note');
+  if (note) { note.textContent = 'Filled in — it\'s your goal, change it anytime.'; note.style.display = ''; }
 });
 
 function loadProfile() {

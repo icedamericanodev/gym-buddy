@@ -1055,30 +1055,39 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(sEl.style.display, 'none', 'implausible height → still hidden');
   });
 
-  check('goal suggestion: shows BMI 22 midpoint + 18.5–24.9 range for a valid height (metric)', () => {
+  check('goal suggestion: shows mid-range (BMI 23) + 18.5–24.9 range for a valid height (metric)', () => {
     setUnits('metric');
     const sEl = document.getElementById('p-goal-suggest');
     document.getElementById('p-height').value = '170'; // 1.7m → m²=2.89
     dom.window.renderGoalSuggestion();
     assert.notStrictEqual(sEl.style.display, 'none', 'valid height → suggestion shown');
-    // ideal = 22 * 2.89 = 63.58 → round 64; low = floor(18.5*2.89=53.4)=53; high = ceil(24.9*2.89=71.96)=72
+    // mid = round(23*2.89=66.5)=66; low=floor(18.5*2.89=53.4)=53; high=ceil(24.9*2.89=71.96)=72
     const btn = document.getElementById('p-goal-use');
     assert.ok(btn, 'Use button must render');
-    assert.strictEqual(btn.dataset.ideal, '64', `ideal should be 64 kg, got ${btn.dataset.ideal}`);
+    assert.strictEqual(btn.dataset.mid, '66', `mid should be 66 kg (BMI 23), got ${btn.dataset.mid}`);
     assert.ok(/53–72 kg/.test(sEl.textContent), `expected "53–72 kg" range, got "${sEl.textContent}"`);
-    assert.ok(/BMI 18\.5–24\.9/.test(sEl.textContent), 'must cite the BMI band');
-    assert.ok(/rough guide|not a target/i.test(sEl.textContent),
+    assert.ok(/mid-range/i.test(btn.textContent), 'button should say "mid-range", not "ideal"');
+    // Dietitian must-fix: name the muscle limitation for a strength-app audience.
+    assert.ok(/muscle/i.test(sEl.textContent), 'copy must name the muscle-mass caveat');
+    assert.ok(/rough guide|yours to set/i.test(sEl.textContent),
       'copy must frame it as a guide, not a mandate');
+    // Progress-analyst: keep the clinical BMI numbers out of the visible line.
+    assert.ok(!/BMI/.test(sEl.textContent),
+      'visible copy should not lead with clinical BMI numbers');
   });
 
-  check('goal suggestion: "Use" button fills the goal-weight field', () => {
+  check('goal suggestion: "Use" button fills the field + shows an authorship note', () => {
     setUnits('metric');
     document.getElementById('p-height').value = '170';
     document.getElementById('p-goal-weight').value = '';
     dom.window.renderGoalSuggestion();
     document.getElementById('p-goal-use').click();
-    assert.strictEqual(document.getElementById('p-goal-weight').value, '64',
-      'clicking Use should fill the goal-weight input with the midpoint');
+    assert.strictEqual(document.getElementById('p-goal-weight').value, '66',
+      'clicking Use should fill the goal-weight input with the mid-range value');
+    const note = document.getElementById('p-goal-use-note');
+    assert.notStrictEqual(note.style.display, 'none', 'authorship note should appear after Use');
+    assert.ok(/your goal|change it anytime/i.test(note.textContent),
+      `note should affirm authorship, got "${note.textContent}"`);
   });
 
   check('goal suggestion: renders in lbs under imperial units', () => {
@@ -1089,8 +1098,8 @@ dom.window.addEventListener('load', async () => {
     dom.window.renderGoalSuggestion();
     assert.ok(/lbs/.test(sEl.textContent), `imperial suggestion must use lbs, got "${sEl.textContent}"`);
     const btn = document.getElementById('p-goal-use');
-    // ideal ~ 22 * 1.7² = 63.6 kg → ~140 lb
-    assert.ok(/^1(39|40|41)$/.test(btn.dataset.ideal), `expected ~140 lb, got ${btn.dataset.ideal}`);
+    // mid ~ 23 * 1.7² = 66.5 kg → ~147 lb
+    assert.ok(/^1(46|47|48)$/.test(btn.dataset.mid), `expected ~147 lb, got ${btn.dataset.mid}`);
     setUnits('metric'); // reset so later tests are unaffected
   });
 
