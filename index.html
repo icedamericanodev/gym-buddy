@@ -110,6 +110,8 @@
   }
   .install-btn:hover { background: var(--accent); color: var(--bg); }
   .install-btn:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+  /* `display: inline-flex` above would otherwise defeat the `hidden` attribute. */
+  .install-btn[hidden] { display: none; }
 
   @media (max-width: 480px) {
     header h1 { font-size: 30px; letter-spacing: 0.04em; }
@@ -639,7 +641,7 @@
     <span class="version">v1.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
-  <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app">⬇ Install app</button>
+  <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
 </header>
 
 <nav>
@@ -2106,10 +2108,13 @@ window.addEventListener('beforeinstallprompt', (e) => {
 if (installBtn) {
   installBtn.addEventListener('click', async () => {
     if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+    // Claim the prompt synchronously so rapid double/triple clicks can't call
+    // prompt() more than once (a used prompt throws on a second prompt() call).
+    const prompt = deferredInstallPrompt;
     deferredInstallPrompt = null;
     installBtn.hidden = true;   // a prompt can only be used once
+    prompt.prompt();
+    await prompt.userChoice;
   });
 }
 window.addEventListener('appinstalled', () => {
