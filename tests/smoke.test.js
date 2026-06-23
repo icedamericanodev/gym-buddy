@@ -100,6 +100,38 @@ dom.window.addEventListener('load', async () => {
     dom.window.matchMedia = origMM;
   });
 
+  check('theme: count-up writes the start value synchronously + guards reentrancy', () => {
+    // Motion allowed; stub rAF to a no-op so the loop never advances and we can
+    // inspect the synchronous setup (flash fix + reentrancy guard).
+    const origMM = dom.window.matchMedia;
+    const origRAF = dom.window.requestAnimationFrame;
+    dom.window.matchMedia = (q) => ({ matches: false, media: q,
+      addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){} });
+    dom.window.requestAnimationFrame = () => 1; // never invokes the callback
+    const hero = document.createElement('div');
+    hero.className = 'today-hero';
+    const num = document.createElement('p');
+    num.className = 'today-num';
+    num.textContent = '70.0 kg'; // renderToday already set the FINAL value
+    hero.appendChild(num);
+    document.body.appendChild(hero);
+
+    dom.window.celebrateWeightLog(num, 72, 70, 'kg');
+    // Flash fix: the hero is rewound to the START value synchronously, so the
+    // final value never lingers for a frame before the count-up begins.
+    assert.strictEqual(num.textContent, '72.0 kg',
+      'count-up should write the start value synchronously');
+    assert.strictEqual(num.dataset.counting, '1', 'counting flag set during animation');
+    // Reentrancy: a second call while counting is a no-op (no reset/restart).
+    dom.window.celebrateWeightLog(num, 80, 70, 'kg');
+    assert.strictEqual(num.textContent, '72.0 kg',
+      'second call while counting must not restart from a new start value');
+
+    hero.remove();
+    dom.window.matchMedia = origMM;
+    dom.window.requestAnimationFrame = origRAF;
+  });
+
   check('version pill in header matches CHANGELOG top entry', () => {
     const versionEl = document.querySelector('header .version');
     assert.ok(versionEl, 'expected a .version pill in the header');
