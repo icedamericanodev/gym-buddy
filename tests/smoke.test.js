@@ -31,8 +31,14 @@ function check(name, fn) {
 dom.window.addEventListener('load', async () => {
   console.log('Running smoke tests...');
 
-  check('five tab buttons render', () => {
-    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 5);
+  check('six tab buttons render with Today as the default-active landing', () => {
+    const btns = document.querySelectorAll('.tab-btn');
+    assert.strictEqual(btns.length, 6);
+    assert.strictEqual(btns[0].dataset.tab, 'today', 'Today is the first tab');
+    assert.ok(btns[0].classList.contains('active'),
+      'Today must be the default-active tab on load');
+    assert.ok(document.querySelector('#today.tab.active'),
+      'the #today section must be active by default');
   });
 
   check('version pill in header matches CHANGELOG top entry', () => {
@@ -642,6 +648,253 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(noKg.heaviest.id, 'a', 'no-weight fallback: heaviest = earliest by date');
     assert.strictEqual(noKg.now.id, 'b', 'no-weight fallback: now = latest by date');
     assert.strictEqual(noKg.deltaHtml, '', 'no-weight fallback must show no delta number');
+  });
+
+  // ---- TODAY (home view) ----
+  function seedToday({ name, weights, goalKg, units = 'metric' }) {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    if (weights && weights.length) {
+      dom.window.localStorage.setItem('herlyftWeights', JSON.stringify(weights));
+    }
+    if (name || weights || goalKg) {
+      const profile = {
+        schema: 2, name: name || '', age: '30', sex: 'female', height: 170,
+        weight: weights && weights.length ? weights[weights.length - 1].kg : 0,
+        units, activity: '1.55', goal: '-500',
+        goalWeight: goalKg || 0, style: 'mixed',
+      };
+      dom.window.localStorage.setItem('herlyftProfile', JSON.stringify(profile));
+      dom.window.loadProfile();
+    }
+    dom.window.renderToday();
+  }
+
+  check('today: no profile shows the CTA empty state with a profile button', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.renderToday();
+    assert.strictEqual(document.getElementById('t-content').style.display, 'none',
+      'today content hidden with no profile');
+    const empty = document.getElementById('t-empty');
+    assert.notStrictEqual(empty.style.display, 'none', 'empty state must be visible');
+    assert.ok(/set up your profile/i.test(empty.textContent),
+      `expected setup CTA copy, got "${empty.textContent}"`);
+    assert.ok(document.getElementById('t-go-profile'), 'CTA button must render');
+  });
+
+  check('today: profile + weight but no goal shows current + delta, hides goal-mini', () => {
+    seedToday({
+      name: 'Alex',
+      weights: [
+        { date: '2026-06-16', kg: 80 },
+        { date: '2026-06-23', kg: 78.5 },
+      ],
+    });
+    assert.strictEqual(document.getElementById('t-content').style.display, '');
+    assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
+      'goal-mini must be hidden with no goal weight set');
+    assert.ok(/Hi, Alex/.test(document.getElementById('t-greeting').textContent),
+      'greeting must personalise to the profile name');
+    const current = document.getElementById('t-current').textContent;
+    assert.ok(/78\.5\s*kg/.test(current), `current weight: "${current}"`);
+    const delta = document.getElementById('t-delta').textContent;
+    assert.ok(/−|-/.test(delta) && /1\.5\s*kg/.test(delta) && /7 days/.test(delta),
+      `expected "−1.5 kg vs 7 days ago" pattern, got "${delta}"`);
+    assert.ok(document.getElementById('t-delta').classList.contains('down'),
+      'down-direction colours the delta');
+  });
+
+  check('today: single weigh-in suppresses goal-mini (mirror Dashboard honesty)', () => {
+    seedToday({
+      weights: [{ date: '2026-06-23', kg: 80 }],
+      goalKg: 70,
+    });
+    // Current weight + delta empty-state still render; goal-mini stays hidden.
+    assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
+      'goal-mini must hide with arr.length < 2');
+    const delta = document.getElementById('t-delta').textContent;
+    // The copy invites the next weigh-in instead of just reporting absence,
+    // but it MUST stay honest: no fake delta, no "kg vs ... ago" stat.
+    assert.ok(/log again/i.test(delta) && /trend/i.test(delta),
+      `single-entry delta should invite the next weigh-in, got "${delta}"`);
+    assert.ok(!/vs\s+\d+\s+days?\s+ago/i.test(delta),
+      `single-entry delta must not imply a delta, got "${delta}"`);
+  });
+
+  check('today: profile + weights + goal renders the goal-mini with pct and bar', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 82 },
+        { date: '2026-06-20', kg: 76 },
+      ],
+      goalKg: 70,
+    });
+    const mini = document.getElementById('t-goal-mini');
+    assert.strictEqual(mini.style.display, '', 'goal-mini must be visible');
+    const text = document.getElementById('t-goal-text').textContent;
+    assert.ok(/6\.0\s*kg\s*to go/.test(text), `expected "6.0 kg to go", got "${text}"`);
+    // Progress = (82-76)/(82-70) = 50%
+    assert.strictEqual(document.getElementById('t-goal-pct').textContent, '50%');
+    assert.strictEqual(document.getElementById('t-goal-bar-fill').style.width, '50%');
+  });
+
+  check('today: goal reached shows celebratory state, 100%', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 80 },
+        { date: '2026-06-20', kg: 68 },
+      ],
+      goalKg: 70,
+    });
+    const text = document.getElementById('t-goal-text').textContent;
+    assert.ok(/Goal reached/i.test(text), `expected "Goal reached", got "${text}"`);
+    assert.strictEqual(document.getElementById('t-goal-pct').textContent, '100%');
+    assert.ok(document.getElementById('t-goal-text').classList.contains('reached'),
+      'reached class must be applied to the goal text');
+  });
+
+  check('today: imperial profile renders weight and delta in lbs', () => {
+    seedToday({
+      weights: [
+        { date: '2026-06-16', kg: 80 },
+        { date: '2026-06-23', kg: 78.5 },
+      ],
+      units: 'imperial',
+    });
+    assert.ok(/lbs/.test(document.getElementById('t-current').textContent));
+    assert.ok(/lbs/.test(document.getElementById('t-delta').textContent));
+  });
+
+  check('today: dynamic "vs N days ago" label when prior is much older than 7 days', () => {
+    const today = new Date();
+    const old = new Date(today); old.setDate(today.getDate() - 30);
+    seedToday({
+      weights: [
+        { date: old.toISOString().slice(0,10), kg: 82 },
+        { date: today.toISOString().slice(0,10), kg: 79 },
+      ],
+    });
+    const delta = document.getElementById('t-delta').textContent;
+    assert.ok(/vs 30 days ago|vs 29 days ago|vs 31 days ago/.test(delta),
+      `expected "vs ~30 days ago", got "${delta}"`);
+    assert.ok(!/vs 7 days ago/.test(delta),
+      `must NOT mislabel a month-old prior as "7 days ago": "${delta}"`);
+  });
+
+  check('today: delta colour respects goal direction (gain goal: weight-up is good)', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.localStorage.setItem('herlyftWeights', JSON.stringify([
+      { date: '2026-06-16', kg: 70 },
+      { date: '2026-06-23', kg: 71.5 },
+    ]));
+    // goal "+300" = gain muscle. A +1.5 kg gain should NOT colour as "bad".
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify({
+      schema: 2, name: '', age: '30', sex: 'male', height: 175,
+      weight: 71.5, units: 'metric', activity: '1.55', goal: '300',
+      goalWeight: 0, style: 'mixed',
+    }));
+    dom.window.loadProfile();
+    dom.window.renderToday();
+    const delta = document.getElementById('t-delta');
+    assert.ok(/\+1\.5/.test(delta.textContent), `expected "+1.5", got "${delta.textContent}"`);
+    assert.ok(!delta.classList.contains('up'),
+      'gain goal + weight-up should NOT use the .up (red/bad) class');
+    assert.ok(delta.classList.contains('down'),
+      'gain goal + weight-up should reuse the .down (teal/good) class');
+  });
+
+  check('today: maintain goal renders neutral delta colour', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.localStorage.setItem('herlyftWeights', JSON.stringify([
+      { date: '2026-06-16', kg: 75 },
+      { date: '2026-06-23', kg: 76 },
+    ]));
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify({
+      schema: 2, name: '', age: '30', sex: 'male', height: 175,
+      weight: 76, units: 'metric', activity: '1.55', goal: '0',
+      goalWeight: 0, style: 'mixed',
+    }));
+    dom.window.loadProfile();
+    dom.window.renderToday();
+    const delta = document.getElementById('t-delta');
+    assert.ok(!delta.classList.contains('up') && !delta.classList.contains('down'),
+      'maintain goal should leave the delta neutral (no colour class)');
+  });
+
+  check('today: wrong-direction shows "from goal" wording, suppresses fake pct', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 80 },
+        { date: '2026-06-20', kg: 82 },
+      ],
+      goalKg: 70,
+    });
+    const text = document.getElementById('t-goal-text').textContent;
+    assert.ok(/from goal/i.test(text), `expected "from goal" wording, got "${text}"`);
+    assert.ok(!/to go/i.test(text),
+      `wrong-direction must NOT use motion verb "to go": "${text}"`);
+    assert.strictEqual(document.getElementById('t-goal-pct').textContent, '',
+      'fake 0% must be suppressed in wrong-direction state');
+  });
+
+  check('today: "started at goal" edge case hides the goal-mini', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 70 },
+        { date: '2026-06-20', kg: 71 },
+      ],
+      goalKg: 70,
+    });
+    assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
+      'totalKg === 0 && !reached must hide the mini (deep advice lives on Dashboard)');
+  });
+
+  // ---- COMPUTE_GOAL_PROGRESS (shared helper) ----
+  check('computeGoalProgress: shared helper returns ready=false for thin data', () => {
+    const f = dom.window.computeGoalProgress;
+    assert.strictEqual(f([], 70).ready, false);
+    assert.strictEqual(f([{date:'x', kg: 80}], 70).ready, false, 'arr.length < 2');
+    assert.strictEqual(f([{date:'a',kg:80},{date:'b',kg:78}], 0).ready, false, 'no goal');
+  });
+
+  check('computeGoalProgress: signedProgress distinguishes flat-line from wrong-direction', () => {
+    const f = dom.window.computeGoalProgress;
+    const flat = f([{date:'a',kg:80},{date:'b',kg:80}], 70);
+    assert.strictEqual(flat.signedProgress, 0, 'flat line: signedProgress = 0');
+    assert.strictEqual(flat.pct, 0);
+    const wrongWay = f([{date:'a',kg:80},{date:'b',kg:82}], 70);
+    assert.ok(wrongWay.signedProgress < 0, 'wrong direction: signedProgress < 0');
+    assert.strictEqual(wrongWay.pct, 0, 'still clamped to 0% in display');
+  });
+
+  // ---- DASHBOARD DELTA: arr.length < 2 guard ----
+  check('dashboard: single weigh-in renders "—" deltas (not fake 0.0)', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    // Single entry, dated >7 days ago — findClosestPriorWeight would return it
+    // as "prior" and the old code wrote "0.0". Guard expects "—".
+    const old = new Date(); old.setDate(old.getDate() - 30);
+    dom.window.localStorage.setItem('herlyftWeights', JSON.stringify([
+      { date: old.toISOString().slice(0,10), kg: 80 },
+    ]));
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify({
+      schema: 2, name: '', age: '30', sex: 'female', height: 170,
+      weight: 80, units: 'metric', activity: '1.55', goal: '-500',
+      goalWeight: 0, style: 'mixed',
+    }));
+    dom.window.loadProfile();
+    dom.window.renderDashboard();
+    assert.strictEqual(document.getElementById('dash-7d').textContent, '—',
+      'single weigh-in must show "—" for 7d delta, not fake 0.0');
+    assert.strictEqual(document.getElementById('dash-30d').textContent, '—');
   });
 
   // ---- GOAL PROGRESS (Dashboard goal card + chart goal line) ----

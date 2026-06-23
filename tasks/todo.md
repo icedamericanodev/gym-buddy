@@ -12,7 +12,33 @@ Owner is the first user. Goal: make the app excellent for *her own* journey
 (heaviest weight → ideal weight), then open it to the public. Work one item at
 a time, each as its own reviewed PR.
 
-## Current task: Goal weight + progress-to-goal (item 2)
+## Current task: "Today" home view (item 3) — MAJOR v2.0.0
+
+A first-tab landing that answers "where am I right now?" at a glance. The owner
+chose: new "Today" tab as the default landing, one weight-glance card to start
+(current + 7-day delta + goal pct). Hydration, workout suggestion, and meals
+intentionally deferred — start minimal, grow.
+
+**Plan:**
+- [ ] Insert "Today" as the first tab (`<button class="tab-btn on" data-tab="today">Today</button>`); make it the default-active tab on load.
+- [ ] Add `<section id="today" class="tab on">` markup; demote the current Profile-tab default `on` state.
+- [ ] Build `renderToday()`: pull `current` + 7-day-prior delta + goal-pct from existing weight/profile helpers (reuse `findClosestPriorWeight`, `getGoalWeightKg`). One card, mobile-first.
+- [ ] Empty / partial states: no profile → "Set up your profile to get started" (deep link); profile + no weights → "Save your weight to start tracking"; weights + no goal → just current + 7d delta (no pct).
+- [ ] Re-render on profile save / unit switch / restore / startup / tab switch into Today.
+- [ ] Verify (lint + test + real-browser drive at 390px), auto-run agents: code-reviewer + qa + ui-ux + progress-analyst (reads back history).
+- [ ] MAJOR bump 1.2.0 → 2.0.0; CHANGELOG.
+- [ ] PR + approver gate. Note the human pre-approved the new-tab + MAJOR rubric trigger via AskUserQuestion before work started.
+
+### Review
+_(fill in once shipped)_
+
+### Today-view backlog (deferred from v2.0.0)
+- [ ] **Empty-state innerHTML re-injection** (code-reviewer nit): every renderToday() call in the empty state rewrites `emptyEl.innerHTML` and rebinds the CTA listener, stealing focus from a tabbed-in user. Cache the current state and only re-render on change, or move the listener to event delegation.
+- [ ] **Today/Dashboard asymmetry** (code-reviewer): Today hides the goal-mini for `arr.length < 2` while Dashboard shows an explicit hint. Intentional density tradeoff for now; revisit if users miss the goal block.
+- [ ] **Today overshoot summary** (progress-analyst nit): when goal is reached with >0.5 kg overshoot, swap "Goal reached 🎉" → "Goal reached — see Dashboard" so the deeper maintenance nudge isn't hidden.
+- [ ] **320px viewport delta wrap** (qa P2): "No earlier weigh-in to compare yet" could wrap to 2 lines on iPhone SE 1st gen — couldn't verify in jsdom; needs real-device eyeball.
+
+## Done: Goal weight + progress-to-goal (item 2) — shipped in #25 (v1.2.0)
 
 Capture an optional goal/ideal weight and show progress toward it — the
 motivational bookend to the before/now photo hero.
