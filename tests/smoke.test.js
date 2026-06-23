@@ -49,6 +49,50 @@ dom.window.addEventListener('load', () => {
       `header pill (${shown}) should match top CHANGELOG entry (${m[1]})`);
   });
 
+  check('PWA: manifest is linked, valid JSON, and its icons exist on disk', () => {
+    const link = document.querySelector('link[rel="manifest"]');
+    assert.ok(link, 'expected a <link rel="manifest"> in the head');
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    assert.ok(themeColor, 'expected a theme-color meta tag');
+
+    const root = path.join(__dirname, '..');
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(root, link.getAttribute('href')), 'utf8'));
+    assert.strictEqual(manifest.display, 'standalone', 'manifest should be standalone');
+    assert.ok(Array.isArray(manifest.icons) && manifest.icons.length >= 2,
+      'manifest should declare at least two icons');
+    assert.ok(manifest.icons.some((i) => /maskable/.test(i.purpose || '')),
+      'manifest should include a maskable icon for Android');
+    manifest.icons.forEach((icon) => {
+      assert.ok(fs.existsSync(path.join(root, icon.src)),
+        `manifest icon ${icon.src} should exist on disk`);
+    });
+  });
+
+  check('PWA: service worker is registered behind an http(s) guard', () => {
+    assert.ok(fs.existsSync(path.join(__dirname, '..', 'sw.js')),
+      'expected sw.js to exist');
+    assert.ok(/serviceWorker['"\]]?\s*in\s*navigator/.test(html),
+      'SW registration should be feature-detected');
+    assert.ok(/location\.protocol\.startsWith\(['"]http/.test(html),
+      'SW registration should be guarded so file:// does not throw');
+  });
+
+  check('PWA: install button is present and hidden until the browser offers a prompt', () => {
+    const btn = document.getElementById('install-btn');
+    assert.ok(btn, 'expected an #install-btn in the header');
+    assert.ok(btn.hidden, 'install button should start hidden');
+    assert.ok(btn.getAttribute('aria-label'), 'install button should have an accessible name');
+  });
+
+  check('PWA: CI deploy stages the manifest, service worker, and icons', () => {
+    const ci = fs.readFileSync(
+      path.join(__dirname, '..', '.github', 'workflows', 'ci.yml'), 'utf8');
+    ['manifest.webmanifest', 'sw.js', 'icons'].forEach((f) => {
+      assert.ok(ci.includes(f), `CI deploy step should stage ${f} to _site`);
+    });
+  });
+
   check('profile calculation produces a sane BMI', () => {
     document.getElementById('p-age').value = '30';
     document.getElementById('p-sex').value = 'male';

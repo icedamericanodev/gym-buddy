@@ -2,6 +2,13 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v1.0.0 — 2026-06-23
+
+### Added
+- **Install Herlyft as an app** 📲 — Herlyft is now a Progressive Web App. On Android (Chrome/Edge) an **Install app** button appears in the header, and you can add it to your home screen to launch it full-screen like a native app, no app store required. iOS users can "Add to Home Screen" from Safari.
+- **Works offline** — a service worker caches the app shell, so Herlyft opens and runs even with no connection. New deploys still reach you (the HTML is fetched network-first).
+- Added a web app manifest and a set of app icons (standard + maskable) rendered from the Herlyft brand mark.
+
 ## v0.11.0 — 2026-05-20
 
 ### Added
