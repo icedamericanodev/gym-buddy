@@ -28,7 +28,7 @@ function check(name, fn) {
 }
 
 // Give the inline <script> a moment to register listeners + run startup.
-dom.window.addEventListener('load', () => {
+dom.window.addEventListener('load', async () => {
   console.log('Running smoke tests...');
 
   check('five tab buttons render', () => {
@@ -596,6 +596,31 @@ dom.window.addEventListener('load', () => {
         `click #${i}: expected distinct picks, got duplicates in ${names.join(', ')}`);
     }
   });
+
+  check('progress photos: card, add control, privacy note, and empty state render', () => {
+    assert.ok(document.getElementById('photos-card'), 'expected a #photos-card on the Dashboard');
+    assert.ok(document.getElementById('pp-add'), 'expected an "Add progress photo" button');
+    const empty = document.getElementById('pp-empty');
+    assert.ok(empty && empty.style.display !== 'none', 'photo gallery should start in its empty state');
+    const card = document.getElementById('photos-card');
+    assert.ok(/device only/i.test(card.textContent), 'card should state photos stay on the device only');
+  });
+
+  // Async: the photo layer must degrade gracefully where IndexedDB is absent
+  // (jsdom has none), so a backup still builds and carries a photos array.
+  await (async () => {
+    const name = 'progress photos: backup builds with a photos array even without IndexedDB';
+    try {
+      const backup = await dom.window.buildBackupWithPhotos();
+      assert.ok(backup && backup.app === 'herlyft', 'should still produce a valid Herlyft backup');
+      assert.ok(Array.isArray(backup.photos), 'backup should include a photos array');
+      console.log(`  ok  ${name}`);
+    } catch (err) {
+      console.error(`  FAIL  ${name}`);
+      console.error(`        ${err.message}`);
+      process.exitCode = 1;
+    }
+  })();
 
   if (process.exitCode) {
     console.error('\nSome smoke tests FAILED.');

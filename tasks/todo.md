@@ -6,32 +6,56 @@ here before non-trivial work, check items off as you go, and add a short
 
 ---
 
-## Current task: Adopt the plan → execute → verify → learn workflow
+## Mission: polish Herlyft for the owner's personal UX, then share publicly
 
-- [x] Fetch the source workflow (BorisCherny CLAUDE.md)
-- [x] Add a "Development workflow" section to `CLAUDE.md` (orchestration, task loop, core principles), wired to existing rules
-- [x] Create `tasks/todo.md` (this file) and `tasks/lessons.md`
-- [x] Run `npm run lint` + `npm test` (green)
-- [x] Commit, push, open PR, subscribe
+Owner is the first user. Goal: make the app excellent for *her own* journey
+(heaviest weight → ideal weight), then open it to the public. Work one item at
+a time, each as its own reviewed PR.
+
+## Current task: Progress-photo journey (item 1)
+
+Attach progress photos across the weight journey — from heaviest weight until
+the goal is reached — so the owner can *see* the change, not just the line.
+
+**Design decisions (answered):**
+- [x] Feature shape: **timeline-tied milestones + a before/now hero** (heaviest vs latest)
+- [x] Photos **included in the JSON backup/restore** (owner accepts larger backup files)
+
+**Plan:**
+- [x] Store images in **IndexedDB** (downscaled JPEG blobs), not localStorage
+- [x] "Add progress photo" form; tag each photo with date + weight (defaults to latest logged weight)
+- [x] Before/now hero (heaviest vs latest) with the weight delta
+- [x] Full timeline grid with per-photo Remove
+- [x] Privacy: "Photos stay on this device only" stated in the UI
+- [x] Photos layered into Backup & Restore (export/restore made async; old backups still load)
+- [x] Verify: `npm run lint` + `npm test` green; real-browser drive (2 photos → hero/delta/timeline/IDB/backup confirmed)
+- [x] Version MINOR bump v1.0.0 → v1.1.0 + CHANGELOG
+- [ ] Auto-run review agents, address findings, then PR
 
 ### Review
-Adopted the plan → execute → verify → learn workflow into `CLAUDE.md` (six
-orchestration principles, the task-management loop, and core principles),
-wired to the existing numbered rules so nothing contradicts. Scaffolded
-`tasks/todo.md` (this file, with the PM backlog) and `tasks/lessons.md`
-(seeded with the two real lessons from this session). Internal process only —
-no app change, no version bump. Lint + tests green.
+Shipped the progress-photo journey. Images live in IndexedDB as downscaled
+JPEGs (feature-detected; degrades to empty state where IDB/canvas are absent,
+e.g. jsdom). Before/now hero computes heaviest-by-weight vs latest with a
+weight delta; full timeline supports delete. Backup/restore now carry photos
+as data URLs (export/restore turned async, backward-compatible). Verified in
+Chromium end-to-end. Bug caught & fixed during verify: `Array.forEach` throws
+on a non-callable callback even for an empty array — guarded `URL.revokeObjectURL`.
 
 ---
 
-## Backlog — from the product-manager review (v1.0.0)
+## Polish backlog — personal UX before public launch
 
-The PM's thesis: Herlyft calculates a lot but records almost nothing — that's
-the retention gap. Ordered by leverage:
+Candidate items to sequence after the photo journey (re-prioritize as we go):
 
-- [ ] **Workout logging** — "I did this" check-off + recent-sessions history (PM Now #1, M)
-- [ ] **"Today" home view** — assemble hydration %, today's workout status, weight + 7-day trend (PM Now #2, M)
-- [ ] **Streak indicator** — workouts-this-week / streak, after logging exists (S)
-- [ ] **Cycle-aware framing** — optional, safely framed; led by `womens-health` (M)
-- [ ] **Hydration history chart** — the per-day data is already stored (S)
-- [ ] **Meal logging vs macro targets** — library recipes toward a daily total (L)
+- [ ] **Goal weight + progress-to-goal** — surface "X kg to go" / % toward ideal weight, tied to the photo journey
+- [ ] First-run / empty-state polish so a brand-new public user isn't lost
+- [ ] **Today home view** (PM Now #2) — hydration %, today's workout status, weight + trend at a glance
+- [ ] **Workout logging** (PM Now #1) — "I did this" check-off + recent history
+- [ ] **Streak indicator** (after logging)
+- [ ] **Cycle-aware framing** (`womens-health`)
+- [ ] **Hydration history chart** — per-day data already stored
+- [ ] Public-launch readiness: README/screenshots, share link, final a11y + perf pass
+
+## Shipped this session
+- ✅ #18 four new agents · #19 PWA v1.0.0 · #20 run-gym-buddy skill ·
+  #21 auto-watch PRs · #22 plan→execute→verify→learn workflow
