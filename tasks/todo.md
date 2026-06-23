@@ -29,6 +29,12 @@ motivational bookend to the before/now photo hero.
 ### Review
 _(fill in once shipped)_
 
+### Goal-progress backlog (from review-agent feedback, deferred from v1.2.0)
+- [ ] **Baseline from a `goalSetAt` timestamp**, not `arr[0]` (progress-analyst). Save `goalSetAt` whenever `goalWeight` changes; use the first weigh-in on/after that date as the baseline; fall back to `arr[0]` if none. Surfaces "since {date}" under the Start stop.
+- [ ] **Rolling 7-day average for pct**, not raw last point (progress-analyst). Suppress pct entirely when `totalKg < 2 kg` or `arr.length < 4` — show absolute remaining only. Smooths week-to-week noise.
+- [ ] **Off-chart goal indicator** when goal sits outside `[yMin, yMax]` (progress-analyst). Render `"goal X.X — off chart ↓"` (arrow per direction) at the chart edge so absence is explained, not silent.
+- [ ] **Upper-bound goal warn** (qa P2). Non-blocking warning when goal is outside 20–400 kg or > ~50 kg from current weight.
+
 ---
 
 ## Done: Progress-photo journey (item 1) — shipped in #23 (v1.1.0)
