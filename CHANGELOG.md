@@ -2,6 +2,18 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v3.0.0 — 2026-06-24
+
+### Changed
+- **New look: "Golden Honey"** 🍯 — a warmer, more uplifting refresh of the champagne-gold identity. Richer honey-gold accents, warmer surfaces, and softer glow throughout — designed to feel encouraging, like good light after a session.
+
+### Added
+- **Light & dark themes with a toggle** 🌗 — a sun/moon button in the header switches between the warm dark theme and a new airy light theme. Your choice is remembered; on first visit the app follows your device's light/dark preference. The browser status-bar colour follows the theme too.
+- **A little celebration when you log a weight** ✨ — on the Today tab, your weight counts up to the new number and a few honey motes drift past it. Fully respects "reduce motion" — if you've asked your device to minimise animation, the number just updates.
+
+### Notes
+- Both themes meet WCAG AA contrast for text and interactive elements. The palette change is purely visual — no data is affected, nothing migrates.
+
 ## v2.1.0 — 2026-06-24
 
 ### Added

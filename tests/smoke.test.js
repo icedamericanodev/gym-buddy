@@ -41,6 +41,97 @@ dom.window.addEventListener('load', async () => {
       'the #today section must be active by default');
   });
 
+  // ---- THEME (Golden Honey light/dark toggle) ----
+  check('theme: both palettes defined and the toggle button exists', () => {
+    const btn = document.getElementById('theme-toggle');
+    assert.ok(btn, 'header must have a #theme-toggle button');
+    assert.ok(btn.getAttribute('aria-label'), 'toggle needs an accessible name');
+    // Light token set must be present in the stylesheet.
+    assert.ok(/:root\[data-theme="light"\]/.test(html),
+      'a [data-theme="light"] token set must be defined');
+    // The pre-paint head script must exist so there's no theme flash.
+    assert.ok(/prefers-color-scheme: light/.test(html),
+      'first-visit default should honour the OS colour-scheme preference');
+    assert.ok(/herlyftTheme/.test(html), 'theme choice must persist under herlyftTheme');
+  });
+
+  check('theme: toggle flips data-theme, persists, and updates theme-color', () => {
+    const btn = document.getElementById('theme-toggle');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const root = document.documentElement;
+    // Normalise to dark first.
+    root.removeAttribute('data-theme');
+    dom.window.applyTheme && dom.window.applyTheme('dark');
+    btn.click(); // → light
+    assert.strictEqual(root.getAttribute('data-theme'), 'light',
+      'first click switches to light');
+    assert.strictEqual(dom.window.localStorage.getItem('herlyftTheme'), 'light',
+      'choice persisted');
+    assert.ok(/#fdf8ea/i.test(meta.getAttribute('content')),
+      `theme-color should be the light bg, got ${meta.getAttribute('content')}`);
+    assert.ok(/dark/i.test(btn.getAttribute('aria-label')),
+      'in light mode the button offers to switch to dark');
+    btn.click(); // → dark
+    assert.strictEqual(root.getAttribute('data-theme'), null,
+      'second click returns to dark (no data-theme attribute)');
+    assert.ok(/#191207/i.test(meta.getAttribute('content')),
+      'theme-color back to the dark bg');
+  });
+
+  check('theme: celebrateWeightLog is a no-op under reduced motion (number stays correct)', () => {
+    // jsdom reports no reduced-motion match by default; stub it to "reduce"
+    // and confirm the function leaves the element text untouched (renderToday
+    // already set the final value) and adds no honey motes.
+    const origMM = dom.window.matchMedia;
+    dom.window.matchMedia = (q) => ({ matches: /reduce/.test(q), media: q,
+      addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){} });
+    const hero = document.createElement('div');
+    hero.className = 'today-hero';
+    const num = document.createElement('p');
+    num.className = 'today-num';
+    num.textContent = '70.0 kg';
+    hero.appendChild(num);
+    document.body.appendChild(hero);
+    dom.window.celebrateWeightLog(num, 72, 70, 'kg');
+    assert.strictEqual(num.textContent, '70.0 kg', 'reduced motion: no count-up animation');
+    assert.strictEqual(hero.querySelectorAll('.honey-mote').length, 0,
+      'reduced motion: no honey motes spawned');
+    hero.remove();
+    dom.window.matchMedia = origMM;
+  });
+
+  check('theme: count-up writes the start value synchronously + guards reentrancy', () => {
+    // Motion allowed; stub rAF to a no-op so the loop never advances and we can
+    // inspect the synchronous setup (flash fix + reentrancy guard).
+    const origMM = dom.window.matchMedia;
+    const origRAF = dom.window.requestAnimationFrame;
+    dom.window.matchMedia = (q) => ({ matches: false, media: q,
+      addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){} });
+    dom.window.requestAnimationFrame = () => 1; // never invokes the callback
+    const hero = document.createElement('div');
+    hero.className = 'today-hero';
+    const num = document.createElement('p');
+    num.className = 'today-num';
+    num.textContent = '70.0 kg'; // renderToday already set the FINAL value
+    hero.appendChild(num);
+    document.body.appendChild(hero);
+
+    dom.window.celebrateWeightLog(num, 72, 70, 'kg');
+    // Flash fix: the hero is rewound to the START value synchronously, so the
+    // final value never lingers for a frame before the count-up begins.
+    assert.strictEqual(num.textContent, '72.0 kg',
+      'count-up should write the start value synchronously');
+    assert.strictEqual(num.dataset.counting, '1', 'counting flag set during animation');
+    // Reentrancy: a second call while counting is a no-op (no reset/restart).
+    dom.window.celebrateWeightLog(num, 80, 70, 'kg');
+    assert.strictEqual(num.textContent, '72.0 kg',
+      'second call while counting must not restart from a new start value');
+
+    hero.remove();
+    dom.window.matchMedia = origMM;
+    dom.window.requestAnimationFrame = origRAF;
+  });
+
   check('version pill in header matches CHANGELOG top entry', () => {
     const versionEl = document.querySelector('header .version');
     assert.ok(versionEl, 'expected a .version pill in the header');

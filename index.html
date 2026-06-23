@@ -8,26 +8,49 @@
 <meta name="description" content="Herlyft — your personal fitness & nutrition assistant. Lift with her.">
 <!-- PWA: installable + offline. Relative paths so it works under the GitHub Pages subpath. -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0a0e1a">
+<meta name="theme-color" content="#191207">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Herlyft">
 <style>
+  /* ===== Golden Honey — warm-uplifting theme (v3.0.0) =====
+     The app themes entirely through these tokens. Dark is the default;
+     [data-theme="light"] on <html> swaps to the light set. */
   :root {
-    --bg: #0a0e1a;
-    --panel: #161c2e;
-    --panel-2: #232a40;
-    --accent: #e8b962;        /* champagne gold */
-    --accent-soft: #f3cd87;
-    --accent-2: #14b8a6;      /* deep teal */
-    --text: #f5f1e8;          /* warm cream */
-    --muted: #9b9486;         /* warm gray */
+    --bg: #191207;
+    --panel: #241b0e;
+    --panel-2: #322617;
+    --accent: #f0c34a;        /* honey gold */
+    --accent-soft: #f8d97e;
+    --accent-2: #14b8a6;      /* deep teal counterpoint */
+    --text: #fbf3e0;          /* warm cream */
+    --muted: #b8a988;         /* warm sand */
     --danger: #f87171;
     --warn: #fbbf24;
-    --border: #2a2f42;
-    --border-strong: #3a4055;
+    --border: #39301d;
+    --border-strong: #4d4129;
+    --header-glow-1: rgba(240, 195, 74, 0.16);  /* honey */
+    --header-glow-2: rgba(20, 184, 166, 0.16);  /* teal */
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #fdf8ea;
+    --panel: #fffdf6;
+    --panel-2: #f6eed6;
+    --accent: #b8860b;        /* dark goldenrod — reads on cream */
+    --accent-soft: #d6a52a;
+    --accent-2: #0d8f84;      /* deepened teal for light bg */
+    --text: #3a2e10;          /* warm espresso */
+    --muted: #7d6c45;
+    --danger: #c2403f;
+    --warn: #9c6f07;
+    --border: #ece0c4;
+    --border-strong: #d8c79c;
+    --header-glow-1: rgba(184, 134, 11, 0.10);
+    --header-glow-2: rgba(13, 143, 132, 0.08);
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   body {
@@ -39,12 +62,13 @@
   }
   header {
     background:
-      radial-gradient(ellipse at top left, rgba(232, 185, 98, 0.18), transparent 55%),
-      radial-gradient(ellipse at bottom right, rgba(20, 184, 166, 0.18), transparent 55%),
-      linear-gradient(135deg, #161c2e, #0a0e1a);
+      radial-gradient(ellipse at top left, var(--header-glow-1), transparent 55%),
+      radial-gradient(ellipse at bottom right, var(--header-glow-2), transparent 55%),
+      linear-gradient(135deg, var(--panel), var(--bg));
     padding: 28px 20px;
     text-align: center;
     border-bottom: 1px solid var(--border);
+    position: relative;
   }
   header h1 {
     margin: 0;
@@ -82,7 +106,8 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--muted);
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
     padding: 3px 9px;
     border-radius: 999px;
     vertical-align: middle;
@@ -112,6 +137,28 @@
   .install-btn:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
   /* `display: inline-flex` above would otherwise defeat the `hidden` attribute. */
   .install-btn[hidden] { display: none; }
+  /* Theme toggle — top-right of the header, sun (in dark) / moon (in light). */
+  .theme-toggle {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel-2);
+    color: var(--accent);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease, transform .2s ease;
+  }
+  .theme-toggle:hover { background: var(--accent); color: var(--bg); }
+  .theme-toggle:active { transform: scale(0.92); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
 
   @media (max-width: 480px) {
     header h1 { font-size: 30px; letter-spacing: 0.04em; }
@@ -248,9 +295,14 @@
     color: var(--muted);
     margin-right: 6px;
   }
+  /* State pills — token-driven so they recolour per theme. Dark default keeps the
+     deep-tint look; light mode gets soft tinted chips that sit on cream. */
   .pill.good { background: #064e3b; color: #6ee7b7; }
   .pill.warn { background: #78350f; color: #fcd34d; }
   .pill.bad  { background: #7f1d1d; color: #fca5a5; }
+  :root[data-theme="light"] .pill.good { background: #d8f0e1; color: #0b6b4f; }
+  :root[data-theme="light"] .pill.warn { background: #f8ead0; color: #8a5a06; }
+  :root[data-theme="light"] .pill.bad  { background: #f7dcd8; color: #a32f2c; }
 
   .recipe, .exercise {
     background: var(--panel-2);
@@ -261,7 +313,7 @@
   }
   .recipe h4, .exercise h4 { margin: 0 0 6px 0; font-size: 16px; }
   .recipe .meta, .exercise .meta { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .recipe .steps, .exercise .desc { font-size: 14px; color: #d6cdb8; }
+  .recipe .steps, .exercise .desc { font-size: 14px; color: var(--text); opacity: 0.85; }
   .have { color: var(--accent-2); }
   .miss { color: var(--warn); }
 
@@ -290,7 +342,8 @@
     font-size: 48px;
     text-align: center;
     padding: 16px;
-    background: #050810;
+    background: var(--panel);
+    border: 1px solid var(--border);
     border-radius: 8px;
     margin-bottom: 10px;
   }
@@ -389,7 +442,7 @@
 
   .info-popover {
     position: absolute;
-    background: #050810;
+    background: var(--panel);
     color: var(--text);
     padding: 10px 12px;
     border-radius: 6px;
@@ -422,7 +475,7 @@
   }
   details.sources[open] summary::before { content: "▾ "; }
   details.sources ul { padding-left: 18px; margin: 10px 0 4px; }
-  details.sources li { font-size: 13px; line-height: 1.6; margin-bottom: 6px; color: #d6cdb8; }
+  details.sources li { font-size: 13px; line-height: 1.6; margin-bottom: 6px; color: var(--text); opacity: 0.85; }
   details.sources li strong { color: var(--text); }
   details.sources .disclaimer { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
 
@@ -512,6 +565,34 @@
     padding: 18px 12px 14px;
     background: var(--panel-2);
     border-radius: 10px;
+    position: relative;     /* anchor for the honey-particle delight */
+    overflow: visible;
+  }
+  .today-num.counting { color: var(--accent); }
+  /* Honey-particle delight: three motes arc up from the hero number on a new
+     weigh-in. Pure decoration — aria-hidden, and disabled under reduced-motion. */
+  .honey-mote {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    box-shadow: 0 0 6px var(--accent);
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: honey-rise 700ms cubic-bezier(.34, 1.56, .64, 1) forwards;
+  }
+  @keyframes honey-rise {
+    0%   { opacity: 0; transform: translate(-50%, 0) scale(.4); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--mote-dx, -50%), -46px) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .honey-mote { display: none; }
+    .theme-toggle, .today-num.counting { transition: none; }
   }
   .today-label {
     margin: 0 0 6px;
@@ -815,7 +896,7 @@
     border-left: 3px solid var(--accent);
   }
   .rec-title { font-size: 14px; font-weight: 600; color: var(--text); }
-  .rec-body { font-size: 13px; color: #d6cdb8; margin-top: 4px; line-height: 1.5; }
+  .rec-body { font-size: 13px; color: var(--text); opacity: 0.85; margin-top: 4px; line-height: 1.5; }
 
   .summary-footer {
     margin-top: 20px;
@@ -873,6 +954,17 @@
     .summary-recs { page-break-before: auto; }
   }
 </style>
+<script>
+  // Set the theme before first paint to avoid a flash of the wrong palette.
+  // A stored choice wins; otherwise honour the OS preference.
+  (function () {
+    try {
+      var t = localStorage.getItem('herlyftTheme');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 
@@ -885,9 +977,12 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v2.1.0</span>
+    <span class="version">v3.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+    <span class="theme-toggle__icon" aria-hidden="true">☀</span>
+  </button>
   <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
 </header>
 
@@ -1293,7 +1388,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v2.1.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v3.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1917,7 +2012,15 @@ document.getElementById('p-save').addEventListener('click', () => {
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   // Log today's weight (always kg) to history — powers the Dashboard chart.
-  if (weightKg && weightKg > 0 && weightKg <= 400) logWeight(weightKg);
+  if (weightKg && weightKg > 0 && weightKg <= 400) {
+    // Remember the prior latest weight so Today can count up to the new one.
+    const before = getWeights();
+    const priorKg = before.length ? before[before.length - 1].kg : null;
+    logWeight(weightKg);
+    if (priorKg !== null && Math.abs(priorKg - weightKg) > 0.001) {
+      pendingCelebrate = { prevKg: priorKg };
+    }
+  }
   calculate();
   renderDashboard();
   renderToday();
@@ -2032,6 +2135,61 @@ function getProfileName() {
   } catch { return ''; }
 }
 
+// Set on a profile save when a new (changed) weight is logged; consumed once
+// by renderToday when the Today tab is visible.
+let pendingCelebrate = null;
+
+function prefersReducedMotion() {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch (e) { return false; }
+}
+
+// The Golden Honey signature delight: the hero number counts up from the prior
+// weight to the new one (~450ms) and three honey motes arc up and fade. Pure
+// decoration — skipped entirely under reduced-motion (the number is already
+// correct from renderToday).
+function celebrateWeightLog(el, prevKg, currentKg, unit) {
+  if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') return;
+  // Reentrancy guard: a second weigh-in within the ~450ms window would start a
+  // parallel rAF loop writing the same node. Ignore until the first finishes.
+  if (el.dataset.counting === '1') return;
+  const toDisp = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
+  const from = toDisp(prevKg), to = toDisp(currentKg);
+  const dur = 450, start = (typeof performance !== 'undefined' ? performance.now() : 0);
+  el.dataset.counting = '1';
+  el.classList.add('counting');
+  // Write the starting value synchronously so renderToday's already-set final
+  // value doesn't flash for one frame before the count-up rewinds to `from`.
+  el.textContent = `${from.toFixed(1)} ${unit}`;
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    const val = from + (to - from) * eased;
+    el.textContent = `${val.toFixed(1)} ${unit}`;
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      el.textContent = `${to.toFixed(1)} ${unit}`;
+      el.classList.remove('counting');
+      delete el.dataset.counting;
+    }
+  };
+  requestAnimationFrame(step);
+
+  // Three motes, staggered, with a little horizontal spread.
+  const hero = el.closest('.today-hero');
+  if (!hero) return;
+  [-18, 4, 20].forEach((dx, i) => {
+    const mote = document.createElement('span');
+    mote.className = 'honey-mote';
+    mote.setAttribute('aria-hidden', 'true');
+    mote.style.setProperty('--mote-dx', `calc(-50% + ${dx}px)`);
+    mote.style.animationDelay = `${i * 70}ms`;
+    hero.appendChild(mote);
+    setTimeout(() => mote.remove(), 900 + i * 70);
+  });
+}
+
 function renderToday() {
   const dateEl = document.getElementById('t-date');
   const greetingEl = document.getElementById('t-greeting');
@@ -2071,7 +2229,16 @@ function renderToday() {
 
   const current = arr[arr.length - 1].kg;
   const unit = wUnitLabel();
-  document.getElementById('t-current').textContent = `${fmtKg(current)} ${unit}`;
+  const currentEl = document.getElementById('t-current');
+  currentEl.textContent = `${fmtKg(current)} ${unit}`;
+
+  // Delight: if a new weight was just logged and Today is the visible tab,
+  // count the hero up to it and toss a few honey motes. Consumed once.
+  if (pendingCelebrate && document.getElementById('today').classList.contains('active')) {
+    const prevKg = pendingCelebrate.prevKg;
+    pendingCelebrate = null;
+    celebrateWeightLog(currentEl, prevKg, current, unit);
+  }
 
   const deltaEl = document.getElementById('t-delta');
   deltaEl.classList.remove('up', 'down');
@@ -2841,6 +3008,33 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => { /* offline support unavailable; app still works */ });
   });
 }
+
+// Light / dark theme toggle. The pre-paint <head> script already applied the
+// stored-or-OS theme; here we sync the button and handle clicks + persistence.
+const THEME_KEY = 'herlyftTheme';
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+function applyTheme(theme) {
+  const isLight = theme === 'light';
+  if (isLight) document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    // Show the icon of the theme you'd switch TO.
+    btn.querySelector('.theme-toggle__icon').textContent = isLight ? '☾' : '☀';
+    btn.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+  }
+  // Keep the browser chrome (PWA status bar / address bar) in step.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isLight ? '#fdf8ea' : '#191207');
+}
+applyTheme(currentTheme());
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+  const next = currentTheme() === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+});
 
 // Custom install affordance: capture the browser's prompt and surface our own
 // button, so installing fits the app's look instead of a generic mini-infobar.
