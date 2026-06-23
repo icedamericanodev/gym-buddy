@@ -2,6 +2,16 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v2.0.0 — 2026-06-23
+
+### Added
+- **Today** 🏠 — Herlyft now opens to a brand-new "Today" tab as the default landing. It's a single-card glance at where you are *right now*: greeting (uses your name if you've set one), today's date, your current weight in large type, the 7-day delta (with up/down color), and — if you've set a goal — a slim progress bar with "X to go" and the percentage. The deeper trend chart and history still live on the Dashboard tab.
+- Empty-state CTAs on Today: brand-new users see "Set up your profile" with a one-click jump; users with a profile but no logged weight see "Save your weight on the Profile tab".
+
+### Notes
+- The Today goal-mini matches the Dashboard goal card's honest framing — single-weigh-in suppresses the bar (one reading isn't a journey), the "Goal reached 🎉" state shares the same celebratory champagne treatment.
+- This is the first user-visible interaction shape change since launch (a new tab as the home), so it's a **major** version bump — your saved data is fully forward-compatible, nothing migrates.
+
 ## v1.2.0 — 2026-06-23
 
 ### Added

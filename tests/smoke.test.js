@@ -31,8 +31,14 @@ function check(name, fn) {
 dom.window.addEventListener('load', async () => {
   console.log('Running smoke tests...');
 
-  check('five tab buttons render', () => {
-    assert.strictEqual(document.querySelectorAll('.tab-btn').length, 5);
+  check('six tab buttons render with Today as the default-active landing', () => {
+    const btns = document.querySelectorAll('.tab-btn');
+    assert.strictEqual(btns.length, 6);
+    assert.strictEqual(btns[0].dataset.tab, 'today', 'Today is the first tab');
+    assert.ok(btns[0].classList.contains('active'),
+      'Today must be the default-active tab on load');
+    assert.ok(document.querySelector('#today.tab.active'),
+      'the #today section must be active by default');
   });
 
   check('version pill in header matches CHANGELOG top entry', () => {
@@ -642,6 +648,120 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(noKg.heaviest.id, 'a', 'no-weight fallback: heaviest = earliest by date');
     assert.strictEqual(noKg.now.id, 'b', 'no-weight fallback: now = latest by date');
     assert.strictEqual(noKg.deltaHtml, '', 'no-weight fallback must show no delta number');
+  });
+
+  // ---- TODAY (home view) ----
+  function seedToday({ name, weights, goalKg, units = 'metric' }) {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    if (weights && weights.length) {
+      dom.window.localStorage.setItem('herlyftWeights', JSON.stringify(weights));
+    }
+    if (name || weights || goalKg) {
+      const profile = {
+        schema: 2, name: name || '', age: '30', sex: 'female', height: 170,
+        weight: weights && weights.length ? weights[weights.length - 1].kg : 0,
+        units, activity: '1.55', goal: '-500',
+        goalWeight: goalKg || 0, style: 'mixed',
+      };
+      dom.window.localStorage.setItem('herlyftProfile', JSON.stringify(profile));
+      dom.window.loadProfile();
+    }
+    dom.window.renderToday();
+  }
+
+  check('today: no profile shows the CTA empty state with a profile button', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.renderToday();
+    assert.strictEqual(document.getElementById('t-content').style.display, 'none',
+      'today content hidden with no profile');
+    const empty = document.getElementById('t-empty');
+    assert.notStrictEqual(empty.style.display, 'none', 'empty state must be visible');
+    assert.ok(/set up your profile/i.test(empty.textContent),
+      `expected setup CTA copy, got "${empty.textContent}"`);
+    assert.ok(document.getElementById('t-go-profile'), 'CTA button must render');
+  });
+
+  check('today: profile + weight but no goal shows current + delta, hides goal-mini', () => {
+    seedToday({
+      name: 'Alex',
+      weights: [
+        { date: '2026-06-16', kg: 80 },
+        { date: '2026-06-23', kg: 78.5 },
+      ],
+    });
+    assert.strictEqual(document.getElementById('t-content').style.display, '');
+    assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
+      'goal-mini must be hidden with no goal weight set');
+    assert.ok(/Hi, Alex/.test(document.getElementById('t-greeting').textContent),
+      'greeting must personalise to the profile name');
+    const current = document.getElementById('t-current').textContent;
+    assert.ok(/78\.5\s*kg/.test(current), `current weight: "${current}"`);
+    const delta = document.getElementById('t-delta').textContent;
+    assert.ok(/−|-/.test(delta) && /1\.5\s*kg/.test(delta) && /7 days/.test(delta),
+      `expected "−1.5 kg vs 7 days ago" pattern, got "${delta}"`);
+    assert.ok(document.getElementById('t-delta').classList.contains('down'),
+      'down-direction colours the delta');
+  });
+
+  check('today: single weigh-in suppresses goal-mini (mirror Dashboard honesty)', () => {
+    seedToday({
+      weights: [{ date: '2026-06-23', kg: 80 }],
+      goalKg: 70,
+    });
+    // Current weight + delta empty-state still render; goal-mini stays hidden.
+    assert.strictEqual(document.getElementById('t-goal-mini').style.display, 'none',
+      'goal-mini must hide with arr.length < 2');
+    const delta = document.getElementById('t-delta').textContent;
+    assert.ok(/no earlier weigh-in/i.test(delta),
+      `single-entry delta should say no earlier weigh-in, got "${delta}"`);
+  });
+
+  check('today: profile + weights + goal renders the goal-mini with pct and bar', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 82 },
+        { date: '2026-06-20', kg: 76 },
+      ],
+      goalKg: 70,
+    });
+    const mini = document.getElementById('t-goal-mini');
+    assert.strictEqual(mini.style.display, '', 'goal-mini must be visible');
+    const text = document.getElementById('t-goal-text').textContent;
+    assert.ok(/6\.0\s*kg\s*to go/.test(text), `expected "6.0 kg to go", got "${text}"`);
+    // Progress = (82-76)/(82-70) = 50%
+    assert.strictEqual(document.getElementById('t-goal-pct').textContent, '50%');
+    assert.strictEqual(document.getElementById('t-goal-bar-fill').style.width, '50%');
+  });
+
+  check('today: goal reached shows celebratory state, 100%', () => {
+    seedToday({
+      weights: [
+        { date: '2026-05-01', kg: 80 },
+        { date: '2026-06-20', kg: 68 },
+      ],
+      goalKg: 70,
+    });
+    const text = document.getElementById('t-goal-text').textContent;
+    assert.ok(/Goal reached/i.test(text), `expected "Goal reached", got "${text}"`);
+    assert.strictEqual(document.getElementById('t-goal-pct').textContent, '100%');
+    assert.ok(document.getElementById('t-goal-text').classList.contains('reached'),
+      'reached class must be applied to the goal text');
+  });
+
+  check('today: imperial profile renders weight and delta in lbs', () => {
+    seedToday({
+      weights: [
+        { date: '2026-06-16', kg: 80 },
+        { date: '2026-06-23', kg: 78.5 },
+      ],
+      units: 'imperial',
+    });
+    assert.ok(/lbs/.test(document.getElementById('t-current').textContent));
+    assert.ok(/lbs/.test(document.getElementById('t-delta').textContent));
   });
 
   // ---- GOAL PROGRESS (Dashboard goal card + chart goal line) ----

@@ -7,7 +7,7 @@
  *
  * Bump CACHE on every release so old caches are cleaned up on activate.
  */
-const CACHE = 'herlyft-v1.2.0';
+const CACHE = 'herlyft-v2.0.0';
 const ASSETS = [
   './',
   './index.html',

@@ -464,6 +464,91 @@
   .dash-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 2 4; }
   .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 1; }
   .dash-goal-label { fill: var(--accent); font-size: 10px; font-weight: 600; }
+  /* TODAY (home view) */
+  .today-card { padding-top: 18px; padding-bottom: 22px; }
+  .today-head {
+    margin-bottom: 18px;
+  }
+  .today-greeting {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .today-date {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .today-hero {
+    text-align: center;
+    padding: 18px 12px 14px;
+    background: var(--panel-2);
+    border-radius: 10px;
+  }
+  .today-label {
+    margin: 0 0 6px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .today-num {
+    margin: 0;
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.05;
+  }
+  .today-delta {
+    margin: 8px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    min-height: 1.2em;
+  }
+  .today-delta.up { color: var(--danger); }
+  .today-delta.down { color: var(--accent-2); }
+  .today-goal-mini {
+    margin-top: 16px;
+  }
+  .today-goal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .today-goal-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .today-goal-text.reached { color: var(--accent); }
+  .today-goal-pct { font-size: 13px; font-weight: 600; color: var(--text); }
+  .today-goal-bar {
+    height: 8px;
+    background: var(--panel-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .today-goal-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+  .today-goal-bar.reached .today-goal-bar-fill { background: var(--accent); }
+  .today-cta {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 14px;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
   /* GOAL PROGRESS */
   .goal-card .hint { margin-top: 2px; }
   .goal-head {
@@ -768,14 +853,15 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v1.2.0</span>
+    <span class="version">v2.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
 </header>
 
 <nav>
-  <button class="tab-btn active" data-tab="profile">Profile</button>
+  <button class="tab-btn active" data-tab="today">Today</button>
+  <button class="tab-btn" data-tab="profile">Profile</button>
   <button class="tab-btn" data-tab="meals">Meals</button>
   <button class="tab-btn" data-tab="workouts">Workouts</button>
   <button class="tab-btn" data-tab="dashboard">Dashboard</button>
@@ -784,8 +870,38 @@
 
 <main>
 
+  <!-- ============ TODAY TAB (home) ============ -->
+  <section id="today" class="tab active">
+    <div class="card today-card">
+      <div class="today-head">
+        <p class="today-greeting" id="t-greeting">Today</p>
+        <p class="today-date" id="t-date" aria-live="polite"></p>
+      </div>
+
+      <div id="t-empty" class="empty" style="display:none;"></div>
+
+      <div id="t-content" style="display:none;">
+        <div class="today-hero">
+          <p class="today-label">Current weight</p>
+          <p class="today-num" id="t-current">—</p>
+          <p class="today-delta" id="t-delta" aria-live="polite"></p>
+        </div>
+
+        <div id="t-goal-mini" class="today-goal-mini" style="display:none;">
+          <div class="today-goal-row">
+            <span id="t-goal-text" class="today-goal-text">—</span>
+            <span id="t-goal-pct" class="today-goal-pct">—</span>
+          </div>
+          <div class="today-goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progress toward your goal weight">
+            <div class="today-goal-bar-fill" id="t-goal-bar-fill" style="width:0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ PROFILE TAB ============ -->
-  <section id="profile" class="tab active">
+  <section id="profile" class="tab">
     <div class="card">
       <h2>Your Profile</h2>
       <p class="hint">Fill this in once. We calculate your BMI, daily calories, and macros.</p>
@@ -1143,7 +1259,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.2.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v2.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1456,6 +1572,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
     if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); }
+    if (btn.dataset.tab === 'today') renderToday();
   });
 });
 
@@ -1543,6 +1660,7 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   // Refresh the dashboard so the goal card, "Current (kg)" label, deltas, and
   // chart y-axis all switch units without requiring another profile save.
   renderDashboard();
+  renderToday();
   renderPhotos();
 });
 
@@ -1712,6 +1830,7 @@ document.getElementById('p-save').addEventListener('click', () => {
   if (weightKg && weightKg > 0 && weightKg <= 400) logWeight(weightKg);
   calculate();
   renderDashboard();
+  renderToday();
   const flash = document.getElementById('p-saved');
   flash.classList.add('show');
   setTimeout(() => flash.classList.remove('show'), 1500);
@@ -1769,6 +1888,123 @@ function fmtDiff(diffKg) {
 }
 
 let dashRangeDays = 30;
+
+function getProfileName() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return '';
+    const p = JSON.parse(raw);
+    const n = (p && typeof p.name === 'string') ? p.name.trim() : '';
+    return n;
+  } catch { return ''; }
+}
+
+function renderToday() {
+  const dateEl = document.getElementById('t-date');
+  const greetingEl = document.getElementById('t-greeting');
+  const emptyEl = document.getElementById('t-empty');
+  const contentEl = document.getElementById('t-content');
+
+  dateEl.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
+  const name = getProfileName();
+  greetingEl.textContent = name ? `Hi, ${name}` : 'Today';
+
+  const hasProfile = !!localStorage.getItem(PROFILE_KEY);
+  const arr = getWeights();
+
+  if (!hasProfile) {
+    contentEl.style.display = 'none';
+    emptyEl.style.display = '';
+    emptyEl.innerHTML = 'Set up your profile to get started. <button class="today-cta" id="t-go-profile">Go to Profile</button>';
+    document.getElementById('t-go-profile').addEventListener('click', () => {
+      document.querySelector('.tab-btn[data-tab="profile"]').click();
+    });
+    return;
+  }
+  if (!arr.length) {
+    contentEl.style.display = 'none';
+    emptyEl.style.display = '';
+    emptyEl.innerHTML = 'Save your weight on the Profile tab to start tracking. <button class="today-cta" id="t-go-profile">Go to Profile</button>';
+    document.getElementById('t-go-profile').addEventListener('click', () => {
+      document.querySelector('.tab-btn[data-tab="profile"]').click();
+    });
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  contentEl.style.display = '';
+
+  const current = arr[arr.length - 1].kg;
+  const unit = wUnitLabel();
+  document.getElementById('t-current').textContent = `${fmtKg(current)} ${unit}`;
+
+  // 7-day delta — same source of truth as the Dashboard's "vs 7 days ago" stat.
+  const deltaEl = document.getElementById('t-delta');
+  const prior = findClosestPriorWeight(7);
+  deltaEl.classList.remove('up', 'down');
+  if (!prior) {
+    deltaEl.textContent = 'No earlier weigh-in to compare yet';
+  } else if (prior.kg === current) {
+    deltaEl.textContent = 'No change vs 7 days ago';
+  } else {
+    const diffKg = current - prior.kg;
+    const diffDisp = currentUnits === 'imperial' ? kgToLb(diffKg) : diffKg;
+    const f = fmtDiff(diffDisp);
+    deltaEl.textContent = `${f.text} ${unit} vs 7 days ago`;
+    deltaEl.classList.add(f.cls);
+  }
+
+  const goalKg = getGoalWeightKg();
+  const goalMini = document.getElementById('t-goal-mini');
+  if (!goalKg || arr.length < 2) {
+    // Single-weigh-in: same honesty rule as the Dashboard goal card — one
+    // reading isn't a journey, don't imply progress.
+    goalMini.style.display = 'none';
+    return;
+  }
+  goalMini.style.display = '';
+
+  const startKg = arr[0].kg;
+  const totalKg = Math.abs(startKg - goalKg);
+  let pct = 0;
+  let reached = false;
+  if (totalKg === 0) {
+    reached = (current === goalKg);
+    pct = reached ? 100 : 0;
+  } else if (startKg > goalKg) {
+    pct = ((startKg - current) / totalKg) * 100;
+    if (current <= goalKg) reached = true;
+  } else {
+    pct = ((current - startKg) / totalKg) * 100;
+    if (current >= goalKg) reached = true;
+  }
+  pct = Math.max(0, Math.min(100, pct));
+
+  const textEl = document.getElementById('t-goal-text');
+  const pctEl = document.getElementById('t-goal-pct');
+  const barEl = goalMini.querySelector('.today-goal-bar');
+  const fillEl = document.getElementById('t-goal-bar-fill');
+
+  if (reached) {
+    textEl.textContent = 'Goal reached 🎉';
+    textEl.classList.add('reached');
+    pctEl.textContent = '100%';
+    fillEl.style.width = '100%';
+    barEl.classList.add('reached');
+    barEl.setAttribute('aria-valuenow', '100');
+  } else {
+    textEl.classList.remove('reached');
+    barEl.classList.remove('reached');
+    const remainingKg = Math.abs(current - goalKg);
+    const remainingDisp = currentUnits === 'imperial' ? kgToLb(remainingKg) : remainingKg;
+    textEl.textContent = `${remainingDisp.toFixed(1)} ${unit} to go`;
+    pctEl.textContent = `${Math.round(pct)}%`;
+    fillEl.style.width = `${pct}%`;
+    barEl.setAttribute('aria-valuenow', String(Math.round(pct)));
+  }
+}
 
 function getGoalWeightKg() {
   try {
@@ -2120,6 +2356,7 @@ document.getElementById('d-restore-input').addEventListener('change', (ev) => {
       loadProfile();
       renderHydration();
       renderDashboard();
+      renderToday();
       await renderPhotos();
       showDataStatus('Backup restored.');
     } catch (err) {
@@ -2830,6 +3067,7 @@ renderHydration();
 renderSummary();
 renderDashboard();
 renderPhotos();
+renderToday();
 </script>
 
 </body>

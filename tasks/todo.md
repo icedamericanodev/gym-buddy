@@ -12,7 +12,27 @@ Owner is the first user. Goal: make the app excellent for *her own* journey
 (heaviest weight → ideal weight), then open it to the public. Work one item at
 a time, each as its own reviewed PR.
 
-## Current task: Goal weight + progress-to-goal (item 2)
+## Current task: "Today" home view (item 3) — MAJOR v2.0.0
+
+A first-tab landing that answers "where am I right now?" at a glance. The owner
+chose: new "Today" tab as the default landing, one weight-glance card to start
+(current + 7-day delta + goal pct). Hydration, workout suggestion, and meals
+intentionally deferred — start minimal, grow.
+
+**Plan:**
+- [ ] Insert "Today" as the first tab (`<button class="tab-btn on" data-tab="today">Today</button>`); make it the default-active tab on load.
+- [ ] Add `<section id="today" class="tab on">` markup; demote the current Profile-tab default `on` state.
+- [ ] Build `renderToday()`: pull `current` + 7-day-prior delta + goal-pct from existing weight/profile helpers (reuse `findClosestPriorWeight`, `getGoalWeightKg`). One card, mobile-first.
+- [ ] Empty / partial states: no profile → "Set up your profile to get started" (deep link); profile + no weights → "Save your weight to start tracking"; weights + no goal → just current + 7d delta (no pct).
+- [ ] Re-render on profile save / unit switch / restore / startup / tab switch into Today.
+- [ ] Verify (lint + test + real-browser drive at 390px), auto-run agents: code-reviewer + qa + ui-ux + progress-analyst (reads back history).
+- [ ] MAJOR bump 1.2.0 → 2.0.0; CHANGELOG.
+- [ ] PR + approver gate. Note the human pre-approved the new-tab + MAJOR rubric trigger via AskUserQuestion before work started.
+
+### Review
+_(fill in once shipped)_
+
+## Done: Goal weight + progress-to-goal (item 2) — shipped in #25 (v1.2.0)
 
 Capture an optional goal/ideal weight and show progress toward it — the
 motivational bookend to the before/now photo hero.
