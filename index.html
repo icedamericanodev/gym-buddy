@@ -218,6 +218,7 @@
     width: 100%;
   }
   button.primary:hover { background: var(--accent-soft); }
+  button.primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .stats {
     display: grid;
@@ -461,6 +462,77 @@
   }
   .dash-axis-line { stroke: var(--border); stroke-width: 1; }
   .dash-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 2 4; }
+  /* PROGRESS PHOTOS */
+  .pp-controls { margin: 4px 0 12px; }
+  .pp-form {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 4px 0 14px;
+    display: grid;
+    gap: 10px;
+  }
+  .pp-form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .pp-form input {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+  }
+  .pp-form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pp-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 14px;
+  }
+  .pp-hero figure { margin: 0; }
+  .pp-hero figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: center; }
+  .pp-hero img, .pp-item img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    background: var(--panel-2);
+  }
+  .pp-delta {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 18px;
+    margin-top: 2px;
+  }
+  .pp-delta.down { color: var(--accent-2); }
+  .pp-delta .muted { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .pp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .pp-item { display: flex; flex-direction: column; }
+  .pp-cap { font-size: 12px; color: var(--muted); margin: 6px 0 4px; text-align: center; }
+  .pp-del {
+    min-height: 44px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .pp-del:hover { color: var(--danger); border-color: var(--danger); }
+  .pp-del:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+  #pp-status.error { color: var(--danger); font-weight: 600; }
   .dash-line {
     stroke: var(--accent);
     stroke-width: 2.5;
@@ -638,7 +710,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v1.0.0</span>
+    <span class="version">v1.1.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
@@ -880,6 +952,36 @@
         <p class="hint" id="dash-meta"></p>
       </div>
     </div>
+
+    <div class="card" id="photos-card">
+      <h2>Progress photos</h2>
+      <p class="hint">Add a photo to mark your journey — from your heaviest weight to your goal. Each is tagged with its date and your weight that day. <strong>Photos stay on this device only</strong> — they're never uploaded.</p>
+
+      <div class="pp-controls">
+        <button type="button" class="primary" id="pp-add">+ Add progress photo</button>
+      </div>
+
+      <div id="pp-form" class="pp-form" style="display:none;">
+        <label>Photo
+          <input type="file" id="pp-file" accept="image/*">
+        </label>
+        <label>Date
+          <input type="date" id="pp-date">
+        </label>
+        <label>Weight (<span id="pp-wunit">kg</span>) — optional
+          <input type="number" id="pp-weight" step="0.1" min="0" inputmode="decimal" placeholder="e.g. 82.5">
+        </label>
+        <div class="pp-form-actions">
+          <button type="button" class="primary" id="pp-save">Save photo</button>
+          <button type="button" class="primary secondary" id="pp-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div id="pp-empty" class="empty">No progress photos yet. Add your first to start your before-and-after.</div>
+      <div id="pp-hero" class="pp-hero" style="display:none;"></div>
+      <div id="pp-grid" class="pp-grid" role="list" aria-label="Progress photo timeline" style="display:none;"></div>
+      <p id="pp-status" class="hint" role="status" aria-live="polite" style="display:none;"></p>
+    </div>
   </section>
 
   <!-- ============ MEALS TAB ============ -->
@@ -947,7 +1049,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.0.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.1.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1259,7 +1361,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
-    if (btn.dataset.tab === 'dashboard') renderDashboard();
+    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); }
   });
 });
 
@@ -1330,6 +1432,7 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   currentUnits = next;
   applyUnitLabels();
   calculate();
+  renderPhotos();
 });
 
 function loadProfile() {
@@ -1700,8 +1803,9 @@ function showDataStatus(msg, isError) {
   setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
-document.getElementById('d-export').addEventListener('click', () => {
-  const data = buildBackup();
+document.getElementById('d-export').addEventListener('click', async () => {
+  showDataStatus('Preparing backup…');
+  const data = await buildBackupWithPhotos();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1711,22 +1815,25 @@ document.getElementById('d-export').addEventListener('click', () => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showDataStatus('Backup downloaded. Keep it somewhere safe.');
+  const n = data.photos ? data.photos.length : 0;
+  showDataStatus(`Backup downloaded${n ? ` (incl. ${n} photo${n === 1 ? '' : 's'})` : ''}. Keep it somewhere safe.`);
 });
 
 document.getElementById('d-restore-input').addEventListener('change', (ev) => {
   const file = ev.target.files && ev.target.files[0];
   if (!file) return;
-  const ok = window.confirm('Replace all current Herlyft data with this backup? Your existing profile, weights, and hydration log will be overwritten.');
+  const ok = window.confirm('Replace all current Herlyft data with this backup? Your existing profile, weights, hydration log, and progress photos will be overwritten.');
   if (!ok) { ev.target.value = ''; return; }
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const data = JSON.parse(e.target.result);
       applyBackup(data);
+      await restorePhotos(data);
       loadProfile();
       renderHydration();
       renderDashboard();
+      await renderPhotos();
       showDataStatus('Backup restored.');
     } catch (err) {
       showDataStatus('Could not restore: ' + err.message, true);
@@ -2123,6 +2230,310 @@ window.addEventListener('appinstalled', () => {
 });
 
 /* ============================================================
+   PROGRESS PHOTOS — local-only journey gallery (IndexedDB).
+   Images are far too large for the localStorage budget the profile and
+   weights share, so they live in IndexedDB as downscaled JPEG blobs.
+   Everything is feature-detected: where IndexedDB/canvas are unavailable
+   (e.g. jsdom in tests), the gallery degrades to its empty state.
+   ============================================================ */
+const PHOTO_DB = 'herlyftPhotos';
+const PHOTO_STORE = 'photos';
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined' || !indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+    const req = indexedDB.open(PHOTO_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE, { keyPath: 'id' });
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
+  });
+}
+
+function idbTx(mode, fn) {
+  return idbOpen().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(PHOTO_STORE, mode);
+    const store = tx.objectStore(PHOTO_STORE);
+    let out;
+    // A synchronous throw from fn (e.g. DataError) would otherwise leave the
+    // promise pending and the db open — reject and close instead.
+    try {
+      const r = fn(store);
+      if (r) r.onsuccess = () => { out = r.result; };
+    } catch (err) {
+      db.close();
+      reject(err);
+      return;
+    }
+    tx.oncomplete = () => { db.close(); resolve(out); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+    // Quota overruns fire abort, not always error — handle both so writes
+    // never hang silently.
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Storage transaction aborted (quota?)')); };
+  }));
+}
+
+const getPhotos    = () => idbTx('readonly',  s => s.getAll());
+const putPhoto     = (rec) => idbTx('readwrite', s => s.put(rec));
+const deletePhotoDb = (id) => idbTx('readwrite', s => s.delete(id));
+const clearPhotos  = () => idbTx('readwrite', s => s.clear());
+
+function genPhotoId() {
+  return (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()
+    : 'p' + Date.now() + Math.random().toString(36).slice(2);
+}
+
+// Shrink to fit a max edge and re-encode as JPEG so a backup stays manageable.
+function downscaleToBlob(file, maxDim = 1080, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      // Any synchronous failure here (no 2D context, missing toBlob) must
+      // reject — otherwise the caller's await never settles and the UI hangs.
+      try {
+        let { width, height } = img;
+        const longest = Math.max(width, height);
+        if (longest > maxDim) {
+          const scale = maxDim / longest;
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || !canvas.toBlob) { reject(new Error('Image processing is unavailable on this device.')); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not encode image')), 'image/jpeg', quality);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file is not a readable image.')); };
+    img.src = url;
+  });
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+const dataUrlToBlob = (dataUrl) => fetch(dataUrl).then(r => r.blob());
+
+// --- backup layer (called by the export/restore handlers) ----------------
+async function buildBackupWithPhotos() {
+  const data = buildBackup();
+  let recs = [];
+  try { recs = await getPhotos(); } catch { recs = []; }
+  data.photos = await Promise.all((recs || []).map(async r => ({
+    id: r.id, date: r.date, kg: r.kg, dataUrl: await blobToDataUrl(r.blob),
+  })));
+  return data;
+}
+
+async function restorePhotos(data) {
+  if (!Array.isArray(data.photos)) return;
+  try {
+    await clearPhotos();
+    for (const p of data.photos) {
+      if (!p || !p.dataUrl) continue;
+      const blob = await dataUrlToBlob(p.dataUrl);
+      await putPhoto({
+        id: p.id || genPhotoId(),
+        date: p.date || new Date().toISOString().slice(0, 10),
+        kg: typeof p.kg === 'number' ? p.kg : null,
+        blob,
+        createdAt: Date.now(),
+      });
+    }
+  } catch { /* IndexedDB unavailable — photos can't be restored here */ }
+}
+
+// --- rendering ------------------------------------------------------------
+let ppObjectUrls = [];
+function ppRevokeUrls() {
+  if (typeof URL !== 'undefined' && URL.revokeObjectURL) {
+    ppObjectUrls.forEach(u => URL.revokeObjectURL(u));
+  }
+  ppObjectUrls = [];
+}
+function ppUrl(blob) { const u = URL.createObjectURL(blob); ppObjectUrls.push(u); return u; }
+
+function ppWeightLabel(kg) {
+  return (typeof kg === 'number') ? `${fmtKg(kg)} ${wUnitLabel()}` : '';
+}
+function ppCaption(rec) {
+  // rec.date can originate from a hand-edited backup file, so escape it before
+  // it reaches innerHTML (kg is a number formatted by fmtKg — already safe).
+  const date = esc(rec.date);
+  const w = ppWeightLabel(rec.kg);
+  return w ? `${date} · ${w}` : date;
+}
+
+// Pure selection of the before/now hero from a date-sorted (ascending) list.
+// `heaviest` = the max-weight photo (earliest of any weight ties, so the
+// "before" reads as far back as honestly possible); `now` = latest by date.
+// With no weights attached, falls back to earliest-vs-latest by date and no
+// number. Returns the delta copy too so it's unit-testable in isolation.
+function ppHero(photos) {
+  if (!photos || !photos.length) return { heaviest: null, now: null, deltaHtml: '' };
+  const withKg = photos.filter(p => typeof p.kg === 'number');
+  const heaviest = withKg.length
+    ? withKg.reduce((m, p) => (p.kg > m.kg ? p : m), withKg[0])
+    : photos[0];
+  const now = photos[photos.length - 1];
+  let deltaHtml = '';
+  if (heaviest && now && heaviest.id !== now.id
+      && typeof heaviest.kg === 'number' && typeof now.kg === 'number') {
+    // `heaviest` is the max-weight photo, so `now` is never heavier than it —
+    // the difference is "down" or (on a weight tie) zero. Round in the
+    // displayed unit before deciding so we never render a "0.0 down" line.
+    const shown = Math.abs(+fmtKg(now.kg) - +fmtKg(heaviest.kg));
+    deltaHtml = shown > 0
+      ? `<div class="pp-delta down">${shown.toFixed(1)} ${wUnitLabel()} down <span class="muted">since your heaviest</span></div>`
+      : `<div class="pp-delta"><span class="muted">Same weight as your heaviest — the change is in the mirror.</span></div>`;
+  }
+  return { heaviest, now, deltaHtml };
+}
+
+async function renderPhotos() {
+  const emptyEl = document.getElementById('pp-empty');
+  const heroEl = document.getElementById('pp-hero');
+  const gridEl = document.getElementById('pp-grid');
+  if (!emptyEl || !heroEl || !gridEl) return;
+
+  let photos = [];
+  try { photos = await getPhotos(); } catch { photos = []; }
+  ppRevokeUrls();
+
+  if (!photos.length) {
+    emptyEl.style.display = '';
+    heroEl.style.display = 'none';
+    gridEl.style.display = 'none';
+    heroEl.innerHTML = '';
+    gridEl.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  photos.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Before/now hero: heaviest weight vs latest photo (falls back to
+  // earliest-vs-latest by date when no weights are attached).
+  const { heaviest, now, deltaHtml } = ppHero(photos);
+  if (heaviest && now && heaviest.id !== now.id) {
+    const delta = deltaHtml;
+    heroEl.innerHTML =
+      `<figure><img alt="Progress photo from ${ppCaption(heaviest)}" src="${ppUrl(heaviest.blob)}"><figcaption>Heaviest · ${ppCaption(heaviest)}</figcaption></figure>` +
+      `<figure><img alt="Most recent progress photo, ${ppCaption(now)}" src="${ppUrl(now.blob)}"><figcaption>Now · ${ppCaption(now)}</figcaption></figure>` +
+      delta;
+    heroEl.style.display = '';
+  } else {
+    heroEl.style.display = 'none';
+    heroEl.innerHTML = '';
+  }
+
+  // Full timeline (most recent first).
+  gridEl.innerHTML = photos.slice().reverse().map(p =>
+    `<div class="pp-item" role="listitem">
+       <img alt="Progress photo from ${ppCaption(p)}" src="${ppUrl(p.blob)}">
+       <div class="pp-cap">${ppCaption(p)}</div>
+       <button type="button" class="pp-del" data-id="${esc(p.id)}" aria-label="Remove photo from ${ppCaption(p)}">Remove</button>
+     </div>`).join('');
+  gridEl.style.display = '';
+}
+
+// --- add / delete handlers ------------------------------------------------
+let ppStatusTimer = null;
+function ppStatus(msg, isError) {
+  const el = document.getElementById('pp-status');
+  if (!el) return;
+  // Prefix an icon so the error isn't conveyed by color alone (WCAG 1.4.1).
+  el.textContent = isError ? `⚠ ${msg}` : msg;
+  el.classList.toggle('error', !!isError);
+  el.style.display = 'block';
+  if (ppStatusTimer) clearTimeout(ppStatusTimer);
+  ppStatusTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+const ppAddBtn = document.getElementById('pp-add');
+const ppForm = document.getElementById('pp-form');
+if (ppAddBtn && ppForm) {
+  ppAddBtn.addEventListener('click', () => {
+    document.getElementById('pp-wunit').textContent = wUnitLabel();
+    document.getElementById('pp-date').value = new Date().toISOString().slice(0, 10);
+    const latest = getWeights().slice(-1)[0];
+    document.getElementById('pp-weight').value = latest ? fmtKg(latest.kg) : '';
+    document.getElementById('pp-file').value = '';
+    ppForm.style.display = 'grid';
+    ppAddBtn.style.display = 'none';
+    // Move focus into the freshly-revealed form so the keyboard/SR user
+    // isn't stranded on the now-hidden Add button.
+    document.getElementById('pp-file').focus();
+  });
+  document.getElementById('pp-cancel').addEventListener('click', () => {
+    ppForm.style.display = 'none';
+    ppAddBtn.style.display = '';
+    ppAddBtn.focus();
+  });
+  const ppSaveBtn = document.getElementById('pp-save');
+  let ppSaving = false;
+  ppSaveBtn.addEventListener('click', async () => {
+    // Guard against a double/triple-click queuing several saves before the
+    // first await yields — without it each click writes a duplicate photo.
+    if (ppSaving) return;
+    const fileInput = document.getElementById('pp-file');
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) { ppStatus('Choose a photo first.', true); return; }
+    const date = document.getElementById('pp-date').value || new Date().toISOString().slice(0, 10);
+    const wRaw = parseFloat(document.getElementById('pp-weight').value);
+    // Weight is optional; ignore non-positive values (the min="0" attribute is
+    // only advisory) so a stray "-5" can't produce a "-5.0 kg" caption.
+    const kg = (Number.isFinite(wRaw) && wRaw > 0) ? (currentUnits === 'imperial' ? lbToKg(wRaw) : wRaw) : null;
+    ppSaving = true;
+    ppSaveBtn.disabled = true;
+    try {
+      ppStatus('Saving…');
+      const blob = await downscaleToBlob(file);
+      await putPhoto({ id: genPhotoId(), date, kg, blob, createdAt: Date.now() });
+      ppForm.style.display = 'none';
+      ppAddBtn.style.display = '';
+      ppAddBtn.focus();
+      await renderPhotos();
+      ppStatus('Photo saved.');
+    } catch (err) {
+      ppStatus(err.message || 'Could not save that photo.', true);
+    } finally {
+      ppSaving = false;
+      ppSaveBtn.disabled = false;
+    }
+  });
+}
+
+const ppGrid = document.getElementById('pp-grid');
+if (ppGrid) {
+  ppGrid.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.pp-del');
+    if (!btn) return;
+    if (!window.confirm('Remove this progress photo? This cannot be undone.')) return;
+    try {
+      await deletePhotoDb(btn.dataset.id);
+      await renderPhotos();
+      ppStatus('Photo removed.');
+    } catch (err) {
+      ppStatus('Could not remove that photo.', true);
+    }
+  });
+}
+
+/* ============================================================
    STARTUP
    ============================================================ */
 loadProfile();
@@ -2131,6 +2542,7 @@ findMeals();
 renderHydration();
 renderSummary();
 renderDashboard();
+renderPhotos();
 </script>
 
 </body>

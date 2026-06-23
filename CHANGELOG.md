@@ -2,6 +2,15 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v1.1.0 — 2026-06-23
+
+### Added
+- **Progress photos** 📸 — a new section on the Dashboard to document your journey from your heaviest weight to your goal. Add a photo, tag it with its date and your weight that day, and Herlyft builds a **before / now** comparison (heaviest vs latest, with the weight difference) plus a full timeline. Photos are downscaled on save and **stay on this device only** — they're never uploaded.
+- Progress photos are included in **Backup & Restore** — the `.json` backup now carries your photos too (so the file is larger), and restoring brings them back.
+
+### Notes
+- Photos are stored in the browser's IndexedDB (images are too large for the localStorage budget); the gallery degrades gracefully where IndexedDB isn't available.
+
 ## v1.0.0 — 2026-06-23
 
 ### Added

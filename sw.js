@@ -7,7 +7,7 @@
  *
  * Bump CACHE on every release so old caches are cleaned up on activate.
  */
-const CACHE = 'herlyft-v1.0.0';
+const CACHE = 'herlyft-v1.1.0';
 const ASSETS = [
   './',
   './index.html',
@@ -58,8 +58,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Stale-while-revalidate for same-origin static assets.
+  // Skip non-http(s) schemes: the progress-photo gallery loads images from
+  // per-render `blob:` URLs (same origin) that are revoked on the next render,
+  // so caching them would only litter the cache with dead, unservable entries.
   const url = new URL(req.url);
-  if (url.origin === self.location.origin) {
+  if ((url.protocol === 'http:' || url.protocol === 'https:') && url.origin === self.location.origin) {
     event.respondWith(
       caches.match(req).then((cached) => {
         const network = fetch(req)
