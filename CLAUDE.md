@@ -1,11 +1,16 @@
 # Herlyft — working agreement
 
-This repo follows **separation of duties**. You (the human owner) review and approve; Claude builds, verifies, and keeps CI green.
+This repo follows **separation of duties with delegated approval**. Claude builds, verifies, and keeps CI green; the `approver` agent independently reviews and approves routine changes so the build loop can self-drive; you (the human owner) set direction and decide anything the approver escalates — and can merge or veto anything at any time.
 
 ## Rules Claude follows
 
 1. **Branching** — never push directly to `main`. Always commit and push to the feature branch the user is on (e.g. `claude/gum-buddy-app-1GY2X`). The push-to-main approval rule in `.claude/settings.json` enforces this.
-2. **Pull requests** — Claude opens PRs as ready for review. **Only the human merges them.** Claude does not click Merge, even when CI is green.
+2. **Pull requests & merging** — Claude opens PRs as ready for review, then runs the **approver gate** (the `approver` agent). The approver independently reviews the branch diff, confirms the local checks pass, and applies the escalation rubric below.
+   - **APPROVE** → Claude merges the PR itself **once CI is green and the PR is mergeable** (no conflicts). This is the default path — the loop does not wait on the human.
+   - **BLOCK** → Claude fixes the defects and re-runs the gate.
+   - **ESCALATE** → Claude stops and asks the human via `AskUserQuestion`; the human decides.
+
+   **Escalation rubric** — the approver bounces to the human when the change involves: **data safety** (user-data schema/migration, or anything that could lose/overwrite saved profile, weights, photos, backups); **security / external** (auth, secrets, `innerHTML` fed by user/restore input, a new external network call, or a new third-party dependency); **big / irreversible scope** (a MAJOR version bump, a new tab, a redesign, or a large multi-file refactor); or **product / UX direction** (a subjective product/UX call, or an unresolved `Must fix` / `P0` from the review agents). When in doubt, escalate. The human may still merge or veto anything regardless of the approver's verdict.
 3. **Always watch PRs** — immediately after opening any PR, Claude subscribes to its activity (`subscribe_pr_activity`) without asking first, and keeps watching until it is merged or closed — responding to CI failures and review comments per rule 4. Subscribing is an action only Claude can take (it's an MCP call, not something a settings.json hook can do), so this rule is what makes it automatic.
 4. **Verify before push** — before any commit/push, Claude runs the local checks:
    - `npm run lint` (HTML structure)
@@ -61,6 +66,7 @@ Twelve project agents live in `.claude/agents/`:
 | `ui-ux` | Any user-visible change |
 | `code-reviewer` | Before declaring a feature done — read-only review of the branch diff |
 | `qa` | Before declaring a feature done — exercises the app, finds and fixes small bugs |
+| `approver` | Final merge gate — independently reviews the diff and returns APPROVE / BLOCK / ESCALATE per the rubric in rule 2. Claude merges on APPROVE (CI green); the human decides on ESCALATE |
 | `end-user` | Manual / periodic. Simulates a real non-technical user and reports friction, wishes, delights — "would a real person actually want to keep using this?" |
 | `product-manager` | Manual / periodic. Strategic review — what to build next, what to cut, prioritized by user value and effort, grounded in the current codebase |
 
@@ -79,6 +85,8 @@ When a "feature step" finishes (e.g. Step 2 — real exercise GIFs, Step 3 — d
 `end-user` and `product-manager` are **not part of the auto-run set** — they're advisory and run too long for every PR. The user invokes them manually when they want fresh eyes or strategic input ("/end-user couch starter persona", "/product-manager what should we build next?"). Claude can also suggest invoking them when stuck on a direction question.
 
 Address any `Must fix` / `P0` / `P1` items from the agents' reports, re-run the local checks, then push. Surface remaining `Should fix` / `P2` items in the PR description or the message to the user — don't silently swallow them.
+
+Then open the PR and run the **`approver` gate** (rule 2): merge on APPROVE once CI is green, fix and re-run on BLOCK, ask the human on ESCALATE. The approver is the final step, after the auto-run agents and CI.
 
 For ad-hoc questions ("does this button feel right?", "is this recipe realistic?"), the user can also spawn an agent manually at any time.
 
