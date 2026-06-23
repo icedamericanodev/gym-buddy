@@ -218,6 +218,7 @@
     width: 100%;
   }
   button.primary:hover { background: var(--accent-soft); }
+  button.primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .stats {
     display: grid;
@@ -509,6 +510,7 @@
     font-size: 18px;
     margin-top: 2px;
   }
+  .pp-delta.down { color: var(--accent-2); }
   .pp-delta .muted { color: var(--muted); font-weight: 400; font-size: 13px; }
   .pp-grid {
     display: grid;
@@ -518,7 +520,7 @@
   .pp-item { display: flex; flex-direction: column; }
   .pp-cap { font-size: 12px; color: var(--muted); margin: 6px 0 4px; text-align: center; }
   .pp-del {
-    min-height: 40px;
+    min-height: 44px;
     padding: 6px 10px;
     background: transparent;
     border: 1px solid var(--border-strong);
@@ -530,6 +532,7 @@
   }
   .pp-del:hover { color: var(--danger); border-color: var(--danger); }
   .pp-del:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+  #pp-status.error { color: var(--danger); font-weight: 600; }
   .dash-line {
     stroke: var(--accent);
     stroke-width: 2.5;
@@ -976,8 +979,8 @@
 
       <div id="pp-empty" class="empty">No progress photos yet. Add your first to start your before-and-after.</div>
       <div id="pp-hero" class="pp-hero" style="display:none;"></div>
-      <div id="pp-grid" class="pp-grid" style="display:none;"></div>
-      <p id="pp-status" class="hint" style="display:none;"></p>
+      <div id="pp-grid" class="pp-grid" role="list" aria-label="Progress photo timeline" style="display:none;"></div>
+      <p id="pp-status" class="hint" role="status" aria-live="polite" style="display:none;"></p>
     </div>
   </section>
 
@@ -2352,6 +2355,32 @@ function ppCaption(rec) {
   return w ? `${rec.date} · ${w}` : rec.date;
 }
 
+// Pure selection of the before/now hero from a date-sorted (ascending) list.
+// `heaviest` = the max-weight photo (earliest of any weight ties, so the
+// "before" reads as far back as honestly possible); `now` = latest by date.
+// With no weights attached, falls back to earliest-vs-latest by date and no
+// number. Returns the delta copy too so it's unit-testable in isolation.
+function ppHero(photos) {
+  if (!photos || !photos.length) return { heaviest: null, now: null, deltaHtml: '' };
+  const withKg = photos.filter(p => typeof p.kg === 'number');
+  const heaviest = withKg.length
+    ? withKg.reduce((m, p) => (p.kg > m.kg ? p : m), withKg[0])
+    : photos[0];
+  const now = photos[photos.length - 1];
+  let deltaHtml = '';
+  if (heaviest && now && heaviest.id !== now.id
+      && typeof heaviest.kg === 'number' && typeof now.kg === 'number') {
+    // `heaviest` is the max-weight photo, so `now` is never heavier than it —
+    // the difference is "down" or (on a weight tie) zero. Round in the
+    // displayed unit before deciding so we never render a "0.0 down" line.
+    const shown = Math.abs(+fmtKg(now.kg) - +fmtKg(heaviest.kg));
+    deltaHtml = shown > 0
+      ? `<div class="pp-delta down">${shown.toFixed(1)} ${wUnitLabel()} down <span class="muted">since your heaviest</span></div>`
+      : `<div class="pp-delta"><span class="muted">Same weight as your heaviest — the change is in the mirror.</span></div>`;
+  }
+  return { heaviest, now, deltaHtml };
+}
+
 async function renderPhotos() {
   const emptyEl = document.getElementById('pp-empty');
   const heroEl = document.getElementById('pp-hero');
@@ -2375,18 +2404,9 @@ async function renderPhotos() {
 
   // Before/now hero: heaviest weight vs latest photo (falls back to
   // earliest-vs-latest by date when no weights are attached).
-  const withKg = photos.filter(p => typeof p.kg === 'number');
-  const heaviest = withKg.length
-    ? withKg.reduce((m, p) => (p.kg > m.kg ? p : m), withKg[0])
-    : photos[0];
-  const now = photos[photos.length - 1];
+  const { heaviest, now, deltaHtml } = ppHero(photos);
   if (heaviest && now && heaviest.id !== now.id) {
-    let delta = '';
-    if (typeof heaviest.kg === 'number' && typeof now.kg === 'number') {
-      const d = now.kg - heaviest.kg;
-      const word = d < 0 ? 'down' : 'up';
-      delta = `<div class="pp-delta">${fmtKg(Math.abs(d))} ${wUnitLabel()} ${word} <span class="muted">since your heaviest</span></div>`;
-    }
+    const delta = deltaHtml;
     heroEl.innerHTML =
       `<figure><img alt="Progress photo from ${ppCaption(heaviest)}" src="${ppUrl(heaviest.blob)}"><figcaption>Heaviest · ${ppCaption(heaviest)}</figcaption></figure>` +
       `<figure><img alt="Most recent progress photo, ${ppCaption(now)}" src="${ppUrl(now.blob)}"><figcaption>Now · ${ppCaption(now)}</figcaption></figure>` +
@@ -2399,22 +2419,25 @@ async function renderPhotos() {
 
   // Full timeline (most recent first).
   gridEl.innerHTML = photos.slice().reverse().map(p =>
-    `<div class="pp-item">
+    `<div class="pp-item" role="listitem">
        <img alt="Progress photo from ${ppCaption(p)}" src="${ppUrl(p.blob)}">
        <div class="pp-cap">${ppCaption(p)}</div>
-       <button type="button" class="pp-del" data-id="${p.id}">Remove</button>
+       <button type="button" class="pp-del" data-id="${p.id}" aria-label="Remove photo from ${ppCaption(p)}">Remove</button>
      </div>`).join('');
   gridEl.style.display = '';
 }
 
 // --- add / delete handlers ------------------------------------------------
+let ppStatusTimer = null;
 function ppStatus(msg, isError) {
   const el = document.getElementById('pp-status');
   if (!el) return;
-  el.textContent = msg;
+  // Prefix an icon so the error isn't conveyed by color alone (WCAG 1.4.1).
+  el.textContent = isError ? `⚠ ${msg}` : msg;
   el.classList.toggle('error', !!isError);
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
+  if (ppStatusTimer) clearTimeout(ppStatusTimer);
+  ppStatusTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 const ppAddBtn = document.getElementById('pp-add');
@@ -2428,10 +2451,14 @@ if (ppAddBtn && ppForm) {
     document.getElementById('pp-file').value = '';
     ppForm.style.display = 'grid';
     ppAddBtn.style.display = 'none';
+    // Move focus into the freshly-revealed form so the keyboard/SR user
+    // isn't stranded on the now-hidden Add button.
+    document.getElementById('pp-file').focus();
   });
   document.getElementById('pp-cancel').addEventListener('click', () => {
     ppForm.style.display = 'none';
     ppAddBtn.style.display = '';
+    ppAddBtn.focus();
   });
   document.getElementById('pp-save').addEventListener('click', async () => {
     const fileInput = document.getElementById('pp-file');
@@ -2446,6 +2473,7 @@ if (ppAddBtn && ppForm) {
       await putPhoto({ id: genPhotoId(), date, kg, blob, createdAt: Date.now() });
       ppForm.style.display = 'none';
       ppAddBtn.style.display = '';
+      ppAddBtn.focus();
       await renderPhotos();
       ppStatus('Photo saved.');
     } catch (err) {

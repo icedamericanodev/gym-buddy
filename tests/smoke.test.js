@@ -78,6 +78,15 @@ dom.window.addEventListener('load', async () => {
       'SW registration should be guarded so file:// does not throw');
   });
 
+  check('PWA: service worker cache version tracks the app version (deploys must reach users)', () => {
+    const sw = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+    const swVer = (sw.match(/herlyft-v([0-9]+\.[0-9]+\.[0-9]+)/) || [])[1];
+    const appVer = (html.match(/class="version">v([0-9]+\.[0-9]+\.[0-9]+)</) || [])[1];
+    assert.ok(swVer, 'sw.js should define a versioned cache name (herlyft-vX.Y.Z)');
+    assert.strictEqual(swVer, appVer,
+      `sw.js CACHE (${swVer}) must match the app version pill (${appVer}) so old caches are cleaned up on activate`);
+  });
+
   check('PWA: install button is present and hidden until the browser offers a prompt', () => {
     const btn = document.getElementById('install-btn');
     assert.ok(btn, 'expected an #install-btn in the header');
@@ -604,6 +613,35 @@ dom.window.addEventListener('load', async () => {
     assert.ok(empty && empty.style.display !== 'none', 'photo gallery should start in its empty state');
     const card = document.getElementById('photos-card');
     assert.ok(/device only/i.test(card.textContent), 'card should state photos stay on the device only');
+  });
+
+  check('progress photos: hero delta math is honest (down, no zero-line on tie, no-weight fallback)', () => {
+    const ppHero = dom.window.ppHero;
+    assert.strictEqual(typeof ppHero, 'function', 'ppHero should be defined');
+    // Heaviest 90.0 -> now 76.5 => "13.5 kg down", anchored on the max-weight photo.
+    const loss = ppHero([
+      { id: 'a', date: '2026-01-01', kg: 90 },
+      { id: 'b', date: '2026-06-01', kg: 76.5 },
+    ]);
+    assert.strictEqual(loss.heaviest.id, 'a', 'heaviest = max-weight photo');
+    assert.strictEqual(loss.now.id, 'b', 'now = latest by date');
+    assert.ok(/13\.5 kg down/.test(loss.deltaHtml), `expected "13.5 kg down", got: ${loss.deltaHtml}`);
+    assert.ok(!/\bup\b/.test(loss.deltaHtml), 'a loss must never read "up"');
+    // Weight tie between two different photos must not render a "0.0 down" line.
+    const tie = ppHero([
+      { id: 'a', date: '2026-01-01', kg: 80 },
+      { id: 'b', date: '2026-06-01', kg: 80 },
+    ]);
+    assert.ok(!/0\.0/.test(tie.deltaHtml), `tie must not show a 0.0 delta, got: ${tie.deltaHtml}`);
+    assert.ok(!/\bdown\b|\bup\b/.test(tie.deltaHtml), 'tie must not claim a direction');
+    // No weights attached => earliest-vs-latest by date, and no number.
+    const noKg = ppHero([
+      { id: 'a', date: '2026-01-01' },
+      { id: 'b', date: '2026-06-01' },
+    ]);
+    assert.strictEqual(noKg.heaviest.id, 'a', 'no-weight fallback: heaviest = earliest by date');
+    assert.strictEqual(noKg.now.id, 'b', 'no-weight fallback: now = latest by date');
+    assert.strictEqual(noKg.deltaHtml, '', 'no-weight fallback must show no delta number');
   });
 
   // Async: the photo layer must degrade gracefully where IndexedDB is absent
