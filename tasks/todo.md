@@ -12,7 +12,53 @@ Owner is the first user. Goal: make the app excellent for *her own* journey
 (heaviest weight → ideal weight), then open it to the public. Work one item at
 a time, each as its own reviewed PR.
 
-## Current task: "Today" home view (item 3) — MAJOR v2.0.0
+## Next session — pick one to start
+
+Owner queued these at the end of the v2.0.0 session. **Do them one at a time,
+each as its own PR.** Owner said "we can do one by one. To maximize the
+enhancement."
+
+1. **Goal-weight suggestion from BMI** (recommended start — small, contained, MINOR)
+   Suggest an ideal goal weight using BMI 22 × height² (default) and offer a
+   one-click "Use this" alongside the existing Profile-tab `#p-goal-weight`
+   input. Show the suggestion as a hint under the field; recompute when height
+   changes. Both `dietitian` (BMI 22 health rationale) and `progress-analyst`
+   (framing — don't shame users above "healthy" BMI) must vet copy. No new
+   agent needed.
+
+2. **Theme refresh — aesthetic, dopamine-inducing** (MAJOR redesign)
+   Trips rubric (redesign + product/UX direction). **Must escalate before
+   shipping** — owner wants to see 2-3 palette/typography mockups and pick
+   one before the full theme lands. Create a new `brand-designer` agent
+   (separate from `ui-ux` — colour mood, typography voice, micro-interaction
+   delight, motion). Reference: "dopamine-inducing" → warm motion, satisfying
+   tactile feedback (button press, weight log, goal milestone), not slot-
+   machine flashiness. Owner's framing: working out improves mental health,
+   so the app should *feel* that way.
+
+3. **Layout refresh — more appealing** (MAJOR redesign)
+   Pairs with #2 once the new design tokens land. `brand-designer` + `ui-ux`
+   in parallel. Keep IA (six tabs) intact unless the redesign exploration
+   surfaces a stronger structure.
+
+### Process notes for tomorrow's session
+- Start the session by reading `tasks/lessons.md` (per CLAUDE.md), then this
+  file, then ask the owner which of the three to start.
+- For #2 specifically: do NOT ship a new theme on a single "go". Build the
+  proposed palette / typography / motion choices into rendered mockups (use
+  the run-gym-buddy skill to screenshot the existing app with the proposed
+  tokens applied) before asking the owner to choose.
+- The feature branch `claude/compassionate-maxwell-3l66g4` is rebased to main
+  at `7ef9e4f`. Fine to continue on it, or branch off — owner's preference.
+
+## Shipped today (2026-06-23)
+- ✅ #24 delegated-approval merge model + `approver` agent (CLAUDE.md rule 2)
+- ✅ #25 Goal weight + progress-to-goal (v1.2.0)
+- ✅ #26 Today home view as default landing (v2.0.0)
+
+---
+
+## Past task: "Today" home view (item 3) — MAJOR v2.0.0
 
 A first-tab landing that answers "where am I right now?" at a glance. The owner
 chose: new "Today" tab as the default landing, one weight-glance card to start
