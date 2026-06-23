@@ -508,7 +508,7 @@
     text-align: center;
   }
   .goal-stop-label { font-size: 11px; color: var(--muted); }
-  .goal-stop-num { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 2px; }
+  .goal-stop-num { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 2px; }
   .goal-stop.center .goal-stop-num { color: var(--accent); }
   .goal-note {
     margin-top: 8px;
@@ -1535,6 +1535,9 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   currentUnits = next;
   applyUnitLabels();
   calculate();
+  // Refresh the dashboard so the goal card, "Current (kg)" label, deltas, and
+  // chart y-axis all switch units without requiring another profile save.
+  renderDashboard();
   renderPhotos();
 });
 
@@ -1878,7 +1881,12 @@ function renderGoalProgress() {
     } else if (pct === 0) {
       noteEl.textContent = 'You\'ve drifted from where you started — keep going, every week counts.';
     } else {
-      noteEl.textContent = `${Math.round(pct)}% of the way from ${startTxt} to ${goalTxt}.`;
+      // Show how much they've MOVED so far — that's net new info versus the
+      // start/now/goal trio above. Direction-aware, in the user's units.
+      const movedKg = Math.abs(startKg - currentKg);
+      const movedDisp = currentUnits === 'imperial' ? movedKg / KG_PER_LB : movedKg;
+      const verb = startKg > goalKg ? 'down' : 'up';
+      noteEl.textContent = `You're ${movedDisp.toFixed(1)} ${unit} ${verb} from where you started.`;
     }
   }
 }
@@ -1964,8 +1972,10 @@ function renderWeightChart(arr, rangeDays) {
   let goalLine = '';
   if (goalKg && goalKg >= yMin && goalKg <= yMax) {
     const y = yScale(goalKg);
+    // Anchor the label to the LEFT edge of the plot area. The data line ends at
+    // the right edge, and the previous right-anchored label collided with it.
     goalLine = `<line class="dash-goal-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
-                <text class="dash-goal-label" x="${W - padR}" y="${y - 4}" text-anchor="end">goal ${fmtKg(goalKg)}</text>`;
+                <text class="dash-goal-label" x="${padL + 4}" y="${y - 4}" text-anchor="start">goal ${fmtKg(goalKg)}</text>`;
   }
 
   // X-axis labels (first and last)
