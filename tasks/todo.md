@@ -20,35 +20,36 @@ a time, each as its own reviewed PR.
    Open question surfaced to owner in the PR: whether to show the explicit
    "BMI 18.5–24.9" band (currently hidden) — one-line change if they want it.
 
-2. **Theme refresh — aesthetic, dopamine-inducing** (MAJOR redesign)
-   Trips rubric (redesign + product/UX direction). **Must escalate before
-   shipping** — owner wants to see 2-3 palette/typography mockups and pick
-   one before the full theme lands. Create a new `brand-designer` agent
-   (separate from `ui-ux` — colour mood, typography voice, micro-interaction
-   delight, motion). Reference: "dopamine-inducing" → warm motion, satisfying
-   tactile feedback (button press, weight log, goal milestone), not slot-
-   machine flashiness. Owner's framing: working out improves mental health,
-   so the app should *feel* that way.
+2. ✅ **Theme refresh — "Golden Honey"** — shipped in #30 (v3.0.0). Owner
+   chose "Warm & uplifting" mood + light/dark with a toggle, concept B
+   (Golden Honey), from 3 rendered mockups. Delivered: dark+light token
+   sets, header sun/moon toggle (persists `herlyftTheme`, first-visit honors
+   `prefers-color-scheme`, pre-paint flash guard), theme-aware header, and
+   the weigh-in count-up + honey-particle delight (reduced-motion safe). New
+   `brand-designer` agent created (`.claude/agents/brand-designer.md`).
 
-3. **Layout refresh — more appealing** (MAJOR redesign)
-   Pairs with #2 once the new design tokens land. `brand-designer` + `ui-ux`
-   in parallel. Keep IA (six tabs) intact unless the redesign exploration
-   surfaces a stronger structure.
+3. **Layout refresh — more appealing** (MAJOR redesign) — NEXT
+   Pairs with #2 now that Golden Honey tokens + the brand-designer agent
+   exist. Keep IA (six tabs) intact unless the exploration surfaces a stronger
+   structure. **Must escalate direction first** — "layout" is broad; ask the
+   owner which screens feel weakest and whether to explore card/spacing/
+   hierarchy refinements vs. a structural rethink, then mock up before shipping.
+   Run `brand-designer` (surface/spacing/rhythm) + `ui-ux` (usability/flow).
 
-### Process notes for tomorrow's session
-- Start the session by reading `tasks/lessons.md` (per CLAUDE.md), then this
-  file, then ask the owner which of the three to start.
-- For #2 specifically: do NOT ship a new theme on a single "go". Build the
-  proposed palette / typography / motion choices into rendered mockups (use
-  the run-gym-buddy skill to screenshot the existing app with the proposed
-  tokens applied) before asking the owner to choose.
-- The feature branch `claude/compassionate-maxwell-3l66g4` is rebased to main
-  at `7ef9e4f`. Fine to continue on it, or branch off — owner's preference.
+### Process notes
+- Redesigns: never ship on a single "go" — build rendered mockups (run-gym-buddy
+  skill) and have the owner pick before the full build. (Worked well for #30.)
+- The `brand-designer` agent registers at session start; created mid-session it
+  isn't selectable until next session (use general-purpose w/ inline brief as a
+  fallback — see lessons.md).
 
-## Shipped today (2026-06-23)
+## Shipped — session of 2026-06-23 → 06-24
 - ✅ #24 delegated-approval merge model + `approver` agent (CLAUDE.md rule 2)
 - ✅ #25 Goal weight + progress-to-goal (v1.2.0)
 - ✅ #26 Today home view as default landing (v2.0.0)
+- ✅ #28 Goal-weight suggestion from BMI (v2.1.0)
+- ✅ #30 Golden Honey theme + light/dark + weigh-in delight (v3.0.0)
+- ✅ #29 brand-designer agent + lessons/queue docs
 
 ---
 

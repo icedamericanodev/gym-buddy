@@ -50,6 +50,25 @@ prevents it recurring. Keep entries short and actionable.
   `dispatchEvent(new dom.window.Event('change'))`), not by poking `window`.
   Symptom: a "metric" assertion passes by accident (default) while the
   "imperial" one renders empty/unchanged.
+- **Playwright headless defaults to `prefers-color-scheme: light`.** When testing
+  a theme that honors the OS preference on first visit, the headless browser
+  starts in *light*, not dark. Pin it explicitly with the `colorScheme` context
+  option (`newContext({ colorScheme: 'dark' })`) so screenshots/assertions are
+  deterministic.
+
+## Subagents / orchestration
+
+- **A newly-created `.claude/agents/*.md` isn't selectable as a `subagent_type`
+  until the next session.** The Agent registry loads at session start; creating
+  the file mid-session registers it for *later* (a system reminder confirms it),
+  but the current turn's `Agent(subagent_type:'new-one')` fails with "agent type
+  not found". Fallback: run `general-purpose` with the agent's brief inline.
+- **Committing does NOT disturb a still-running subagent editing the same file** —
+  a commit snapshots the index, it doesn't rewrite the working tree. So when the
+  stop-hook nags about a finished agent's edit while others still run, it's safe
+  to commit that checkpoint. But do NOT *edit* the same file yourself while agents
+  are mid-edit — their `Edit` matches `old_string` against live disk and a
+  concurrent change can break it (or yours). Wait for completion, then batch.
 
 ## Git / branch hygiene
 
