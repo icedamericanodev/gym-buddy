@@ -462,6 +462,64 @@
   }
   .dash-axis-line { stroke: var(--border); stroke-width: 1; }
   .dash-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 2 4; }
+  .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 1; }
+  .dash-goal-label { fill: var(--accent); font-size: 10px; font-weight: 600; }
+  /* GOAL PROGRESS */
+  .goal-card .hint { margin-top: 2px; }
+  .goal-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0 8px;
+    flex-wrap: wrap;
+  }
+  .goal-headline {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .goal-headline.reached { color: var(--accent); }
+  .goal-pct {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  /* On very narrow screens (long imperial strings, e.g. "Goal reached 🎉" + "100%"),
+     the flex-wrapped pct sits flush against the headline; nudge it down a hair. */
+  @media (max-width: 340px) {
+    .goal-pct { margin-top: 4px; }
+  }
+  .goal-bar {
+    height: 10px;
+    background: var(--panel-2);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .goal-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+  .goal-bar.reached .goal-bar-fill { background: var(--accent); }
+  .goal-stops {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .goal-stop-label { font-size: 11px; color: var(--muted); }
+  .goal-stop-num { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 2px; }
+  .goal-stop.center .goal-stop-num { color: var(--accent); }
+  .goal-note {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
   /* PROGRESS PHOTOS */
   .pp-controls { margin: 4px 0 12px; }
   .pp-form {
@@ -710,7 +768,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v1.1.0</span>
+    <span class="version">v1.2.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="install-btn" class="install-btn" type="button" hidden aria-label="Install Herlyft as an app"><span class="install-btn__icon" aria-hidden="true">↓</span> Install app</button>
@@ -789,6 +847,13 @@
             <option value="0" selected>Maintain weight</option>
             <option value="300">Gain muscle (+300 kcal/day)</option>
           </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div style="grid-column: 1 / -1;">
+          <label id="p-goal-weight-label">Goal weight (kg) — optional</label>
+          <input id="p-goal-weight" type="number" step="0.1" min="0" placeholder="e.g. 68">
         </div>
       </div>
 
@@ -906,6 +971,35 @@
 
   <!-- ============ DASHBOARD TAB ============ -->
   <section id="dashboard" class="tab">
+    <div class="card goal-card" id="goal-card" style="display:none;">
+      <h2>Goal progress</h2>
+      <p class="hint" id="goal-hint">Set a goal weight on the Profile tab to see how far you've come and how far's left.</p>
+      <div id="goal-body" style="display:none;">
+        <div class="goal-head">
+          <p class="goal-headline" id="goal-headline" aria-live="polite">—</p>
+          <div class="goal-pct" id="goal-pct"></div>
+        </div>
+        <div class="goal-bar" id="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progress toward your goal weight">
+          <div class="goal-bar-fill" id="goal-bar-fill" style="width:0%;"></div>
+        </div>
+        <div class="goal-stops" aria-hidden="true">
+          <div class="goal-stop">
+            <div class="goal-stop-label">Started</div>
+            <div class="goal-stop-num" id="goal-start">—</div>
+          </div>
+          <div class="goal-stop center">
+            <div class="goal-stop-label">Now</div>
+            <div class="goal-stop-num" id="goal-now">—</div>
+          </div>
+          <div class="goal-stop">
+            <div class="goal-stop-label">Goal</div>
+            <div class="goal-stop-num" id="goal-target">—</div>
+          </div>
+        </div>
+        <p class="goal-note" id="goal-note"></p>
+      </div>
+    </div>
+
     <div class="card">
       <h2>Your progress</h2>
       <p class="hint">Each time you save your profile with a new weight, today's value is logged. Chart shows the trend over the time range you pick.</p>
@@ -1049,7 +1143,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.1.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v1.2.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1390,6 +1484,11 @@ function readHeightCm() {
   if (!v) return v;
   return currentUnits === 'imperial' ? inToCm(v) : v;
 }
+function readGoalWeightKg() {
+  const v = +document.getElementById('p-goal-weight').value;
+  if (!v) return 0;
+  return currentUnits === 'imperial' ? lbToKg(v) : v;
+}
 function readWeightKg() {
   const v = +document.getElementById('p-weight').value;
   if (!v) return v;
@@ -1404,14 +1503,18 @@ function hUnitLabel() { return currentUnits === 'imperial' ? 'in' : 'cm'; }
 function applyUnitLabels() {
   document.getElementById('p-height-label').textContent = `Height (${hUnitLabel()})`;
   document.getElementById('p-weight-label').textContent = `Weight (${wUnitLabel()})`;
+  document.getElementById('p-goal-weight-label').textContent = `Goal weight (${wUnitLabel()}) — optional`;
   const heightInput = document.getElementById('p-height');
   const weightInput = document.getElementById('p-weight');
+  const goalWInput = document.getElementById('p-goal-weight');
   if (currentUnits === 'imperial') {
     heightInput.min = 36; heightInput.max = 96; heightInput.placeholder = '69';
     weightInput.min = 60; weightInput.max = 700; weightInput.placeholder = '165';
+    goalWInput.min = 60; goalWInput.max = 700; goalWInput.placeholder = 'e.g. 150';
   } else {
     heightInput.min = 100; heightInput.max = 250; heightInput.placeholder = '175';
     weightInput.min = 30; weightInput.max = 400; weightInput.placeholder = '75';
+    goalWInput.min = 30; goalWInput.max = 400; goalWInput.placeholder = 'e.g. 68';
   }
 }
 
@@ -1421,17 +1524,25 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   // Convert the currently-displayed numbers so the user doesn't have to retype.
   const heightInput = document.getElementById('p-height');
   const weightInput = document.getElementById('p-weight');
+  const goalWInput = document.getElementById('p-goal-weight');
   const h = +heightInput.value;
   const w = +weightInput.value;
+  const gw = +goalWInput.value;
   if (h) heightInput.value = next === 'imperial'
     ? Math.round(cmToIn(h))
     : Math.round(inToCm(h));
   if (w) weightInput.value = next === 'imperial'
     ? kgToLb(w).toFixed(1)
     : lbToKg(w).toFixed(1);
+  if (gw) goalWInput.value = next === 'imperial'
+    ? kgToLb(gw).toFixed(1)
+    : lbToKg(gw).toFixed(1);
   currentUnits = next;
   applyUnitLabels();
   calculate();
+  // Refresh the dashboard so the goal card, "Current (kg)" label, deltas, and
+  // chart y-axis all switch units without requiring another profile save.
+  renderDashboard();
   renderPhotos();
 });
 
@@ -1470,6 +1581,10 @@ function loadProfile() {
     : '';
   document.getElementById('p-weight').value = wKg
     ? (currentUnits === 'imperial' ? kgToLb(wKg).toFixed(1) : wKg)
+    : '';
+  const gwKg = parseFloat(p.goalWeight);
+  document.getElementById('p-goal-weight').value = (gwKg && gwKg > 0)
+    ? (currentUnits === 'imperial' ? kgToLb(gwKg).toFixed(1) : gwKg)
     : '';
   document.getElementById('p-activity').value = p.activity || '1.55';
   document.getElementById('p-goal').value = p.goal || '0';
@@ -1578,6 +1693,7 @@ document.getElementById('p-save').addEventListener('click', () => {
   // canonical regardless of the units the user prefers to see.
   const heightCm = readHeightCm();
   const weightKg = readWeightKg();
+  const goalWeightKg = readGoalWeightKg();
   const profile = {
     schema: PROFILE_SCHEMA,
     name: document.getElementById('p-name').value,
@@ -1588,6 +1704,7 @@ document.getElementById('p-save').addEventListener('click', () => {
     units: currentUnits,              // 'metric' | 'imperial' (display only)
     activity: document.getElementById('p-activity').value,
     goal: document.getElementById('p-goal').value,
+    goalWeight: goalWeightKg > 0 ? goalWeightKg : 0,  // kg; 0 = not set, clamp negatives/NaN
     style: document.getElementById('p-style').value,
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -1653,7 +1770,161 @@ function fmtDiff(diffKg) {
 
 let dashRangeDays = 30;
 
+function getGoalWeightKg() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return 0;
+    const p = JSON.parse(raw);
+    const gw = parseFloat(p && p.goalWeight);
+    return (gw && gw > 0) ? gw : 0;
+  } catch { return 0; }
+}
+
+function renderGoalProgress() {
+  const card = document.getElementById('goal-card');
+  const body = document.getElementById('goal-body');
+  const hint = document.getElementById('goal-hint');
+  const goalKg = getGoalWeightKg();
+  const arr = getWeights();
+
+  // Keep the dashboard quiet for brand-new users — no goal, no history.
+  if (!goalKg && !arr.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  if (!goalKg) {
+    hint.style.display = '';
+    hint.textContent = 'Set a goal weight on the Profile tab to see how far you\'ve come and how far\'s left.';
+    body.style.display = 'none';
+    return;
+  }
+  if (!arr.length) {
+    hint.style.display = '';
+    hint.textContent = 'Save your profile with today\'s weight on the Profile tab to start tracking progress.';
+    body.style.display = 'none';
+    return;
+  }
+  // A single weigh-in isn't a journey yet — one reading can swing a kilo from
+  // water alone. Hide the progress UI and explain rather than imply 0%.
+  if (arr.length === 1) {
+    hint.style.display = '';
+    hint.textContent = 'You\'ve logged one weigh-in so far. Save your weight again in a few days and progress starts showing — single readings swing a kilo or two from water alone.';
+    body.style.display = 'none';
+    return;
+  }
+
+  hint.style.display = 'none';
+  body.style.display = '';
+
+  const startKg = arr[0].kg;
+  const currentKg = arr[arr.length - 1].kg;
+  const unit = wUnitLabel();
+  const startTxt = `${fmtKg(startKg)} ${unit}`;
+  const nowTxt = `${fmtKg(currentKg)} ${unit}`;
+  const goalTxt = `${fmtKg(goalKg)} ${unit}`;
+
+  document.getElementById('goal-start').textContent = startTxt;
+  document.getElementById('goal-now').textContent = nowTxt;
+  document.getElementById('goal-target').textContent = goalTxt;
+
+  const headEl = document.getElementById('goal-headline');
+  const pctEl = document.getElementById('goal-pct');
+  const barEl = document.getElementById('goal-bar');
+  const fillEl = document.getElementById('goal-bar-fill');
+  const noteEl = document.getElementById('goal-note');
+
+  const dispKg = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
+  const remainingKg = currentKg - goalKg;
+  const remainingTxt = `${dispKg(Math.abs(remainingKg)).toFixed(1)} ${unit}`;
+
+  // start vs goal sets the intended direction; the bar fills as the user
+  // moves toward the goal, clamps at 100 once they cross it.
+  const totalKg = Math.abs(startKg - goalKg);
+  let pct = 0;
+  let reached = false;
+  let overshootKg = 0;
+  // Signed progress before clamping — distinguishes "no movement" from
+  // "moved the wrong way" once we clamp pct at 0.
+  let signedProgress = 0;
+
+  if (totalKg === 0) {
+    reached = (currentKg === goalKg);
+    pct = reached ? 100 : 0;
+  } else if (startKg > goalKg) {
+    signedProgress = startKg - currentKg;
+    pct = (signedProgress / totalKg) * 100;
+    if (currentKg <= goalKg) {
+      reached = true;
+      overshootKg = goalKg - currentKg;
+    }
+  } else {
+    signedProgress = currentKg - startKg;
+    pct = (signedProgress / totalKg) * 100;
+    if (currentKg >= goalKg) {
+      reached = true;
+      overshootKg = currentKg - goalKg;
+    }
+  }
+  pct = Math.max(0, Math.min(100, pct));
+
+  // Edge: user started already at their goal but has since drifted. The generic
+  // "X to go / 0%" framing is misleading here — they had no journey to begin.
+  if (totalKg === 0 && !reached) {
+    headEl.classList.remove('reached');
+    barEl.classList.remove('reached');
+    headEl.textContent = `${remainingTxt} from your goal`;
+    pctEl.textContent = '';
+    fillEl.style.width = '0%';
+    barEl.setAttribute('aria-valuenow', '0');
+    noteEl.textContent = 'You started at your goal weight. Switch your profile goal to "Maintain" to focus on staying here.';
+    return;
+  }
+
+  if (reached) {
+    headEl.textContent = 'Goal reached 🎉';
+    headEl.classList.add('reached');
+    pctEl.textContent = '100%';
+    fillEl.style.width = '100%';
+    barEl.classList.add('reached');
+    barEl.setAttribute('aria-valuenow', '100');
+    if (overshootKg > 0.05) {
+      const overTxt = `${dispKg(overshootKg).toFixed(1)} ${unit}`;
+      // No praise — losing more than planned (or gaining past the target) is a
+      // signal to revisit maintenance, not a reward moment.
+      noteEl.textContent = startKg > goalKg
+        ? `You're ${overTxt} below your goal. If that wasn't intentional, switch your profile goal to "Maintain" on the Profile tab.`
+        : `You're ${overTxt} above your goal. Switch your profile goal to "Maintain" on the Profile tab to focus on staying here.`;
+    } else {
+      noteEl.textContent = 'You\'re at your goal weight. Switch your profile goal to "Maintain" to lock it in.';
+    }
+  } else {
+    headEl.classList.remove('reached');
+    barEl.classList.remove('reached');
+    headEl.textContent = `${remainingTxt} to go`;
+    pctEl.textContent = `${Math.round(pct)}%`;
+    fillEl.style.width = `${pct}%`;
+    barEl.setAttribute('aria-valuenow', String(Math.round(pct)));
+
+    if (signedProgress < 0) {
+      // Below 4 entries, week-to-week noise dominates — stay neutral instead
+      // of telling someone they've "drifted" from a 2-point trend.
+      noteEl.textContent = arr.length < 4
+        ? 'Not much movement yet — log a few more weigh-ins and the trend will show.'
+        : 'Current weight is above where you started — week-to-week swings are normal; the chart trend is the signal to watch.';
+    } else if (pct === 0) {
+      noteEl.textContent = 'No change yet — keep going, every week counts.';
+    } else {
+      const movedTxt = `${dispKg(Math.abs(startKg - currentKg)).toFixed(1)} ${unit}`;
+      const verb = startKg > goalKg ? 'down' : 'up';
+      noteEl.textContent = `You're ${movedTxt} ${verb} from where you started.`;
+    }
+  }
+}
+
 function renderDashboard() {
+  renderGoalProgress();
   const arr = getWeights();
   document.getElementById('dash-empty').style.display = arr.length ? 'none' : '';
   document.getElementById('dash-content').style.display = arr.length ? '' : 'none';
@@ -1727,6 +1998,21 @@ function renderWeightChart(arr, rangeDays) {
             <text class="dash-label-text" x="${padL - 6}" y="${y + 3}" text-anchor="end">${fmtKg(v)}</text>`;
   }).join('');
 
+  // Goal line — only when the goal sits inside the visible y-range; far-away
+  // goals would render off-chart, and the goal-progress card carries that story.
+  const goalKg = getGoalWeightKg();
+  let goalLine = '';
+  if (goalKg && goalKg >= yMin && goalKg <= yMax) {
+    const y = yScale(goalKg);
+    // Label sits ABOVE the line normally; flip below when the line is near the
+    // top of the plot area (text would otherwise clip out of the SVG).
+    const labelY = y < padT + 12 ? y + 12 : y - 4;
+    // Anchor the label to the LEFT edge of the plot area. The data line ends at
+    // the right edge, and the previous right-anchored label collided with it.
+    goalLine = `<line class="dash-goal-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
+                <text class="dash-goal-label" x="${padL + 4}" y="${labelY}" text-anchor="start">goal ${fmtKg(goalKg)}</text>`;
+  }
+
   // X-axis labels (first and last)
   const fmtDate = d => d.slice(5); // "MM-DD"
   const xLabels = `
@@ -1740,6 +2026,7 @@ function renderWeightChart(arr, rangeDays) {
 
   svg.innerHTML = `
     ${gridLines}
+    ${goalLine}
     ${areaPath ? `<path class="dash-fill" d="${areaPath}"/>` : ''}
     ${pts.length > 1 ? `<polyline class="dash-line" points="${line}"/>` : ''}
     ${points}

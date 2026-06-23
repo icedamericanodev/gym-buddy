@@ -644,6 +644,261 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(noKg.deltaHtml, '', 'no-weight fallback must show no delta number');
   });
 
+  // ---- GOAL PROGRESS (Dashboard goal card + chart goal line) ----
+  // Helper that seeds a clean goal-progress scenario from kg inputs.
+  function seedGoalScenario({ weights, goalKg, units = 'metric' }) {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    if (weights && weights.length) {
+      dom.window.localStorage.setItem('herlyftWeights', JSON.stringify(weights));
+    }
+    const profile = {
+      schema: 2, name: 'g', age: '30', sex: 'female', height: 170,
+      weight: weights && weights.length ? weights[weights.length - 1].kg : 0,
+      units, activity: '1.55', goal: '-500',
+      goalWeight: goalKg || 0, style: 'mixed',
+    };
+    dom.window.localStorage.setItem('herlyftProfile', JSON.stringify(profile));
+    dom.window.loadProfile();
+    dom.window.renderDashboard();
+  }
+
+  check('goal progress: halfway scenario renders bar, %, and stops', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 75 }],
+      goalKg: 70,
+    });
+    const card = document.getElementById('goal-card');
+    assert.notStrictEqual(card.style.display, 'none', 'goal card should be visible');
+    assert.strictEqual(document.getElementById('goal-body').style.display, '',
+      'goal body should be visible when goal + history exist');
+    const head = document.getElementById('goal-headline').textContent;
+    assert.ok(/5\.0\s*kg\s*to go/i.test(head), `expected "5.0 kg to go", got "${head}"`);
+    assert.strictEqual(document.getElementById('goal-pct').textContent, '50%');
+    assert.strictEqual(document.getElementById('goal-bar-fill').style.width, '50%');
+    assert.strictEqual(document.getElementById('goal-bar').getAttribute('aria-valuenow'), '50');
+    assert.strictEqual(document.getElementById('goal-start').textContent, '80.0 kg');
+    assert.strictEqual(document.getElementById('goal-now').textContent, '75.0 kg');
+    assert.strictEqual(document.getElementById('goal-target').textContent, '70.0 kg');
+  });
+
+  check('goal progress: no goal set surfaces a nudge, not numbers', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-06-20', kg: 75 }],
+      goalKg: 0,
+    });
+    const card = document.getElementById('goal-card');
+    assert.notStrictEqual(card.style.display, 'none',
+      'card should still show — we have history, just no goal');
+    const hint = document.getElementById('goal-hint');
+    assert.strictEqual(hint.style.display, '', 'nudge hint should be visible');
+    assert.ok(/set a goal weight/i.test(hint.textContent),
+      `expected a "set a goal weight" nudge, got "${hint.textContent}"`);
+    assert.strictEqual(document.getElementById('goal-body').style.display, 'none',
+      'body should be hidden when no goal is set');
+  });
+
+  check('goal progress: brand-new profile (no goal, no history) keeps the card hidden', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.renderDashboard();
+    assert.strictEqual(document.getElementById('goal-card').style.display, 'none',
+      'no goal and no weights should hide the goal card entirely');
+  });
+
+  check('goal progress: single weigh-in suppresses progress UI and shows honest hint', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-06-20', kg: 80 }],
+      goalKg: 70,
+    });
+    // Single reading isn't a journey yet — body (headline/pct/bar/stops) hidden,
+    // hint explains why and asks for another weigh-in.
+    assert.strictEqual(document.getElementById('goal-body').style.display, 'none',
+      'goal body should be hidden with a single weigh-in');
+    const hint = document.getElementById('goal-hint').textContent;
+    assert.ok(/one weigh-in|water alone|save your weight again|few days/i.test(hint),
+      `expected single-entry honest hint, got "${hint}"`);
+  });
+
+  check('goal progress: wrong-direction clamps at 0% with encouraging copy (not negative)', () => {
+    // Loss goal (start 80, goal 70) but current 82 — drifted away from start.
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 82 }],
+      goalKg: 70,
+    });
+    const pct = document.getElementById('goal-pct').textContent;
+    assert.ok(/^0%$/.test(pct), `expected 0% (clamped, not negative), got "${pct}"`);
+    assert.strictEqual(document.getElementById('goal-bar-fill').style.width, '0%');
+    const note = document.getElementById('goal-note').textContent;
+    // With only 2 entries we deliberately stay neutral — "not much movement
+    // yet" rather than telling the user they've "drifted" from 2-point noise.
+    assert.ok(/not much movement|few more weigh-ins|trend/i.test(note),
+      `expected neutral low-data wrong-direction copy, got "${note}"`);
+    assert.ok(!/-\d|negative|−/.test(document.getElementById('goal-headline').textContent),
+      'headline must not show a negative number');
+  });
+
+  check('goal progress: no-movement and wrong-direction get different notes (not conflated)', () => {
+    // Same clamped 0% — but very different stories. Bug guard from code review:
+    // earlier copy said "drifted from where you started" for BOTH cases.
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 80 }],
+      goalKg: 70,
+    });
+    const noMoveNote = document.getElementById('goal-note').textContent;
+    assert.ok(/no change|keep going/i.test(noMoveNote),
+      `flat-line should say "no change yet", got "${noMoveNote}"`);
+    assert.ok(!/above where you started|not much movement/i.test(noMoveNote),
+      `flat-line must NOT use wrong-direction copy: "${noMoveNote}"`);
+
+    // Wrong direction with the same clamped 0% pct — different note.
+    seedGoalScenario({
+      weights: [
+        { date: '2026-03-01', kg: 80 }, { date: '2026-04-01', kg: 81 },
+        { date: '2026-05-01', kg: 81 }, { date: '2026-06-20', kg: 82 },
+      ],
+      goalKg: 70,
+    });
+    const wrongWayNote = document.getElementById('goal-note').textContent;
+    assert.ok(/above where you started|chart trend/i.test(wrongWayNote),
+      `4+ entries wrong-way should mention being above start, got "${wrongWayNote}"`);
+  });
+
+  check('goal progress: write-time clamp drops negative goal weights', () => {
+    // The form would block this, but a tampered backup or stale localStorage
+    // could carry one in. saveProfile() must zero it out rather than persist.
+    dom.window.document.getElementById('p-age').value = '30';
+    dom.window.document.getElementById('p-sex').value = 'female';
+    dom.window.document.getElementById('p-height').value = '170';
+    dom.window.document.getElementById('p-weight').value = '70';
+    dom.window.document.getElementById('p-goal-weight').value = '-50';
+    dom.window.document.getElementById('p-save').click();
+    const saved = JSON.parse(dom.window.localStorage.getItem('herlyftProfile'));
+    assert.strictEqual(saved.goalWeight, 0,
+      `negative goal-weight must persist as 0, got ${saved.goalWeight}`);
+  });
+
+  check('goal progress: overshoot triggers reached state with overshoot copy', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 68 }],
+      goalKg: 70,
+    });
+    assert.ok(/Goal reached/i.test(document.getElementById('goal-headline').textContent),
+      'expected "Goal reached" headline');
+    assert.strictEqual(document.getElementById('goal-pct').textContent, '100%');
+    assert.strictEqual(document.getElementById('goal-bar-fill').style.width, '100%');
+    assert.ok(document.getElementById('goal-bar').classList.contains('reached'),
+      'bar should carry the .reached class');
+    const note = document.getElementById('goal-note').textContent;
+    // No praise for overshooting — neutral framing that points to maintenance.
+    // Also explicitly assert NO "nice work" / "great job" / "well done" copy.
+    assert.ok(/below your goal/i.test(note),
+      `expected loss-overshoot copy "below your goal", got "${note}"`);
+    assert.ok(/maintain/i.test(note),
+      `expected maintenance suggestion in overshoot copy, got "${note}"`);
+    assert.ok(!/nice work|great job|well done|amazing/i.test(note),
+      `overshoot copy must not praise — got "${note}"`);
+    assert.ok(/2\.0\s*kg/.test(note), `expected the "2.0 kg" delta, got "${note}"`);
+  });
+
+  check('goal progress: exactly at goal uses the "lock in maintenance" copy', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 70 }],
+      goalKg: 70,
+    });
+    assert.ok(/Goal reached/i.test(document.getElementById('goal-headline').textContent));
+    assert.ok(/Maintain/.test(document.getElementById('goal-note').textContent),
+      'at-goal copy should suggest switching to Maintain');
+  });
+
+  check('goal progress: backup carries goalWeight and restore brings it back', () => {
+    Object.keys(dom.window.localStorage).forEach(k => {
+      if (k.startsWith('herlyft')) dom.window.localStorage.removeItem(k);
+    });
+    dom.window.applyBackup({
+      app: 'herlyft', schema: 2,
+      profile: {
+        schema: 2, name: 'R', age: '30', sex: 'female',
+        height: 170, weight: 75, units: 'metric',
+        activity: '1.55', goal: '-500', goalWeight: 65, style: 'mixed',
+      },
+      weights: [{ date: '2026-01-01', kg: 80 }, { date: '2026-06-20', kg: 75 }],
+      hydration: {},
+    });
+    dom.window.loadProfile();
+    dom.window.renderDashboard();
+    assert.strictEqual(document.getElementById('p-goal-weight').value, '65',
+      'restore must repopulate the goal-weight input');
+    const stored = JSON.parse(dom.window.localStorage.getItem('herlyftProfile'));
+    assert.strictEqual(stored.goalWeight, 65, 'restored profile should carry goalWeight=65');
+    assert.strictEqual(document.getElementById('goal-target').textContent, '65.0 kg');
+  });
+
+  check('goal progress: switching to imperial converts the goal-weight input and dashboard stops', () => {
+    seedGoalScenario({
+      weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 75 }],
+      goalKg: 70,
+    });
+    // Sanity: starting in metric.
+    assert.strictEqual(document.getElementById('goal-target').textContent, '70.0 kg');
+    document.getElementById('p-units').value = 'imperial';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+    // Goal-weight input should convert without losing data.
+    const lb = parseFloat(document.getElementById('p-goal-weight').value);
+    assert.ok(Math.abs(lb - 154.3) < 0.5,
+      `70 kg should display as ~154.3 lb in the input, got ${lb}`);
+    assert.ok(/lbs/.test(document.getElementById('p-goal-weight-label').textContent),
+      'goal-weight label should switch to lbs');
+    // Dashboard goal card must reflect the unit change (regression: used to stay in kg).
+    assert.ok(/lbs/.test(document.getElementById('goal-target').textContent),
+      `goal-target stop should switch to lbs, got "${document.getElementById('goal-target').textContent}"`);
+    assert.ok(/lbs/.test(document.getElementById('goal-now').textContent),
+      `goal-now stop should switch to lbs, got "${document.getElementById('goal-now').textContent}"`);
+    assert.ok(/lbs/.test(document.getElementById('goal-start').textContent),
+      `goal-start stop should switch to lbs, got "${document.getElementById('goal-start').textContent}"`);
+    assert.strictEqual(document.getElementById('dash-current-label').textContent, 'Current (lbs)',
+      'dashboard "Current" label should switch to lbs after unit flip');
+  });
+
+  check('goal progress: stored goalWeight survives a kg -> lb -> kg round trip', () => {
+    // Mounting metric first.
+    document.getElementById('p-units').value = 'metric';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+    document.getElementById('p-goal-weight').value = '70.5';
+    document.getElementById('p-units').value = 'imperial';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+    document.getElementById('p-units').value = 'metric';
+    document.getElementById('p-units').dispatchEvent(new dom.window.Event('change'));
+    const back = parseFloat(document.getElementById('p-goal-weight').value);
+    assert.ok(Math.abs(back - 70.5) < 0.1,
+      `goal-weight should round-trip 70.5 kg -> lb -> kg without drift, got ${back}`);
+  });
+
+  check('chart goal line: visible when goal is inside the y-range, hidden when far below', () => {
+    // Goal 78 sits inside the 75–80 chart band — line should render.
+    seedGoalScenario({
+      weights: [{ date: '2026-06-15', kg: 80 }, { date: '2026-06-20', kg: 75 }],
+      goalKg: 78,
+    });
+    const svgNear = document.getElementById('dash-svg').innerHTML;
+    assert.ok(svgNear.includes('dash-goal-line'),
+      'goal line should render when goal is inside the visible chart range');
+    assert.ok(svgNear.includes('goal 78'),
+      'goal label should accompany the dashed line');
+
+    // Goal 40 sits way below the 75–80 band — line must NOT render
+    // (the goal card carries that story; we don't want to squash the chart).
+    seedGoalScenario({
+      weights: [{ date: '2026-06-15', kg: 80 }, { date: '2026-06-20', kg: 75 }],
+      goalKg: 40,
+    });
+    const svgFar = document.getElementById('dash-svg').innerHTML;
+    assert.ok(!svgFar.includes('dash-goal-line'),
+      'goal line should be omitted when the goal is far outside the chart range');
+  });
+
   // Async: the photo layer must degrade gracefully where IndexedDB is absent
   // (jsdom has none), so a backup still builds and carries a photos array.
   await (async () => {
