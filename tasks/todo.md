@@ -32,6 +32,12 @@ intentionally deferred — start minimal, grow.
 ### Review
 _(fill in once shipped)_
 
+### Today-view backlog (deferred from v2.0.0)
+- [ ] **Empty-state innerHTML re-injection** (code-reviewer nit): every renderToday() call in the empty state rewrites `emptyEl.innerHTML` and rebinds the CTA listener, stealing focus from a tabbed-in user. Cache the current state and only re-render on change, or move the listener to event delegation.
+- [ ] **Today/Dashboard asymmetry** (code-reviewer): Today hides the goal-mini for `arr.length < 2` while Dashboard shows an explicit hint. Intentional density tradeoff for now; revisit if users miss the goal block.
+- [ ] **Today overshoot summary** (progress-analyst nit): when goal is reached with >0.5 kg overshoot, swap "Goal reached 🎉" → "Goal reached — see Dashboard" so the deeper maintenance nudge isn't hidden.
+- [ ] **320px viewport delta wrap** (qa P2): "No earlier weigh-in to compare yet" could wrap to 2 lines on iPhone SE 1st gen — couldn't verify in jsdom; needs real-device eyeball.
+
 ## Done: Goal weight + progress-to-goal (item 2) — shipped in #25 (v1.2.0)
 
 Capture an optional goal/ideal weight and show progress toward it — the
