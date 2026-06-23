@@ -347,21 +347,21 @@
     line-height: 1.45;
     margin: 8px 0 0;
   }
-  .goal-suggest .goal-suggest-range { color: var(--text); font-weight: 600; }
+  .goal-suggest .goal-suggest-range { color: var(--text); font-weight: 600; white-space: nowrap; }
   .goal-suggest-use {
     display: inline-block;
-    margin-left: 6px;
-    padding: 3px 10px;
+    margin-top: 8px;
+    padding: 7px 14px;
     background: none;
     border: 1px solid var(--accent);
     color: var(--accent);
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    vertical-align: baseline;
   }
   .goal-suggest-use:hover { background: var(--accent); color: var(--bg); }
+  .goal-suggest-use:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
 
   button.info {
     /* visible glyph kept ~16px so layout doesn't shift; padding around it
@@ -1661,7 +1661,7 @@ function renderGoalSuggestion() {
   el.innerHTML =
     `A healthy weight for your height is roughly ` +
     `<span class="goal-suggest-range">${low}–${high} ${unit}</span> ` +
-    `(BMI 18.5–24.9) — a rough guide, not a target you must hit. ` +
+    `(BMI 18.5–24.9) — a rough guide, not a target you must hit.<br>` +
     `<button type="button" class="goal-suggest-use" id="p-goal-use" data-ideal="${ideal}">` +
     `Use ${ideal} ${unit}</button>`;
 }
