@@ -2,6 +2,16 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v1.2.0 — 2026-06-23
+
+### Added
+- **Goal weight + progress card** 🎯 — set an optional ideal weight on the Profile tab and the Dashboard now shows a new "Goal progress" card: how much you have to go, the percentage of the way from where you started to your goal, a progress bar, and the started → now → goal trio. Hits 100% with a "Goal reached 🎉" when you cross it, and stays honest about wrong-direction drift and single-weigh-in starts.
+- The **weight-trend chart** now overlays a dashed champagne goal-line (with label) whenever your goal sits inside the visible y-range — so the line itself becomes the target you're chasing.
+- Goal weight rides along with **Backup & Restore** automatically (it's part of your profile).
+
+### Notes
+- The goal weight is stored in kg internally and rendered in whatever unit you've picked on the Profile tab — switching units converts the value alongside your current weight, no retyping needed.
+
 ## v1.1.0 — 2026-06-23
 
 ### Added
