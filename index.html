@@ -1361,7 +1361,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
-    if (btn.dataset.tab === 'dashboard') renderDashboard();
+    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); }
   });
 });
 
@@ -1432,6 +1432,7 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   currentUnits = next;
   applyUnitLabels();
   calculate();
+  renderPhotos();
 });
 
 function loadProfile() {
@@ -2256,10 +2257,21 @@ function idbTx(mode, fn) {
     const tx = db.transaction(PHOTO_STORE, mode);
     const store = tx.objectStore(PHOTO_STORE);
     let out;
-    const r = fn(store);
-    if (r) r.onsuccess = () => { out = r.result; };
+    // A synchronous throw from fn (e.g. DataError) would otherwise leave the
+    // promise pending and the db open — reject and close instead.
+    try {
+      const r = fn(store);
+      if (r) r.onsuccess = () => { out = r.result; };
+    } catch (err) {
+      db.close();
+      reject(err);
+      return;
+    }
     tx.oncomplete = () => { db.close(); resolve(out); };
     tx.onerror = () => { db.close(); reject(tx.error); };
+    // Quota overruns fire abort, not always error — handle both so writes
+    // never hang silently.
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Storage transaction aborted (quota?)')); };
   }));
 }
 
@@ -2269,7 +2281,7 @@ const deletePhotoDb = (id) => idbTx('readwrite', s => s.delete(id));
 const clearPhotos  = () => idbTx('readwrite', s => s.clear());
 
 function genPhotoId() {
-  return (crypto && crypto.randomUUID) ? crypto.randomUUID()
+  return (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()
     : 'p' + Date.now() + Math.random().toString(36).slice(2);
 }
 
@@ -2280,18 +2292,26 @@ function downscaleToBlob(file, maxDim = 1080, quality = 0.82) {
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let { width, height } = img;
-      const longest = Math.max(width, height);
-      if (longest > maxDim) {
-        const scale = maxDim / longest;
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
+      // Any synchronous failure here (no 2D context, missing toBlob) must
+      // reject — otherwise the caller's await never settles and the UI hangs.
+      try {
+        let { width, height } = img;
+        const longest = Math.max(width, height);
+        if (longest > maxDim) {
+          const scale = maxDim / longest;
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || !canvas.toBlob) { reject(new Error('Image processing is unavailable on this device.')); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not encode image')), 'image/jpeg', quality);
+      } catch (err) {
+        reject(err);
       }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not encode image')), 'image/jpeg', quality);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file is not a readable image.')); };
     img.src = url;
@@ -2351,8 +2371,11 @@ function ppWeightLabel(kg) {
   return (typeof kg === 'number') ? `${fmtKg(kg)} ${wUnitLabel()}` : '';
 }
 function ppCaption(rec) {
+  // rec.date can originate from a hand-edited backup file, so escape it before
+  // it reaches innerHTML (kg is a number formatted by fmtKg — already safe).
+  const date = esc(rec.date);
   const w = ppWeightLabel(rec.kg);
-  return w ? `${rec.date} · ${w}` : rec.date;
+  return w ? `${date} · ${w}` : date;
 }
 
 // Pure selection of the before/now hero from a date-sorted (ascending) list.
@@ -2422,7 +2445,7 @@ async function renderPhotos() {
     `<div class="pp-item" role="listitem">
        <img alt="Progress photo from ${ppCaption(p)}" src="${ppUrl(p.blob)}">
        <div class="pp-cap">${ppCaption(p)}</div>
-       <button type="button" class="pp-del" data-id="${p.id}" aria-label="Remove photo from ${ppCaption(p)}">Remove</button>
+       <button type="button" class="pp-del" data-id="${esc(p.id)}" aria-label="Remove photo from ${ppCaption(p)}">Remove</button>
      </div>`).join('');
   gridEl.style.display = '';
 }
@@ -2460,13 +2483,22 @@ if (ppAddBtn && ppForm) {
     ppAddBtn.style.display = '';
     ppAddBtn.focus();
   });
-  document.getElementById('pp-save').addEventListener('click', async () => {
+  const ppSaveBtn = document.getElementById('pp-save');
+  let ppSaving = false;
+  ppSaveBtn.addEventListener('click', async () => {
+    // Guard against a double/triple-click queuing several saves before the
+    // first await yields — without it each click writes a duplicate photo.
+    if (ppSaving) return;
     const fileInput = document.getElementById('pp-file');
     const file = fileInput.files && fileInput.files[0];
     if (!file) { ppStatus('Choose a photo first.', true); return; }
     const date = document.getElementById('pp-date').value || new Date().toISOString().slice(0, 10);
     const wRaw = parseFloat(document.getElementById('pp-weight').value);
-    const kg = Number.isFinite(wRaw) ? (currentUnits === 'imperial' ? lbToKg(wRaw) : wRaw) : null;
+    // Weight is optional; ignore non-positive values (the min="0" attribute is
+    // only advisory) so a stray "-5" can't produce a "-5.0 kg" caption.
+    const kg = (Number.isFinite(wRaw) && wRaw > 0) ? (currentUnits === 'imperial' ? lbToKg(wRaw) : wRaw) : null;
+    ppSaving = true;
+    ppSaveBtn.disabled = true;
     try {
       ppStatus('Saving…');
       const blob = await downscaleToBlob(file);
@@ -2478,6 +2510,9 @@ if (ppAddBtn && ppForm) {
       ppStatus('Photo saved.');
     } catch (err) {
       ppStatus(err.message || 'Could not save that photo.', true);
+    } finally {
+      ppSaving = false;
+      ppSaveBtn.disabled = false;
     }
   });
 }

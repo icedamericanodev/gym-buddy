@@ -30,7 +30,7 @@ the goal is reached — so the owner can *see* the change, not just the line.
 - [x] Photos layered into Backup & Restore (export/restore made async; old backups still load)
 - [x] Verify: `npm run lint` + `npm test` green; real-browser drive (2 photos → hero/delta/timeline/IDB/backup confirmed)
 - [x] Version MINOR bump v1.0.0 → v1.1.0 + CHANGELOG
-- [ ] Auto-run review agents, address findings, then PR
+- [x] Auto-run review agents (code-reviewer, qa, ui-ux, progress-analyst, accessibility, pwa-performance), address findings, then PR
 
 ### Review
 Shipped the progress-photo journey. Images live in IndexedDB as downscaled
