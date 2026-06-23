@@ -2,6 +2,14 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v2.1.0 — 2026-06-24
+
+### Added
+- **Goal-weight suggestion** 🧮 — once you've entered your height on the Profile tab, a hint under the optional "Goal weight" field shows a healthy weight range for your height (BMI 18.5–24.9) and a one-click **Use** button that fills in the midpoint (BMI 22). It updates live as you type your height and follows your metric/imperial unit choice.
+
+### Notes
+- The suggestion is framed as a rough guide, not a target you must hit — BMI doesn't know your build, muscle mass, or history. You can always type your own number, and the field stays optional.
+
 ## v2.0.0 — 2026-06-23
 
 ### Added
