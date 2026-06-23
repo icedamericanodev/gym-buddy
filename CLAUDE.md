@@ -14,6 +14,37 @@ This repo follows **separation of duties**. You (the human owner) review and app
 5. **Auto-fix CI** — when CI fails on a Claude-authored PR, Claude diagnoses and pushes fixes until it's green. No per-fix approval needed. If a fix would require an architectural change or is out of scope, stop and ask.
 6. **No backwards-compat hacks** — fix the real issue, don't paper over it with `|| true`, skipped tests, or disabled rules.
 
+## Development workflow
+
+Herlyft follows a **plan → execute → verify → learn** loop. Two living files in `tasks/` drive it:
+
+- **`tasks/todo.md`** — the current plan as a checklist. Write the plan here before starting non-trivial work, check items off as you go, and add a short **Review** when done. It also holds the backlog.
+- **`tasks/lessons.md`** — durable lessons. After any correction from the user (or a mistake you catch yourself), record the pattern and the rule that prevents it. **Review this file at the start of a session.**
+
+### Orchestration
+
+1. **Plan first.** For any non-trivial task (3+ steps or an architectural decision), write the plan to `tasks/todo.md` as checkable items before touching code, and check in on it. If something goes sideways mid-task, stop and re-plan rather than pushing on. Write detailed specs upfront to reduce ambiguity.
+2. **Use subagents to keep the main context clean.** Offload research, exploration, and parallel analysis to subagents — one focused task each. Throw more compute at hard problems via parallel subagents. (See "Specialized agents" and the auto-run set below.)
+3. **Self-improvement loop.** After any correction, update `tasks/lessons.md` with the pattern and a rule for yourself, and iterate until the mistake stops recurring.
+4. **Verify before done.** Never mark a task complete without proving it works — run `npm run lint` + `npm test`, and where it helps, diff behavior against `main`. Ask: "would a staff engineer approve this?" (Reinforces rule 4 above.)
+5. **Demand elegance (balanced).** For non-trivial changes, pause and ask whether there's a simpler, more elegant approach; if a fix feels hacky, redo it properly knowing what you now know. Skip this for small, obvious fixes — don't over-engineer.
+6. **Fix bugs autonomously.** Given a bug report, a failing test, or red CI: diagnose from the logs/errors and fix it without hand-holding (this is rule 5, Auto-fix CI). Stop and ask only if the fix needs an architectural change or is out of scope.
+
+### Task-management loop
+
+1. **Plan first** — write the plan to `tasks/todo.md` with checkable items.
+2. **Verify the plan** — check in before implementing.
+3. **Track progress** — mark items complete as you go.
+4. **Explain changes** — a high-level summary at each step.
+5. **Document results** — add a Review to `tasks/todo.md`.
+6. **Capture lessons** — update `tasks/lessons.md` after corrections.
+
+### Core principles
+
+- **Simplicity first** — make every change as simple as possible; touch minimal code.
+- **No laziness** — find root causes; no temporary fixes. Senior-developer standards (this is rule 6, No backwards-compat hacks).
+- **Minimal impact** — change only what's necessary; avoid introducing new bugs.
+
 ## Specialized agents
 
 Twelve project agents live in `.claude/agents/`:
