@@ -1898,6 +1898,49 @@ function fmtDiff(diffKg) {
 
 let dashRangeDays = 30;
 
+// Single source of truth for the goal-progress math used by both the Today
+// view and the Dashboard goal card — keeps the two from drifting apart on a
+// future tweak. Returns ready=false when there isn't enough data to compute.
+function computeGoalProgress(arr, goalKg) {
+  if (!goalKg || !arr || arr.length < 2) return { ready: false };
+  const startKg = arr[0].kg;
+  const currentKg = arr[arr.length - 1].kg;
+  const totalKg = Math.abs(startKg - goalKg);
+  let pct = 0;
+  let reached = false;
+  let signedProgress = 0;
+  let overshootKg = 0;
+  if (totalKg === 0) {
+    reached = (currentKg === goalKg);
+    pct = reached ? 100 : 0;
+  } else if (startKg > goalKg) {
+    signedProgress = startKg - currentKg;
+    pct = (signedProgress / totalKg) * 100;
+    if (currentKg <= goalKg) { reached = true; overshootKg = goalKg - currentKg; }
+  } else {
+    signedProgress = currentKg - startKg;
+    pct = (signedProgress / totalKg) * 100;
+    if (currentKg >= goalKg) { reached = true; overshootKg = currentKg - goalKg; }
+  }
+  pct = Math.max(0, Math.min(100, pct));
+  return { ready: true, startKg, currentKg, totalKg, pct, reached, signedProgress, overshootKg };
+}
+
+// "lose" / "gain" / "maintain" so the Today delta colour can respect the
+// user's intent — a +2 kg gain shouldn't read as bad for someone on a gain
+// goal. Falls back to "maintain" (no colour) on any read error.
+function getGoalDirection() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return 'maintain';
+    const p = JSON.parse(raw);
+    const g = parseInt(p && p.goal, 10);
+    if (g < 0) return 'lose';
+    if (g > 0) return 'gain';
+    return 'maintain';
+  } catch { return 'maintain'; }
+}
+
 function getProfileName() {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
@@ -1935,7 +1978,7 @@ function renderToday() {
   if (!arr.length) {
     contentEl.style.display = 'none';
     emptyEl.style.display = '';
-    emptyEl.innerHTML = 'Save your weight on the Profile tab to start tracking. <button class="today-cta" id="t-go-profile">Go to Profile</button>';
+    emptyEl.innerHTML = 'Save your weight to start tracking. <button class="today-cta" id="t-go-profile">Go to Profile</button>';
     document.getElementById('t-go-profile').addEventListener('click', () => {
       document.querySelector('.tab-btn[data-tab="profile"]').click();
     });
@@ -1949,56 +1992,55 @@ function renderToday() {
   const unit = wUnitLabel();
   document.getElementById('t-current').textContent = `${fmtKg(current)} ${unit}`;
 
-  // 7-day delta — same source of truth as the Dashboard's "vs 7 days ago" stat.
   const deltaEl = document.getElementById('t-delta');
-  const prior = findClosestPriorWeight(7);
   deltaEl.classList.remove('up', 'down');
-  if (!prior) {
-    // Single-weigh-in: stay honest (no fake delta) but warmer than a flat
-    // negative — invite the next data point instead of just reporting absence.
+
+  // Honest delta: when there's only one weigh-in, there's no comparison —
+  // don't let findClosestPriorWeight return the same point and read as "0.0".
+  if (arr.length < 2) {
     deltaEl.textContent = 'Log again in a few days to see your trend';
-  } else if (prior.kg === current) {
-    deltaEl.textContent = 'No change vs 7 days ago';
   } else {
-    const diffKg = current - prior.kg;
-    const diffDisp = currentUnits === 'imperial' ? kgToLb(diffKg) : diffKg;
-    const f = fmtDiff(diffDisp);
-    deltaEl.textContent = `${f.text} ${unit} vs 7 days ago`;
-    deltaEl.classList.add(f.cls);
+    // Closest entry ≤ 7 days ago — falls back to the most recent prior so a
+    // user who logs frequently still gets a comparison (just labelled with the
+    // real days, not a fake "7 days ago").
+    let prior = findClosestPriorWeight(7);
+    if (!prior) prior = arr[arr.length - 2];
+    const days = Math.max(1, Math.round((Date.now() - new Date(prior.date).getTime()) / 86400000));
+    const label = days <= 9 ? '7 days' : `${days} days`;
+    if (prior.kg === current) {
+      deltaEl.textContent = `No change vs ${label} ago`;
+    } else {
+      const diffDisp = currentUnits === 'imperial' ? kgToLb(current - prior.kg) : (current - prior.kg);
+      const f = fmtDiff(diffDisp);
+      deltaEl.textContent = `${f.text} ${unit} vs ${label} ago`;
+      // Colour respects intent: weight-up reads as bad for a "lose" goal but
+      // as a win for a "gain" goal; "maintain" stays neutral.
+      const dir = getGoalDirection();
+      const cls = dir === 'lose' ? f.cls
+                : dir === 'gain' ? (f.cls === 'up' ? 'down' : 'up')
+                : '';
+      if (cls) deltaEl.classList.add(cls);
+    }
   }
 
   const goalKg = getGoalWeightKg();
   const goalMini = document.getElementById('t-goal-mini');
-  if (!goalKg || arr.length < 2) {
-    // Single-weigh-in: same honesty rule as the Dashboard goal card — one
-    // reading isn't a journey, don't imply progress.
+  const gp = computeGoalProgress(arr, goalKg);
+  // Skip the mini entirely when there's no journey to chart: no goal, single
+  // weigh-in, or "started already at goal" with current drifted (the deep
+  // explanation lives on the Dashboard goal card — don't truncate it here).
+  if (!gp.ready || (gp.totalKg === 0 && !gp.reached)) {
     goalMini.style.display = 'none';
     return;
   }
   goalMini.style.display = '';
-
-  const startKg = arr[0].kg;
-  const totalKg = Math.abs(startKg - goalKg);
-  let pct = 0;
-  let reached = false;
-  if (totalKg === 0) {
-    reached = (current === goalKg);
-    pct = reached ? 100 : 0;
-  } else if (startKg > goalKg) {
-    pct = ((startKg - current) / totalKg) * 100;
-    if (current <= goalKg) reached = true;
-  } else {
-    pct = ((current - startKg) / totalKg) * 100;
-    if (current >= goalKg) reached = true;
-  }
-  pct = Math.max(0, Math.min(100, pct));
 
   const textEl = document.getElementById('t-goal-text');
   const pctEl = document.getElementById('t-goal-pct');
   const barEl = goalMini.querySelector('.today-goal-bar');
   const fillEl = document.getElementById('t-goal-bar-fill');
 
-  if (reached) {
+  if (gp.reached) {
     textEl.textContent = 'Goal reached 🎉';
     textEl.classList.add('reached');
     pctEl.textContent = '100%';
@@ -2008,12 +2050,21 @@ function renderToday() {
   } else {
     textEl.classList.remove('reached');
     barEl.classList.remove('reached');
-    const remainingKg = Math.abs(current - goalKg);
+    const remainingKg = Math.abs(gp.currentKg - goalKg);
     const remainingDisp = currentUnits === 'imperial' ? kgToLb(remainingKg) : remainingKg;
-    textEl.textContent = `${remainingDisp.toFixed(1)} ${unit} to go`;
-    pctEl.textContent = `${Math.round(pct)}%`;
-    fillEl.style.width = `${pct}%`;
-    barEl.setAttribute('aria-valuenow', String(Math.round(pct)));
+    if (gp.signedProgress < 0) {
+      // Wrong-direction so far: drop the motion verb and the fake percentage.
+      // The Dashboard goal card carries the deeper neutral framing.
+      textEl.textContent = `${remainingDisp.toFixed(1)} ${unit} from goal`;
+      pctEl.textContent = '';
+      fillEl.style.width = '0%';
+      barEl.setAttribute('aria-valuenow', '0');
+    } else {
+      textEl.textContent = `${remainingDisp.toFixed(1)} ${unit} to go`;
+      pctEl.textContent = `${Math.round(gp.pct)}%`;
+      fillEl.style.width = `${gp.pct}%`;
+      barEl.setAttribute('aria-valuenow', String(Math.round(gp.pct)));
+    }
   }
 }
 
@@ -2065,8 +2116,8 @@ function renderGoalProgress() {
   hint.style.display = 'none';
   body.style.display = '';
 
-  const startKg = arr[0].kg;
-  const currentKg = arr[arr.length - 1].kg;
+  const gp = computeGoalProgress(arr, goalKg);
+  const { startKg, currentKg, totalKg, pct, reached, signedProgress, overshootKg } = gp;
   const unit = wUnitLabel();
   const startTxt = `${fmtKg(startKg)} ${unit}`;
   const nowTxt = `${fmtKg(currentKg)} ${unit}`;
@@ -2083,38 +2134,7 @@ function renderGoalProgress() {
   const noteEl = document.getElementById('goal-note');
 
   const dispKg = (kg) => currentUnits === 'imperial' ? kgToLb(kg) : kg;
-  const remainingKg = currentKg - goalKg;
-  const remainingTxt = `${dispKg(Math.abs(remainingKg)).toFixed(1)} ${unit}`;
-
-  // start vs goal sets the intended direction; the bar fills as the user
-  // moves toward the goal, clamps at 100 once they cross it.
-  const totalKg = Math.abs(startKg - goalKg);
-  let pct = 0;
-  let reached = false;
-  let overshootKg = 0;
-  // Signed progress before clamping — distinguishes "no movement" from
-  // "moved the wrong way" once we clamp pct at 0.
-  let signedProgress = 0;
-
-  if (totalKg === 0) {
-    reached = (currentKg === goalKg);
-    pct = reached ? 100 : 0;
-  } else if (startKg > goalKg) {
-    signedProgress = startKg - currentKg;
-    pct = (signedProgress / totalKg) * 100;
-    if (currentKg <= goalKg) {
-      reached = true;
-      overshootKg = goalKg - currentKg;
-    }
-  } else {
-    signedProgress = currentKg - startKg;
-    pct = (signedProgress / totalKg) * 100;
-    if (currentKg >= goalKg) {
-      reached = true;
-      overshootKg = currentKg - goalKg;
-    }
-  }
-  pct = Math.max(0, Math.min(100, pct));
+  const remainingTxt = `${dispKg(Math.abs(currentKg - goalKg)).toFixed(1)} ${unit}`;
 
   // Edge: user started already at their goal but has since drifted. The generic
   // "X to go / 0%" framing is misleading here — they had no journey to begin.
@@ -2185,14 +2205,17 @@ function renderDashboard() {
   for (const [days, elId] of buckets) {
     const prev = findClosestPriorWeight(days);
     const el = document.getElementById(elId);
-    if (!prev || prev.kg === current) {
-      el.textContent = prev ? '0.0' : '—';
+    // Single weigh-in is not a delta. findClosestPriorWeight can return that
+    // lone entry as "prior" if it's older than the bucket — guard before the
+    // comparison so we don't render a fake 0.0.
+    if (arr.length < 2 || !prev) {
+      el.textContent = '—';
+      el.className = 'dash-num';
+    } else if (prev.kg === current) {
+      el.textContent = '0.0';
       el.className = 'dash-num';
     } else {
-      // Convert the kg diff into the user's preferred unit before formatting.
-      const diffDisplay = currentUnits === 'imperial'
-        ? (current - prev.kg) * (1 / KG_PER_LB)
-        : (current - prev.kg);
+      const diffDisplay = currentUnits === 'imperial' ? kgToLb(current - prev.kg) : (current - prev.kg);
       const f = fmtDiff(diffDisplay);
       el.textContent = f.text;
       el.className = 'dash-num ' + f.cls;
