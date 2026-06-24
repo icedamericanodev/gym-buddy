@@ -459,8 +459,9 @@
     background: var(--panel);
   }
   .gif-body { padding: 14px; }
-  .gif-name { margin: 0 0 6px; font-size: 16px; text-transform: capitalize; color: var(--text); }
-  .gif-meta { margin: 2px 0; font-size: 12px; color: var(--muted); }
+  .gif-name { margin: 0 0 8px; font-size: 16px; text-transform: capitalize; color: var(--text); }
+  .gif-card .meta { margin: 0 0 8px; }
+  .gif-fallback { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
   .gif-steps { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text); }
   .gif-steps li { margin-bottom: 4px; }
 
@@ -1632,20 +1633,6 @@
 
   <!-- ============ WORKOUTS TAB ============ -->
   <section id="workouts" class="tab">
-    <!-- Optional ExerciseDB key: when present, the curated session is augmented
-         with animated GIF demos. Without it, the session still works fully. -->
-    <details class="card api-key-card" id="api-key-card">
-      <summary>ExerciseDB API Key <span class="api-key-tag">free at rapidapi.com</span></summary>
-      <p class="hint">Get your free key at rapidapi.com, search ExerciseDB, subscribe to the free plan, copy your key. Add it here to see animated exercise demos with your session.</p>
-      <input type="password" id="edb-key" autocomplete="off" placeholder="Paste your RapidAPI key">
-      <div class="api-key-actions">
-        <button type="button" class="primary" id="edb-save">Save Key</button>
-        <button type="button" class="primary secondary" id="edb-forget">Forget key</button>
-      </div>
-      <p class="hint api-key-note">🔒 Stored unencrypted in this browser only — never uploaded. Use “Forget key” to remove it anytime.</p>
-      <p id="edb-status" class="hint" role="status" aria-live="polite" style="display:none;"></p>
-    </details>
-
     <div class="card">
       <h2>Today's Coach</h2>
       <p class="hint">Pick where you're training. We'll show suitable exercises with form tips.</p>
@@ -1713,7 +1700,23 @@
     </div>
 
     <div id="w-results"></div>
-    <div id="w-demos"></div>
+    <div id="w-demos" aria-live="polite"></div>
+
+    <!-- Optional ExerciseDB key: when present, the curated session above is
+         augmented with animated GIF demos. Kept at the bottom so it doesn't
+         bury the primary "build a session" flow for keyless users. -->
+    <details class="card api-key-card" id="api-key-card">
+      <summary>Animated demos — add a free ExerciseDB key <span class="api-key-tag">optional</span></summary>
+      <p class="hint">See an animated demo for each move. Get a free key at rapidapi.com, search ExerciseDB, subscribe to the free plan, and paste your key here. Your session works fine without it.</p>
+      <label for="edb-key">ExerciseDB API key</label>
+      <input type="password" id="edb-key" autocomplete="off" placeholder="Paste your RapidAPI key">
+      <div class="api-key-actions">
+        <button type="button" class="primary" id="edb-save">Save key</button>
+        <button type="button" class="primary secondary" id="edb-forget">Forget key</button>
+      </div>
+      <p class="hint api-key-note">🔒 Stored unencrypted in this browser only — never uploaded. Use “Forget key” to remove it anytime.</p>
+      <p id="edb-status" class="hint" role="status" aria-live="polite"></p>
+    </details>
   </section>
 
 </main>
@@ -3303,19 +3306,23 @@ function getEdbKey() {
   try { return (localStorage.getItem(EDB_KEY_STORAGE) || '').trim(); } catch { return ''; }
 }
 
-// Key card: prefill from storage, Save / Forget.
+// Key card: prefill from storage, Save / Forget. The status line is always in
+// the layout (no display toggling) so its role=status reliably announces.
 (function initEdbKeyCard() {
   const input = document.getElementById('edb-key');
   if (!input) return;
   const status = document.getElementById('edb-status');
-  const flash = (msg) => { status.textContent = msg; status.style.display = ''; };
+  const flash = (msg) => { if (status) status.textContent = msg; };
   const saved = getEdbKey();
   if (saved) input.value = saved;
   document.getElementById('edb-save').addEventListener('click', () => {
     const v = input.value.trim();
     if (!v) { flash('Enter a key first.'); return; }
     try { localStorage.setItem(EDB_KEY_STORAGE, v); } catch {}
-    flash('Key saved — build a session to see animated demos.');
+    flash('Key saved.');
+    // If a session is already on screen, refresh the demos right away
+    // (symmetric with Forget, which clears them).
+    if (document.getElementById('w-results').innerHTML.trim()) loadDemos(curMuscle);
   });
   document.getElementById('edb-forget').addEventListener('click', () => {
     try { localStorage.removeItem(EDB_KEY_STORAGE); } catch {}
@@ -3325,18 +3332,19 @@ function getEdbKey() {
   });
 })();
 
+// Throws an Error tagged with the HTTP status so the caller can tailor copy.
 async function fetchExerciseGifs(bodyPart, key) {
   const url = `https://${EDB_HOST}/exercises/bodyPart/${encodeURIComponent(bodyPart)}?limit=6`;
   const res = await fetch(url, {
     headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': EDB_HOST },
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  if (!res.ok) { const e = new Error('HTTP ' + res.status); e.status = res.status; throw e; }
   const data = await res.json();
   if (!Array.isArray(data)) throw new Error('Unexpected response');
   return data.slice(0, 6);
 }
 
-// Only allow http(s) image URLs — untrusted API data feeds an <img src>.
+// Only allow https image URLs — untrusted API data feeds an <img src>.
 function safeGifUrl(u) {
   const s = String(u || '');
   return /^https:\/\//i.test(s) ? esc(s) : '';
@@ -3350,23 +3358,27 @@ function gifCardHtml(ex) {
   const steps = Array.isArray(ex.instructions) ? ex.instructions.slice(0, 3) : [];
   const stepsHtml = steps.length
     ? `<ol class="gif-steps">${steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`
-    : '<p class="gif-meta">Perform with controlled form. 3 sets x 10 to 12 reps.</p>';
+    : '<p class="gif-fallback">Perform with controlled form. 3 sets x 10 to 12 reps.</p>';
+  // A failed remote GIF hides itself so the card doesn't show a broken-image box.
   const imgHtml = img
-    ? `<img class="gif-img" src="${img}" alt="${name} demonstration" loading="lazy">`
+    ? `<img class="gif-img" src="${img}" alt="${name} — animated demonstration" width="280" height="200" loading="lazy" decoding="async" onerror="this.style.display='none'">`
     : '';
+  const meta = [target && `<span class="pill">🎯 ${target}</span>`, equip && `<span class="pill">🏋️ ${equip}</span>`]
+    .filter(Boolean).join('');
   return `<div class="gif-card">
     ${imgHtml}
     <div class="gif-body">
       <h3 class="gif-name">${name}</h3>
-      ${target ? `<p class="gif-meta">🎯 ${target}</p>` : ''}
-      ${equip ? `<p class="gif-meta">🏋️ ${equip}</p>` : ''}
+      ${meta ? `<div class="meta">${meta}</div>` : ''}
       ${stepsHtml}
     </div>
   </div>`;
 }
 
+const DEMOS_HEAD = '<h2>Animated demos</h2>';
+
 function flexibilityTipCard() {
-  return `<div class="card"><h2>Animated demos</h2>
+  return `<div class="card">${DEMOS_HEAD}
     <p class="gif-note">Flexibility &amp; mobility work doesn't need a demo feed — hold each stretch 20–30 seconds, breathe slowly, and never bounce. Aim for mild tension, not pain. Try cat–cow, the world's greatest stretch, a hip-flexor lunge, and a doorway chest stretch.</p></div>`;
 }
 
@@ -3380,20 +3392,26 @@ async function loadDemos(muscle) {
 
   const key = getEdbKey();
   if (!key) {
-    out.innerHTML = '<div class="card"><p class="gif-note">Add your free ExerciseDB API key above to see animated exercise demos.</p></div>';
+    // Benefit-led, optional framing — not a broken/locked state.
+    out.innerHTML = '<div class="card"><p class="gif-note">Want an animated demo for each move? Add a free ExerciseDB key below — optional, your session above works without it.</p></div>';
     return;
   }
   const bodyPart = EDB_BODYPART[muscle] || 'chest';
-  out.innerHTML = '<div class="card"><h2>Animated demos</h2><div class="gif-spinner" role="status" aria-label="Loading demos"></div></div>';
+  out.innerHTML = `<div class="card">${DEMOS_HEAD}<div class="gif-spinner" role="status" aria-label="Loading demos"></div></div>`;
   try {
     const list = await fetchExerciseGifs(bodyPart, key);
     if (myId !== demoReqId) return;
     out.innerHTML = list.length
-      ? `<div class="card"><h2>Animated demos</h2><div class="gif-grid">${list.map(gifCardHtml).join('')}</div></div>`
-      : '<div class="card"><h2>Animated demos</h2><p class="gif-note">No demos found for this muscle group.</p></div>';
+      ? `<div class="card">${DEMOS_HEAD}<p class="hint">Bonus demos for this muscle group — your session above is the plan.</p><div class="gif-grid">${list.map(gifCardHtml).join('')}</div></div>`
+      : `<div class="card">${DEMOS_HEAD}<p class="gif-note">No demos found for this muscle group.</p></div>`;
   } catch (e) {
     if (myId !== demoReqId) return;
-    out.innerHTML = '<div class="card"><h2>Animated demos</h2><p class="gif-note">Couldn\'t load exercises. Check your API key or try again.</p></div>';
+    const msg = (e && (e.status === 401 || e.status === 403))
+      ? 'That key looks invalid — re-check it in the key card below.'
+      : (e && e.status === 429)
+      ? 'Daily free-tier limit reached — try again tomorrow.'
+      : "Couldn't load exercises — check your connection and try again.";
+    out.innerHTML = `<div class="card">${DEMOS_HEAD}<p class="gif-note">${msg}</p></div>`;
   }
 }
 
