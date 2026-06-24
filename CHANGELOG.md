@@ -2,7 +2,14 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
-## v4.4.1 — 2026-06-24
+## v5.0.0 — 2026-06-24
+
+### Added
+- **Workout logging with last-time recall** 🏋️ — the Workouts tab is no longer just a reference. Every exercise now has a **"＋ Log a set"** control: tap it to log your **reps** and (optional) **weight**, and each set you do today shows as a removable chip. The next time you open that exercise, a **"Last time (Jun 20): 8×20kg, 8×22.5kg"** line reminds you what you did — the foundation for progressive overload, the thing that actually makes you stronger.
+- **Training read-back on Today** — the Today glance now shows **"Last trained · N this week"** so logged workouts (not only weigh-ins) show up where you land.
+- Weights are logged in **your unit** (kg or lbs) and stored safely; your whole workout history **rides along in Backup & Restore** like everything else, and works fully offline.
+
+_Next up (not in this release): "you hit the top of your rep range — add weight" nudges and a per-lift strength-progress chart._
 
 ### Changed
 - **More natural body silhouettes** 🪞 — the "Picture Your Direction" figures were redrawn to read as a natural female figure: rounded shoulders, a gently defined waist, hips a little wider than the shoulders, full thighs, shaped calves, and small feet (the previous version's thin "stilt" legs and top-heavy torso are gone). Still a fully abstract, single-colour illustration — no real or AI bodies — so the body-image-safe framing, labels, and motivation copy are unchanged.

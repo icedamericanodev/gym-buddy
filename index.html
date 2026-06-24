@@ -507,6 +507,46 @@
     margin-top: 8px;
   }
   .demo-toggle:hover { background: var(--panel-2); }
+  /* Workout logging on each exercise card */
+  .ws { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px; }
+  .ws-last {
+    margin: 0 0 6px; font-size: 12.5px; color: var(--muted);
+  }
+  .ws-sets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .ws-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 12.5px;
+    color: var(--text);
+  }
+  .ws-del-set {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 50%;
+  }
+  .ws-del-set:hover { color: var(--text); background: var(--border); }
+  .ws-log-toggle {
+    background: none; color: var(--accent); border: 1px solid var(--border-strong);
+    padding: 5px 11px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .ws-log-toggle:hover { background: var(--panel-2); }
+  .ws-panel {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 8px;
+  }
+  .ws-field {
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 11.5px; color: var(--muted); text-transform: lowercase;
+  }
+  .ws-field input {
+    width: 90px; padding: 6px 8px; font-size: 14px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border-strong); border-radius: 6px;
+  }
+  .ws-add-set {
+    background: var(--accent); color: var(--bg); border: none;
+    padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .ws-add-set:hover { filter: brightness(1.05); }
   .demo-frame {
     position: relative;
     width: 100%;
@@ -1196,7 +1236,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.4.1</span>
+    <span class="version">v5.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1253,9 +1293,9 @@
           </div>
           <button type="button" class="glance-tile" id="t-workout-cta">
             <span class="glance-ico" aria-hidden="true">🏋️</span>
-            <p class="glance-label">Today's workout</p>
-            <p class="glance-val">Ready when you are</p>
-            <p class="glance-cta">Build a session →</p>
+            <p class="glance-label">Training</p>
+            <p class="glance-val" id="t-workout-val">Ready when you are</p>
+            <p class="glance-cta">Log or build a session →</p>
           </button>
         </div>
       </div>
@@ -1669,7 +1709,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.4.1</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v5.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -2135,6 +2175,7 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   renderDashboard();
   renderToday();
   renderPhotos();
+  renderExercises();  // exercise cards show weight in the chosen unit
 });
 
 // Recompute the goal-weight suggestion as the user types their height.
@@ -2587,6 +2628,21 @@ function renderToday() {
     }
   }
 
+  // Glance: training read-back — surface the most recent logged session so
+  // logged workouts (not just weigh-ins) show up where the user lands.
+  const wkVal = document.getElementById('t-workout-val');
+  if (wkVal) {
+    const days = workoutDays();
+    if (days.length) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const when = days[0].date === todayStr ? 'Trained today' : `Last trained ${shortDate(days[0].date)}`;
+      const n = sessionsThisWeek();
+      wkVal.textContent = n > 1 ? `${when} · ${n} this week` : when;
+    } else {
+      wkVal.textContent = 'Ready when you are';
+    }
+  }
+
   // Delight: if a new weight was just logged and Today is the visible tab,
   // count the hero up to it and toss a few honey motes. Consumed once.
   if (pendingCelebrate && document.getElementById('today').classList.contains('active')) {
@@ -2939,11 +2995,14 @@ function buildBackup() {
     bodyNow: localStorage.getItem(BODY_NOW_KEY),
     bodyGoal: localStorage.getItem(BODY_GOAL_KEY),
     hydration: {},
+    workouts: {},
   };
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (k && k.startsWith('herlyftHydro:')) {
       try { data.hydration[k.slice('herlyftHydro:'.length)] = JSON.parse(localStorage.getItem(k)); } catch {}
+    } else if (k && k.startsWith(WORKOUT_PREFIX)) {
+      try { data.workouts[k.slice(WORKOUT_PREFIX.length)] = JSON.parse(localStorage.getItem(k)); } catch {}
     }
   }
   return data;
@@ -2962,6 +3021,14 @@ function applyBackup(data) {
     for (const [date, entries] of Object.entries(data.hydration)) {
       if (Array.isArray(entries)) {
         localStorage.setItem(`herlyftHydro:${date}`, JSON.stringify(entries));
+      }
+    }
+  }
+  // Workout log (additive; older backups simply lack the `workouts` key).
+  if (data.workouts && typeof data.workouts === 'object') {
+    for (const [date, entries] of Object.entries(data.workouts)) {
+      if (Array.isArray(entries)) {
+        localStorage.setItem(`${WORKOUT_PREFIX}${date}`, JSON.stringify(entries));
       }
     }
   }
@@ -3081,6 +3148,110 @@ document.getElementById('h-undo').addEventListener('click', () => {
 });
 
 /* ============================================================
+   WORKOUT LOG — capture sets (reps + weight) per exercise, per day,
+   so a lifter can see "last time" and progress over weeks. Stored
+   per-day in localStorage (same pattern as hydration) so it rides
+   along in Backup & Restore and stays fully offline. Weight is stored
+   canonical in kg (like body weight); the UI reads/writes in the
+   user's chosen unit. Bodyweight sets store kg = null.
+   ============================================================ */
+const WORKOUT_PREFIX = 'herlyftWorkout:';
+function workoutKey(date) {
+  return `${WORKOUT_PREFIX}${date || new Date().toISOString().slice(0, 10)}`;
+}
+function getWorkoutDay(date) {
+  try {
+    const raw = localStorage.getItem(workoutKey(date));
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveWorkoutDay(entries, date) {
+  localStorage.setItem(workoutKey(date), JSON.stringify(entries));
+}
+// Append a set to today's entry for `name` (creating the entry if needed).
+// Returns true if it logged. `kg` null/blank = a bodyweight set.
+function logSet(name, muscle, reps, kg) {
+  const repsN = Math.round(+reps);
+  if (!repsN || repsN < 1) return false;
+  const kgN = (kg === null || kg === undefined || kg === '' || isNaN(+kg)) ? null : Math.max(0, +kg);
+  const entries = getWorkoutDay();
+  let entry = entries.find(e => e.name === name);
+  if (!entry) { entry = { name, muscle, sets: [] }; entries.push(entry); }
+  entry.sets.push({ reps: repsN, kg: kgN });
+  saveWorkoutDay(entries);
+  return true;
+}
+// Remove the set at `idx` from today's entry for `name`; drop the entry if it empties.
+function removeSet(name, idx) {
+  const entries = getWorkoutDay();
+  const entry = entries.find(e => e.name === name);
+  if (!entry || idx < 0 || idx >= entry.sets.length) return;
+  entry.sets.splice(idx, 1);
+  saveWorkoutDay(entry.sets.length ? entries : entries.filter(e => e !== entry));
+}
+// Most recent PRIOR day (strictly before today) that logged `name`, for the
+// "last time" line. Returns { date, sets } or null.
+function lastLoggedFor(name) {
+  const today = new Date().toISOString().slice(0, 10);
+  let best = null;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(WORKOUT_PREFIX)) continue;
+    const date = k.slice(WORKOUT_PREFIX.length);
+    if (date >= today) continue;
+    if (best && date <= best.date) continue;
+    let entries; try { entries = JSON.parse(localStorage.getItem(k)); } catch { continue; }
+    if (!Array.isArray(entries)) continue;
+    const entry = entries.find(e => e && e.name === name && Array.isArray(e.sets) && e.sets.length);
+    if (entry) best = { date, sets: entry.sets };
+  }
+  return best;
+}
+// All logged workout days (with an exercise count), most recent first.
+function workoutDays() {
+  const days = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(WORKOUT_PREFIX)) continue;
+    let entries; try { entries = JSON.parse(localStorage.getItem(k)); } catch { continue; }
+    if (Array.isArray(entries) && entries.length) {
+      days.push({ date: k.slice(WORKOUT_PREFIX.length), count: entries.length });
+    }
+  }
+  return days.sort((a, b) => b.date.localeCompare(a.date));
+}
+// Distinct days trained in the last 7 days (today inclusive).
+function sessionsThisWeek() {
+  const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  return workoutDays().filter(d => d.date >= weekAgo).length;
+}
+// --- display helpers (weight shown in the user's unit) ---
+function fmtSetWeight(kg) {
+  return (kg === null || kg === undefined) ? 'BW' : `${+fmtKg(kg)}${wUnitLabel()}`;
+}
+function setSummary(sets) {
+  return sets.map(s => (s.kg == null ? `${s.reps}` : `${s.reps}×${fmtSetWeight(s.kg)}`)).join(', ');
+}
+function shortDate(iso) {
+  const d = new Date(`${iso}T00:00:00`);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+// The "last time" line + today's logged-set chips for one exercise card.
+function workoutLogInner(e) {
+  const last = lastLoggedFor(e.name);
+  const lastLine = last
+    ? `<p class="ws-last">Last time (${esc(shortDate(last.date))}): ${esc(setSummary(last.sets))}</p>`
+    : '';
+  const today = getWorkoutDay().find(x => x.name === e.name);
+  if (!today || !today.sets.length) return lastLine;
+  const chips = today.sets.map((s, i) => {
+    const label = s.kg == null ? `${s.reps} reps` : `${s.reps} × ${fmtSetWeight(s.kg)}`;
+    return `<span class="ws-chip">${esc(label)}<button type="button" class="ws-del-set" data-ex="${esc(e.name)}" data-idx="${i}" aria-label="Remove set ${esc(label)}">✕</button></span>`;
+  }).join('');
+  return `${lastLine}<div class="ws-sets" aria-label="Sets logged today">${chips}</div>`;
+}
+
+/* ============================================================
    MEALS — match user ingredients against recipes
    ============================================================ */
 function normalize(s) { return s.toLowerCase().trim(); }
@@ -3195,6 +3366,19 @@ function exerciseCard(e) {
       </div>
       <div class="desc">${esc(e.desc)}</div>
       ${demoBtn}
+      <div class="ws" data-ex="${esc(e.name)}">
+        <div class="ws-info">${workoutLogInner(e)}</div>
+        <button type="button" class="ws-log-toggle" aria-expanded="false">＋ Log a set</button>
+        <div class="ws-panel" hidden>
+          <label class="ws-field">reps
+            <input type="number" class="ws-reps" min="1" step="1" inputmode="numeric">
+          </label>
+          <label class="ws-field">weight (${esc(wUnitLabel())})
+            <input type="number" class="ws-weight" min="0" step="0.5" inputmode="decimal" placeholder="optional">
+          </label>
+          <button type="button" class="ws-add-set" data-ex="${esc(e.name)}" data-muscle="${esc(e.muscle)}">Add</button>
+        </div>
+      </div>
     </div>`;
 }
 
@@ -3220,6 +3404,57 @@ document.addEventListener('click', (ev) => {
     title="Exercise demo"></iframe>`;
   card.appendChild(frame);
   btn.textContent = '✕ Hide demo';
+});
+
+// Workout logging — delegated like the demo toggle. Handles opening the log
+// panel, adding a set (reps + optional weight in the user's unit), and removing
+// a logged set. Re-renders only the card's `.ws-info` region so other cards and
+// the panel's open state are untouched.
+function rerenderWsInfo(wsEl, name) {
+  const e = EXERCISES.find(x => x.name === name);
+  if (e) wsEl.querySelector('.ws-info').innerHTML = workoutLogInner(e);
+}
+function addSetFromPanel(ws) {
+  const repsEl = ws.querySelector('.ws-reps');
+  const wEl = ws.querySelector('.ws-weight');
+  const addBtn = ws.querySelector('.ws-add-set');
+  const reps = parseInt(repsEl.value, 10);
+  if (!reps || reps < 1) { repsEl.focus(); return; }
+  const wStr = wEl.value.trim();
+  const kg = wStr === '' ? null : (currentUnits === 'imperial' ? lbToKg(parseFloat(wStr)) : parseFloat(wStr));
+  if (logSet(addBtn.dataset.ex, addBtn.dataset.muscle, reps, kg)) {
+    repsEl.value = ''; wEl.value = '';
+    rerenderWsInfo(ws, addBtn.dataset.ex);
+    repsEl.focus();
+  }
+}
+document.addEventListener('click', (ev) => {
+  const toggle = ev.target.closest('.ws-log-toggle');
+  if (toggle) {
+    const panel = toggle.closest('.ws').querySelector('.ws-panel');
+    const opening = panel.hasAttribute('hidden');
+    panel.toggleAttribute('hidden', !opening);
+    toggle.setAttribute('aria-expanded', String(opening));
+    toggle.textContent = opening ? '✕ Close' : '＋ Log a set';
+    if (opening) panel.querySelector('.ws-reps').focus();
+    return;
+  }
+  const add = ev.target.closest('.ws-add-set');
+  if (add) { addSetFromPanel(add.closest('.ws')); return; }
+  const del = ev.target.closest('.ws-del-set');
+  if (del) {
+    removeSet(del.dataset.ex, parseInt(del.dataset.idx, 10));
+    rerenderWsInfo(del.closest('.ws'), del.dataset.ex);
+    return;
+  }
+});
+// Enter in either input adds the set (the panel isn't a <form>).
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter') return;
+  const input = ev.target.closest('.ws-reps, .ws-weight');
+  if (!input) return;
+  ev.preventDefault();
+  addSetFromPanel(input.closest('.ws'));
 });
 
 function updatePlanButtonLabel() {
