@@ -496,7 +496,6 @@
   .body-col--now .body-shape, .body-col--now .body-head { fill: var(--muted); }
   .body-col--goal .body-shape, .body-col--goal .body-head { fill: var(--accent); }
   .body-col-label { margin: 6px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
-  .body-col--goal .body-col-title { color: var(--accent); }
   .body-col input[type="range"] {
     width: 100%; height: 44px; accent-color: var(--accent); cursor: pointer;
   }
@@ -507,12 +506,12 @@
   .body-col--now input[type="range"] { accent-color: var(--muted); }
   .body-motivation {
     text-align: center; font-size: 14px; font-weight: 600;
-    color: var(--accent); min-height: 2.6em; margin: 14px 0;
+    color: var(--text); min-height: 2.6em; margin: 14px 0;   /* --text for AA contrast in both themes */
   }
   @media (prefers-reduced-motion: reduce) { .body-shape { transition: none; } }
   /* Dashboard read-only transform */
   .transform-cols { align-items: center; }
-  .transform-arrow { font-size: 36px; color: var(--accent); flex: 0 0 auto; }
+  .transform-arrow { font-size: 40px; font-weight: 700; color: var(--text); flex: 0 0 auto; line-height: 1; }
 
   .visual {
     font-size: 48px;
@@ -1490,7 +1489,7 @@
       </div>
       <p class="body-motivation" id="body-motivation" role="status"></p>
       <button type="button" class="primary" id="body-save">Save</button>
-      <span id="body-saved" class="saved-flash">Saved!</span>
+      <span id="body-saved" class="saved-flash" role="status">Saved!</span>
     </div>
 
     <div class="card" id="data-card">
@@ -2992,6 +2991,8 @@ function buildBackup() {
     exportedAt: new Date().toISOString(),
     profile: profileRaw ? JSON.parse(profileRaw) : null,
     weights: getWeights(),
+    bodyNow: localStorage.getItem(BODY_NOW_KEY),
+    bodyGoal: localStorage.getItem(BODY_GOAL_KEY),
     hydration: {},
   };
   for (let i = 0; i < localStorage.length; i++) {
@@ -3007,6 +3008,11 @@ function applyBackup(data) {
   if (!data || data.app !== 'herlyft') throw new Error('Not a Herlyft backup file.');
   if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
   if (Array.isArray(data.weights)) saveWeights(data.weights);
+  // Body-shape "direction" (additive; older backups simply lack these keys).
+  for (const [field, key] of [['bodyNow', BODY_NOW_KEY], ['bodyGoal', BODY_GOAL_KEY]]) {
+    const v = parseInt(data[field], 10);
+    if (v >= 1 && v <= 5) localStorage.setItem(key, String(v));
+  }
   if (data.hydration && typeof data.hydration === 'object') {
     for (const [date, entries] of Object.entries(data.hydration)) {
       if (Array.isArray(entries)) {
@@ -3055,6 +3061,8 @@ document.getElementById('d-restore-input').addEventListener('change', (ev) => {
       renderHydration();
       renderDashboard();
       renderToday();
+      refreshBodyShapeSliders();
+      renderTransform();
       await renderPhotos();
       showDataStatus('Backup restored.');
     } catch (err) {
@@ -3975,20 +3983,21 @@ if (ppGrid) {
 }
 
 /* ============================================================
-   BODY SHAPE SELECTOR — "Visualize Your Goal" (Profile) + read-only
-   "My Transformation Goal" (Dashboard). Additive localStorage only.
+   BODY SHAPE SELECTOR — "Picture Your Direction" (Profile) + read-only
+   "My Direction" (Dashboard). Additive localStorage only.
    ============================================================ */
 const BODY_NOW_KEY = 'herlyft_body_now';
 const BODY_GOAL_KEY = 'herlyft_body_goal';
 const BODY_LABELS = ['Slimmer', 'Lean', 'Mid', 'Soft', 'Fuller'];
 
 // Parametric female silhouette (head drawn separately); f in [0,1] scales body
-// fullness. Returns one path string combining torso+legs and both arms.
+// fullness. Arms-against-body (merged into the outline, no separate sub-paths)
+// so there's no seam at any size — what changes is bust/waist/hip/leg width.
 function bodyShapePath(f) {
   const cx = 60;
   const sh = 16 + 6 * f, bu = 14 + 10 * f, wa = 8 + 9 * f, hi = 17 + 15 * f, th = 10 + 7 * f, an = 7 + 3 * f;
   const R = x => (cx + x).toFixed(1), L = x => (cx - x).toFixed(1);
-  const body = [
+  return [
     `M ${R(4)},62`,
     `C ${R(sh)},64 ${R(sh)},74 ${R(sh)},82`,
     `C ${R(sh)},96 ${R(bu)},100 ${R(bu)},114`,
@@ -4005,13 +4014,6 @@ function bodyShapePath(f) {
     `C ${L(bu)},100 ${L(sh)},96 ${L(sh)},82`,
     `C ${L(sh)},74 ${L(sh)},64 ${L(4)},62`, 'Z',
   ].join(' ');
-  const arm = (s) => {
-    const S = x => (cx + s * x).toFixed(1);
-    return `M ${S(sh - 2)},86 C ${S(sh + 6)},92 ${S(sh + 7)},124 ${S(sh + 4)},170 ` +
-           `C ${S(sh + 3)},178 ${S(sh - 2)},178 ${S(sh - 3)},170 ` +
-           `C ${S(sh - 5)},126 ${S(sh - 5)},100 ${S(sh - 4)},88 Z`;
-  };
-  return `${body} ${arm(-1)} ${arm(1)}`;
 }
 
 // One SVG per figure: a head + 5 stacked silhouettes; the selected one fades in.
@@ -4086,7 +4088,19 @@ function bodyMotivation(now, goal) {
   });
 })();
 
-// Dashboard read-only "My Transformation Goal" — saved shapes side by side.
+// Re-sync the Profile sliders/figures from storage (e.g. after a restore), so a
+// later Save can't overwrite restored values with stale slider positions.
+function refreshBodyShapeSliders() {
+  const nowSlider = document.getElementById('body-now-slider');
+  const goalSlider = document.getElementById('body-goal-slider');
+  if (!nowSlider || !goalSlider) return;
+  nowSlider.value = readBodyVal(BODY_NOW_KEY, parseInt(nowSlider.value, 10) || 3);
+  goalSlider.value = readBodyVal(BODY_GOAL_KEY, parseInt(goalSlider.value, 10) || 3);
+  nowSlider.dispatchEvent(new Event('input'));   // drives the shared sync() handler
+  goalSlider.dispatchEvent(new Event('input'));
+}
+
+// Dashboard read-only "My Direction" — saved shapes side by side.
 function renderTransform() {
   const body = document.getElementById('transform-body');
   const empty = document.getElementById('transform-empty');
