@@ -2,6 +2,11 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v4.4.1 — 2026-06-24
+
+### Changed
+- **More natural body silhouettes** 🪞 — the "Picture Your Direction" figures were redrawn to read as a natural female figure: rounded shoulders, a gently defined waist, hips a little wider than the shoulders, full thighs, shaped calves, and small feet (the previous version's thin "stilt" legs and top-heavy torso are gone). Still a fully abstract, single-colour illustration — no real or AI bodies — so the body-image-safe framing, labels, and motivation copy are unchanged.
+
 ## v4.4.0 — 2026-06-24
 
 ### Changed
