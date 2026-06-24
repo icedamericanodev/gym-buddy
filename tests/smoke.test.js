@@ -518,6 +518,58 @@ dom.window.addEventListener('load', async () => {
     clearWorkouts();
   });
 
+  check('workout log: logKind classifies exercises (none for mobility)', () => {
+    const lk = dom.window.logKind;
+    assert.strictEqual(lk({ muscle: 'flexibility' }), 'none', 'stretches are non-loggable');
+    assert.strictEqual(lk({ muscle: 'legs' }), 'reps', 'default is rep-based');
+    assert.strictEqual(lk({ log: 'time', muscle: 'cardio' }), 'time');
+    assert.strictEqual(lk({ log: 'dist', muscle: 'core' }), 'dist');
+  });
+
+  check('workout log: formatSet unifies chip + recall and reflects the log kind', () => {
+    const f = dom.window.formatSet;
+    assert.strictEqual(f({ muscle: 'legs' }, { reps: 8, kg: 42.5 }), '8 × 42.5 kg');
+    assert.strictEqual(f({ muscle: 'legs' }, { reps: 12, kg: null }), '12 reps');
+    assert.strictEqual(f({ log: 'time' }, { reps: 45, kg: null }), '45 sec');
+    assert.strictEqual(f({ log: 'dist' }, { reps: 30, kg: null }), '30 m');
+    assert.strictEqual(f({ log: 'time' }, { reps: 30, kg: 10 }), '30 sec × 10 kg');
+  });
+
+  check('workout log: exerciseCard omits the logger for mobility moves', () => {
+    const stretch = dom.window.exerciseCard({ name: "Child's pose", loc: 'bodyweight', muscle: 'flexibility', emoji: '🧘', sets: 'Hold 30 sec', desc: 'x' });
+    assert.ok(!/ws-log-toggle/.test(stretch), 'no logger on a flexibility card');
+    const strength = dom.window.exerciseCard({ name: 'Bench press', loc: 'gym', muscle: 'chest', emoji: '🏋️', sets: '4 × 6–10', desc: 'x' });
+    assert.ok(/ws-log-toggle/.test(strength), 'logger present on a strength card');
+  });
+
+  check('workout log: read-back ignores empty-set entries and future-dated keys', () => {
+    clearWorkouts();
+    const ago = n => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const ahead = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+    dom.window.localStorage.setItem(`herlyftWorkout:${ago(2)}`, JSON.stringify([{ name: 'Squat', muscle: 'legs', sets: [{ reps: 5, kg: 60 }] }]));
+    dom.window.localStorage.setItem(`herlyftWorkout:${ago(1)}`, JSON.stringify([{ name: 'Squat', muscle: 'legs', sets: [] }]));
+    dom.window.localStorage.setItem(`herlyftWorkout:${ahead(1)}`, JSON.stringify([{ name: 'Squat', muscle: 'legs', sets: [{ reps: 5, kg: 60 }] }]));
+    const dates = dom.window.workoutDays().map(d => d.date);
+    assert.ok(!dates.includes(ago(1)), 'empty-set day is excluded');
+    assert.ok(!dates.includes(ahead(1)), 'future-dated day is excluded');
+    assert.strictEqual(dom.window.sessionsThisWeek(), 1, 'only the one real prior day counts');
+    clearWorkouts();
+  });
+
+  check('workout log: weight 0 logs a bodyweight set, not "0 kg"', () => {
+    clearWorkouts();
+    document.getElementById('w-results').innerHTML = dom.window.exerciseCard(
+      { name: 'Bench press', loc: 'gym', muscle: 'chest', emoji: '🏋️', sets: '4 × 6–10', desc: 'x' });
+    const card = document.querySelector('#w-results .exercise');
+    card.querySelector('.ws-log-toggle').click();
+    card.querySelector('.ws-reps').value = '5';
+    card.querySelector('.ws-weight').value = '0';
+    card.querySelector('.ws-add-set').click();
+    const day = dom.window.getWorkoutDay().find(e => e.name === 'Bench press');
+    assert.ok(day && day.sets[0].kg === null, 'weight 0 is stored as bodyweight (null)');
+    clearWorkouts();
+  });
+
   check('tapping the wordmark spawns a lowkey love note 💛', () => {
     // Clear any prior pops left by other interactions.
     document.querySelectorAll('.love-pop').forEach(p => p.remove());
