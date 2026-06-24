@@ -348,6 +348,57 @@
     border-color: var(--accent);
   }
 
+  /* ---- Interactive muscle map (Workouts tab) ---- */
+  .muscle-map-label {
+    margin: 4px 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .view-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .view-toggle button {
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border-strong);
+    padding: 8px 18px;
+    min-height: 44px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .view-toggle button.on {
+    background: var(--accent);
+    color: #0a0e1a;
+    border-color: var(--accent);
+  }
+  .muscle-figure {
+    max-width: 280px;
+    margin: 0 auto 16px;
+  }
+  .muscle-svg { width: 100%; height: auto; display: block; }
+  .muscle-svg.hidden { display: none; }
+  .body-base {
+    fill: var(--panel-2);
+    stroke: var(--border-strong);
+    stroke-width: 1;
+  }
+  .muscle-zone {
+    fill: var(--border-strong);
+    cursor: pointer;
+    transition: fill 0.3s ease;
+  }
+  .muscle-zone:hover { fill: var(--accent-soft); }
+  .muscle-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .muscle-zone.active { fill: var(--accent); }
+  @media (prefers-reduced-motion: reduce) {
+    .muscle-zone { transition: none; }
+  }
+
   .visual {
     font-size: 48px;
     text-align: center;
@@ -1058,7 +1109,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.0.0</span>
+    <span class="version">v4.1.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1491,7 +1542,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.0.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.1.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1511,6 +1562,45 @@
         <button data-loc="bodyweight">Bodyweight</button>
         <button data-loc="home">Home (light equipment)</button>
         <button data-loc="gym">Gym</button>
+      </div>
+
+      <!-- Interactive muscle map: tap a zone to set the muscle filter, and the
+           filter buttons highlight the matching zone. Front/Back toggle. -->
+      <p class="muscle-map-label">Tap a muscle to target it</p>
+      <div class="view-toggle" role="group" aria-label="Body view">
+        <button type="button" data-view="front" class="on">Front</button>
+        <button type="button" data-view="back">Back</button>
+      </div>
+      <div class="muscle-figure">
+        <svg id="muscle-front" class="muscle-svg" viewBox="0 0 200 380" role="img" aria-label="Front view body map">
+          <circle class="body-base" cx="100" cy="28" r="18"/>
+          <path class="body-base" d="M82,48 L118,48 C138,52 146,68 144,90 C142,116 132,130 128,150 C127,166 128,182 136,202 C140,250 138,300 130,366 L112,366 C108,300 104,250 100,210 C96,250 92,300 88,366 L70,366 C62,300 60,250 64,202 C72,182 73,166 72,150 C68,130 58,116 56,90 C54,68 62,52 82,48 Z"/>
+          <path class="body-base" d="M56,92 C48,96 44,110 44,140 C43,160 46,178 52,196 L60,194 C56,176 56,158 58,138 C60,118 64,104 68,96 Z"/>
+          <path class="body-base" d="M144,92 C152,96 156,110 156,140 C157,160 154,178 148,196 L140,194 C144,176 144,158 142,138 C140,118 136,104 132,96 Z"/>
+          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-label="Target shoulders" d="M58,84 C50,86 47,96 50,108 C58,104 66,102 70,100 C68,90 64,84 58,84 Z"/>
+          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-label="Target shoulders" d="M142,84 C150,86 153,96 150,108 C142,104 134,102 130,100 C132,90 136,84 142,84 Z"/>
+          <path class="muscle-zone" data-muscle="chest" tabindex="0" role="button" aria-label="Target chest" d="M74,104 C82,100 92,100 98,106 C98,118 94,126 84,128 C76,128 72,118 74,104 Z"/>
+          <path class="muscle-zone" data-muscle="chest" tabindex="0" role="button" aria-label="Target chest" d="M126,104 C118,100 108,100 102,106 C102,118 106,126 116,128 C124,128 128,118 126,104 Z"/>
+          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-label="Target arms" d="M48,116 C45,128 45,146 48,162 C54,160 58,158 60,156 C58,142 58,128 60,116 C56,114 52,114 48,116 Z"/>
+          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-label="Target arms" d="M152,116 C155,128 155,146 152,162 C146,160 142,158 140,156 C142,142 142,128 140,116 C144,114 148,114 152,116 Z"/>
+          <path class="muscle-zone" data-muscle="core" tabindex="0" role="button" aria-label="Target core" d="M88,132 C96,130 104,130 112,132 C114,150 113,168 108,184 C103,190 97,190 92,184 C87,168 86,150 88,132 Z"/>
+          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-label="Target legs" d="M70,210 C66,240 66,270 72,298 C80,296 86,294 90,290 C90,262 90,236 88,212 C82,208 76,208 70,210 Z"/>
+          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-label="Target legs" d="M130,210 C134,240 134,270 128,298 C120,296 114,294 110,290 C110,262 110,236 112,212 C118,208 124,208 130,210 Z"/>
+        </svg>
+        <svg id="muscle-back" class="muscle-svg hidden" viewBox="0 0 200 380" role="img" aria-label="Back view body map">
+          <circle class="body-base" cx="100" cy="28" r="18"/>
+          <path class="body-base" d="M82,48 L118,48 C138,52 146,68 144,90 C142,116 132,130 128,150 C127,166 128,182 136,202 C140,250 138,300 130,366 L112,366 C108,300 104,250 100,210 C96,250 92,300 88,366 L70,366 C62,300 60,250 64,202 C72,182 73,166 72,150 C68,130 58,116 56,90 C54,68 62,52 82,48 Z"/>
+          <path class="body-base" d="M56,92 C48,96 44,110 44,140 C43,160 46,178 52,196 L60,194 C56,176 56,158 58,138 C60,118 64,104 68,96 Z"/>
+          <path class="body-base" d="M144,92 C152,96 156,110 156,140 C157,160 154,178 148,196 L140,194 C144,176 144,158 142,138 C140,118 136,104 132,96 Z"/>
+          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-label="Target shoulders" d="M58,84 C50,86 47,96 50,108 C58,104 66,102 70,100 C68,90 64,84 58,84 Z"/>
+          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-label="Target shoulders" d="M142,84 C150,86 153,96 150,108 C142,104 134,102 130,100 C132,90 136,84 142,84 Z"/>
+          <path class="muscle-zone" data-muscle="back" tabindex="0" role="button" aria-label="Target back" d="M84,86 C92,82 108,82 116,86 C112,100 106,108 100,110 C94,108 88,100 84,86 Z"/>
+          <path class="muscle-zone" data-muscle="back" tabindex="0" role="button" aria-label="Target back" d="M76,112 C86,108 114,108 124,112 C122,140 114,166 100,178 C86,166 78,140 76,112 Z"/>
+          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-label="Target arms" d="M48,116 C45,128 45,146 48,162 C54,160 58,158 60,156 C58,142 58,128 60,116 C56,114 52,114 48,116 Z"/>
+          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-label="Target arms" d="M152,116 C155,128 155,146 152,162 C146,160 142,158 140,156 C142,142 142,128 140,116 C144,114 148,114 152,116 Z"/>
+          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-label="Target legs" d="M70,210 C66,240 66,270 72,298 C80,296 86,294 90,290 C90,262 90,236 88,212 C82,208 76,208 70,210 Z"/>
+          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-label="Target legs" d="M130,210 C134,240 134,270 128,298 C120,296 114,294 110,290 C110,262 110,236 112,212 C118,208 124,208 130,210 Z"/>
+        </svg>
       </div>
 
       <div class="filter-bar" id="muscle-filter">
@@ -2927,12 +3017,42 @@ document.querySelectorAll('#loc-filter button').forEach(b => {
     renderExercises();
   });
 });
+// Single source of truth for the muscle filter — driven by both the filter
+// buttons and the interactive muscle map, so they stay in sync.
+function setMuscleFilter(muscle) {
+  document.querySelectorAll('#muscle-filter button').forEach(x =>
+    x.classList.toggle('on', x.dataset.muscle === muscle));
+  curMuscle = muscle;
+  highlightMuscleZones(muscle);
+  renderExercises();
+}
+
+// Highlight every SVG zone matching the muscle (front + back share data-muscle).
+// 'all', 'cardio' and 'flexibility' have no body part → clears all highlights.
+function highlightMuscleZones(muscle) {
+  document.querySelectorAll('.muscle-zone').forEach(z =>
+    z.classList.toggle('active', z.dataset.muscle === muscle));
+}
+
 document.querySelectorAll('#muscle-filter button').forEach(b => {
+  b.addEventListener('click', () => setMuscleFilter(b.dataset.muscle));
+});
+
+// Muscle-map zones: tap (or Enter/Space) sets the filter, which highlights back.
+document.querySelectorAll('.muscle-zone').forEach(z => {
+  z.addEventListener('click', () => setMuscleFilter(z.dataset.muscle));
+  z.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMuscleFilter(z.dataset.muscle); }
+  });
+});
+
+// Front / Back view toggle — only one figure visible at a time.
+document.querySelectorAll('.view-toggle button').forEach(b => {
   b.addEventListener('click', () => {
-    document.querySelectorAll('#muscle-filter button').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    curMuscle = b.dataset.muscle;
-    renderExercises();
+    const view = b.dataset.view;
+    document.querySelectorAll('.view-toggle button').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('muscle-front').classList.toggle('hidden', view !== 'front');
+    document.getElementById('muscle-back').classList.toggle('hidden', view !== 'back');
   });
 });
 

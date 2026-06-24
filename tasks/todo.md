@@ -14,6 +14,17 @@ a time, each as its own reviewed PR.
 
 ## Queue — do one at a time, each its own PR
 
+### Owner request 2026-06-24 — three new features (each its own PR off main)
+0. **Muscle anatomy diagram** (Feature 1) — interactive front/back SVG body map on
+   Workouts; tap a muscle ↔ muscle filter button two-way sync. MINOR v4.1.0.
+   IN REVIEW (branch claude/muscle-anatomy-diagram).
+1. **Exercise GIF cards** (Feature 2) — ExerciseDB/RapidAPI; user-supplied key in
+   localStorage; GIF cards replace text session. ⚠️ Architecturally significant:
+   turns the offline-first PWA into an API-dependent app + bypasses curated
+   EXERCISES. CONFIRM replace-vs-augment with owner before building.
+2. **Body shape selector** (Feature 3) — 5 female silhouettes, Now/Goal sliders on
+   Profile, read-only on Dashboard; herlyft_body_now / herlyft_body_goal. MINOR.
+
 1. ✅ **Goal-weight suggestion from BMI** — shipped in #28 (v2.1.0). Final
    shape: healthy-range hint + "Use mid-range (BMI 23)" button + muscle caveat
    + authorship note; clinical BMI numbers kept out of the visible line.
