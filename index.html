@@ -565,9 +565,9 @@
   .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 1; }
   .dash-goal-label { fill: var(--accent); font-size: 10px; font-weight: 600; }
   /* TODAY (home view) */
-  .today-card { padding-top: 18px; padding-bottom: 22px; }
+  .today-card { padding-top: var(--space-5); padding-bottom: var(--space-6); }
   .today-head {
-    margin-bottom: 18px;
+    margin-bottom: var(--space-4);
   }
   .today-greeting {
     margin: 0;
@@ -1014,15 +1014,12 @@
   }
   .glance-val { margin: 2px 0 0; font-size: 18px; font-weight: 700; color: var(--text); }
   .glance-sub { margin: 0; font-size: 12px; color: var(--muted); }
-  .glance-bar {
-    height: 4px; background: var(--bg); border-radius: 999px;
-    overflow: hidden; margin-top: 6px;
-  }
-  .glance-bar-fill {
-    height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent));
-    transition: width .4s ease;
-  }
   .glance-cta { margin: 2px 0 0; font-size: 12px; font-weight: 700; color: var(--accent); }
+  /* Lapsed streak: dim the tile and grey the flame so "Restart" reads as a
+     paused state, not a live one. */
+  .glance-tile.lapsed { opacity: 0.72; }
+  .glance-tile.lapsed .glance-ico { filter: grayscale(1); opacity: 0.6; }
+  .glance-tile.lapsed .glance-val { color: var(--muted); }
 
   /* ---- Profile: grouped section headers ---- */
   .field-group {
@@ -1110,13 +1107,13 @@
 
         <!-- Glance row: a tasteful second look without crowding the hero -->
         <div class="today-glance">
-          <div class="glance-tile">
+          <div class="glance-tile" id="t-streak-tile" aria-live="polite">
             <span class="glance-ico" aria-hidden="true">🔥</span>
             <p class="glance-label">Logging streak</p>
             <p class="glance-val" id="t-streak">—</p>
             <p class="glance-sub" id="t-streak-sub"></p>
           </div>
-          <button type="button" class="glance-tile" id="t-workout-cta" aria-label="Go to Workouts to build today's session">
+          <button type="button" class="glance-tile" id="t-workout-cta">
             <span class="glance-ico" aria-hidden="true">🏋️</span>
             <p class="glance-label">Today's workout</p>
             <p class="glance-val">Ready when you are</p>
@@ -1153,7 +1150,7 @@
       <h2>Your Profile</h2>
       <p class="hint">Fill this in once. We calculate your BMI, daily calories, and macros.</p>
 
-      <p class="field-group first">About you</p>
+      <h3 class="field-group first">About you</h3>
       <div class="form-row">
         <div>
           <label>Name</label>
@@ -1182,7 +1179,7 @@
         </div>
       </div>
 
-      <p class="field-group">Your body</p>
+      <h3 class="field-group">Your body</h3>
       <div class="form-row">
         <div>
           <label id="p-height-label">Height (cm)</label>
@@ -1194,7 +1191,7 @@
         </div>
       </div>
 
-      <p class="field-group">Your goals</p>
+      <h3 class="field-group">Your goals</h3>
       <div class="form-row">
         <div>
           <label>Activity level</label>
@@ -2302,18 +2299,18 @@ function celebrateWeightLog(el, prevKg, currentKg, unit) {
 // "active" only if this week or last week has a log; otherwise it's lapsed.
 function computeStreak() {
   const arr = getWeights();
-  if (!arr.length) return { weeks: 0, active: false };
+  if (!arr.length) return { weeks: 0, active: false, current: false };
   // YYYY-MM-DD parses as UTC midnight; Date.now() is UTC — same basis. Epoch
   // day 0 (1970-01-01) was a Thursday, so −4 shifts the week boundary to Monday.
   const weekIdx = (ms) => Math.floor((Math.floor(ms / 86400000) - 4) / 7);
   const weeks = new Set(arr.map(e => weekIdx(new Date(e.date).getTime())));
   const thisWeek = weekIdx(Date.now());
-  let cursor = weeks.has(thisWeek) ? thisWeek
-             : weeks.has(thisWeek - 1) ? thisWeek - 1 : null;
-  if (cursor === null) return { weeks: 0, active: false };
+  const current = weeks.has(thisWeek);   // logged in the current week (vs. only last week's grace)
+  let cursor = current ? thisWeek : weeks.has(thisWeek - 1) ? thisWeek - 1 : null;
+  if (cursor === null) return { weeks: 0, active: false, current: false };
   let count = 0;
   while (weeks.has(cursor)) { count++; cursor--; }
-  return { weeks: count, active: true };
+  return { weeks: count, active: true, current };
 }
 
 function renderToday() {
@@ -2362,12 +2359,25 @@ function renderToday() {
   const streak = computeStreak();
   const streakEl = document.getElementById('t-streak');
   const streakSubEl = document.getElementById('t-streak-sub');
-  if (streak.active) {
-    streakEl.textContent = streak.weeks === 1 ? 'This week' : `${streak.weeks} weeks`;
-    streakSubEl.textContent = streak.weeks === 1 ? 'logged — keep it going' : 'logged in a row';
-  } else {
+  const streakTile = document.getElementById('t-streak-tile');
+  if (!streak.active) {
+    // Lapsed: nothing this week or last. Dim the tile so the lapse is legible.
     streakEl.textContent = 'Restart';
     streakSubEl.textContent = 'log a weight this week';
+    streakTile.classList.add('lapsed');
+  } else {
+    streakTile.classList.remove('lapsed');
+    if (!streak.current) {
+      // Alive on the last-week grace only — nudge to weigh in, don't claim "this week".
+      streakEl.textContent = streak.weeks === 1 ? '1 week' : `${streak.weeks} weeks`;
+      streakSubEl.textContent = 'log this week to keep it';
+    } else if (streak.weeks === 1) {
+      streakEl.textContent = 'This week';
+      streakSubEl.textContent = 'logged — keep it going';
+    } else {
+      streakEl.textContent = `${streak.weeks} weeks`;
+      streakSubEl.textContent = 'logged in a row';
+    }
   }
 
   // Delight: if a new weight was just logged and Today is the visible tab,

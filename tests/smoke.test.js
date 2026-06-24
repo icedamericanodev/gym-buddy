@@ -1329,6 +1329,50 @@ dom.window.addEventListener('load', async () => {
     }
   })();
 
+  // ---- LOGGING STREAK (weeks with a weigh-in) ----
+  // A 7-day step always moves exactly one Monday-aligned week back, so dates at
+  // 0/7/14/21 days ago land in this/last/2-weeks/3-weeks buckets deterministically
+  // regardless of today's weekday.
+  check('streak: weekly buckets — active this week, grace window, lapse, and gaps', () => {
+    const dayMs = 86400000;
+    const isoAgo = (d) => new Date(Date.now() - d * dayMs).toISOString().slice(0, 10);
+    const seed = (dates) => dom.window.localStorage.setItem(
+      'herlyftWeights', JSON.stringify(dates.map((dt, i) => ({ date: dt, kg: 80 - i }))));
+
+    // (computeStreak returns a jsdom-realm object, so assert fields directly
+    // rather than deepStrictEqual, which is strict about cross-realm prototypes.)
+    const expect = (s, w, a, c, msg) => {
+      assert.strictEqual(s.weeks, w, `${msg}: weeks`);
+      assert.strictEqual(s.active, a, `${msg}: active`);
+      assert.strictEqual(s.current, c, `${msg}: current`);
+    };
+
+    seed([]);
+    expect(dom.window.computeStreak(), 0, false, false, 'empty history → no streak');
+
+    seed([isoAgo(0)]);
+    let s = dom.window.computeStreak();
+    assert.ok(s.active && s.current && s.weeks === 1, 'logged this week → active 1-week streak');
+
+    seed([isoAgo(14), isoAgo(7), isoAgo(0)]);
+    assert.strictEqual(dom.window.computeStreak().weeks, 3,
+      'three consecutive weeks → weeks:3');
+
+    seed([isoAgo(7)]);
+    s = dom.window.computeStreak();
+    assert.ok(s.active && !s.current && s.weeks === 1,
+      'logged only last week → alive on the grace window, but current:false (no "this week" claim)');
+
+    seed([isoAgo(0), isoAgo(14)]);
+    assert.strictEqual(dom.window.computeStreak().weeks, 1,
+      'a gap at last week resets the streak to just this week');
+
+    seed([isoAgo(21)]);
+    expect(dom.window.computeStreak(), 0, false, false, 'nothing in this or last week → lapsed');
+
+    dom.window.localStorage.removeItem('herlyftWeights');
+  });
+
   if (process.exitCode) {
     console.error('\nSome smoke tests FAILED.');
   } else {
