@@ -1250,6 +1250,23 @@ dom.window.addEventListener('load', async () => {
     assert.strictEqual(document.getElementById('goal-target').textContent, '65.0 kg');
   });
 
+  check('body shape: backup carries the saved direction and restore brings it back', () => {
+    dom.window.localStorage.setItem('herlyft_body_now', '5');
+    dom.window.localStorage.setItem('herlyft_body_goal', '2');
+    const backup = dom.window.buildBackup();
+    assert.strictEqual(backup.bodyNow, '5', 'backup should carry bodyNow');
+    assert.strictEqual(backup.bodyGoal, '2', 'backup should carry bodyGoal');
+    dom.window.localStorage.removeItem('herlyft_body_now');
+    dom.window.localStorage.removeItem('herlyft_body_goal');
+    dom.window.applyBackup(backup);
+    assert.strictEqual(dom.window.localStorage.getItem('herlyft_body_now'), '5', 'restore brings back bodyNow');
+    assert.strictEqual(dom.window.localStorage.getItem('herlyft_body_goal'), '2', 'restore brings back bodyGoal');
+    // Out-of-range values in a backup are ignored, not blindly written.
+    dom.window.localStorage.removeItem('herlyft_body_now');
+    dom.window.applyBackup({ app: 'herlyft', bodyNow: '9', weights: [] });
+    assert.strictEqual(dom.window.localStorage.getItem('herlyft_body_now'), null, 'invalid bodyNow is rejected');
+  });
+
   check('goal progress: switching to imperial converts the goal-weight input and dashboard stops', () => {
     seedGoalScenario({
       weights: [{ date: '2026-05-01', kg: 80 }, { date: '2026-06-20', kg: 75 }],

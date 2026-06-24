@@ -479,6 +479,40 @@
   }
   .gif-note { color: var(--muted); font-size: 13px; }
 
+  /* ---- Body shape selector ("Visualize Your Goal") ---- */
+  .body-shape-cols {
+    display: flex; gap: 16px; justify-content: center; align-items: flex-start;
+    margin-top: 12px;
+  }
+  .body-col { flex: 1; max-width: 160px; text-align: center; }
+  .body-col-title {
+    margin: 0 0 4px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted);
+  }
+  .body-figure { width: 100%; }
+  .body-figure svg { width: 100%; height: auto; display: block; }
+  .body-shape { opacity: 0; transition: opacity 0.3s ease; }
+  .body-shape.on { opacity: 1; }
+  .body-col--now .body-shape, .body-col--now .body-head { fill: var(--muted); }
+  .body-col--goal .body-shape, .body-col--goal .body-head { fill: var(--accent); }
+  .body-col-label { margin: 6px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
+  .body-col input[type="range"] {
+    width: 100%; height: 44px; accent-color: var(--accent); cursor: pointer;
+  }
+  .body-col input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  /* Now slider matches its muted figure; Goal stays accent. */
+  .body-col--now input[type="range"] { accent-color: var(--muted); }
+  .body-motivation {
+    text-align: center; font-size: 14px; font-weight: 600;
+    color: var(--text); min-height: 2.6em; margin: 14px 0;   /* --text for AA contrast in both themes */
+  }
+  @media (prefers-reduced-motion: reduce) { .body-shape { transition: none; } }
+  /* Dashboard read-only transform */
+  .transform-cols { align-items: center; }
+  .transform-arrow { font-size: 40px; font-weight: 700; color: var(--text); flex: 0 0 auto; line-height: 1; }
+
   .visual {
     font-size: 48px;
     text-align: center;
@@ -1189,7 +1223,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.2.0</span>
+    <span class="version">v4.3.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1436,6 +1470,28 @@
       </details>
     </div>
 
+    <div class="card" id="body-shape-card">
+      <h2>Picture Your Direction</h2>
+      <p class="hint">A private picture of where you are and where you're headed — yours, no one else's. Strength lives at every size on this slider, and where you sit says nothing about your health or your worth.</p>
+      <div class="body-shape-cols">
+        <div class="body-col body-col--now">
+          <p class="body-col-title">Now</p>
+          <div class="body-figure" id="body-now-fig"></div>
+          <p class="body-col-label" id="body-now-label">Mid</p>
+          <input type="range" min="1" max="5" step="1" value="3" id="body-now-slider" aria-label="Current body shape" aria-valuetext="Mid">
+        </div>
+        <div class="body-col body-col--goal">
+          <p class="body-col-title">Goal</p>
+          <div class="body-figure" id="body-goal-fig"></div>
+          <p class="body-col-label" id="body-goal-label">Mid</p>
+          <input type="range" min="1" max="5" step="1" value="3" id="body-goal-slider" aria-label="Goal body shape" aria-valuetext="Mid">
+        </div>
+      </div>
+      <p class="body-motivation" id="body-motivation" role="status"></p>
+      <button type="button" class="primary" id="body-save">Save</button>
+      <span id="body-saved" class="saved-flash" role="status">Saved!</span>
+    </div>
+
     <div class="card" id="data-card">
       <h2>Backup & Restore</h2>
       <p class="hint">Your data only lives in this browser. Download a backup before clearing your cookies, switching devices, or shipping a major app update.</p>
@@ -1450,6 +1506,24 @@
 
   <!-- ============ DASHBOARD TAB ============ -->
   <section id="dashboard" class="tab">
+    <div class="card" id="transform-card">
+      <h2>My Direction</h2>
+      <div class="body-shape-cols transform-cols" id="transform-body">
+        <div class="body-col body-col--now">
+          <p class="body-col-title">Now</p>
+          <div class="body-figure" id="t-body-now-fig"></div>
+          <p class="body-col-label" id="t-body-now-label">—</p>
+        </div>
+        <div class="transform-arrow" aria-hidden="true">→</div>
+        <div class="body-col body-col--goal">
+          <p class="body-col-title">Goal</p>
+          <div class="body-figure" id="t-body-goal-fig"></div>
+          <p class="body-col-label" id="t-body-goal-label">—</p>
+        </div>
+      </div>
+      <p class="hint" id="transform-empty" style="display:none;">Set your direction on the Profile tab.</p>
+    </div>
+
     <div class="card goal-card" id="goal-card" style="display:none;">
       <h2>Goal progress</h2>
       <p class="hint" id="goal-hint">Set a goal weight on the Profile tab to see how far you've come and how far's left.</p>
@@ -1622,7 +1696,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.2.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.3.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1991,7 +2065,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
-    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); }
+    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); renderTransform(); }
     if (btn.dataset.tab === 'today') renderToday();
   });
 });
@@ -2917,6 +2991,8 @@ function buildBackup() {
     exportedAt: new Date().toISOString(),
     profile: profileRaw ? JSON.parse(profileRaw) : null,
     weights: getWeights(),
+    bodyNow: localStorage.getItem(BODY_NOW_KEY),
+    bodyGoal: localStorage.getItem(BODY_GOAL_KEY),
     hydration: {},
   };
   for (let i = 0; i < localStorage.length; i++) {
@@ -2932,6 +3008,11 @@ function applyBackup(data) {
   if (!data || data.app !== 'herlyft') throw new Error('Not a Herlyft backup file.');
   if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
   if (Array.isArray(data.weights)) saveWeights(data.weights);
+  // Body-shape "direction" (additive; older backups simply lack these keys).
+  for (const [field, key] of [['bodyNow', BODY_NOW_KEY], ['bodyGoal', BODY_GOAL_KEY]]) {
+    const v = parseInt(data[field], 10);
+    if (v >= 1 && v <= 5) localStorage.setItem(key, String(v));
+  }
   if (data.hydration && typeof data.hydration === 'object') {
     for (const [date, entries] of Object.entries(data.hydration)) {
       if (Array.isArray(entries)) {
@@ -2980,6 +3061,8 @@ document.getElementById('d-restore-input').addEventListener('change', (ev) => {
       renderHydration();
       renderDashboard();
       renderToday();
+      refreshBodyShapeSliders();
+      renderTransform();
       await renderPhotos();
       showDataStatus('Backup restored.');
     } catch (err) {
@@ -3900,6 +3983,141 @@ if (ppGrid) {
 }
 
 /* ============================================================
+   BODY SHAPE SELECTOR — "Picture Your Direction" (Profile) + read-only
+   "My Direction" (Dashboard). Additive localStorage only.
+   ============================================================ */
+const BODY_NOW_KEY = 'herlyft_body_now';
+const BODY_GOAL_KEY = 'herlyft_body_goal';
+const BODY_LABELS = ['Slimmer', 'Lean', 'Mid', 'Soft', 'Fuller'];
+
+// Parametric female silhouette (head drawn separately); f in [0,1] scales body
+// fullness. Arms-against-body (merged into the outline, no separate sub-paths)
+// so there's no seam at any size — what changes is bust/waist/hip/leg width.
+function bodyShapePath(f) {
+  const cx = 60;
+  const sh = 16 + 6 * f, bu = 14 + 10 * f, wa = 8 + 9 * f, hi = 17 + 15 * f, th = 10 + 7 * f, an = 7 + 3 * f;
+  const R = x => (cx + x).toFixed(1), L = x => (cx - x).toFixed(1);
+  return [
+    `M ${R(4)},62`,
+    `C ${R(sh)},64 ${R(sh)},74 ${R(sh)},82`,
+    `C ${R(sh)},96 ${R(bu)},100 ${R(bu)},114`,
+    `C ${R(bu)},132 ${R(wa)},138 ${R(wa)},152`,
+    `C ${R(wa)},168 ${R(hi)},174 ${R(hi)},192`,
+    `C ${R(hi)},214 ${R(th + 3)},224 ${R(th)},236`,
+    `L ${R(an + 1)},310`, `L ${R(an - 3)},310`,
+    `L ${R(3)},238`, `L ${cx},232`, `L ${L(3)},238`,
+    `L ${L(an - 3)},310`, `L ${L(an + 1)},310`,
+    `L ${L(th)},236`,
+    `C ${L(th + 3)},224 ${L(hi)},214 ${L(hi)},192`,
+    `C ${L(hi)},174 ${L(wa)},168 ${L(wa)},152`,
+    `C ${L(wa)},138 ${L(bu)},132 ${L(bu)},114`,
+    `C ${L(bu)},100 ${L(sh)},96 ${L(sh)},82`,
+    `C ${L(sh)},74 ${L(sh)},64 ${L(4)},62`, 'Z',
+  ].join(' ');
+}
+
+// One SVG per figure: a head + 5 stacked silhouettes; the selected one fades in.
+function buildBodyFigure(container, selectedIdx) {
+  if (!container) return;
+  const paths = BODY_LABELS.map((_, i) =>
+    `<path class="body-shape" data-shape="${i + 1}" d="${bodyShapePath(i / 4)}"/>`).join('');
+  // The visible text label carries the meaning for AT; the figure is decorative.
+  container.innerHTML = `<svg viewBox="0 0 120 320" aria-hidden="true" focusable="false">` +
+    `<circle class="body-head" cx="60" cy="32" r="15"/>${paths}</svg>`;
+  setBodyShape(container, selectedIdx);
+}
+
+function setBodyShape(container, idx) {
+  container.querySelectorAll('.body-shape').forEach(p =>
+    p.classList.toggle('on', Number(p.dataset.shape) === idx));
+}
+
+function readBodyVal(key, fallback) {
+  const n = parseInt(localStorage.getItem(key), 10);
+  return (n >= 1 && n <= 5) ? n : fallback;
+}
+
+function bodyMotivation(now, goal) {
+  if (goal < now) return "You've pictured your direction — every session is you showing up for it. Proud of you.";
+  if (goal > now) return "You've pictured your direction — every session is you building toward it. Proud of you.";
+  return "Right where you want to be — every session is you holding your strength. Proud of you.";
+}
+
+(function initBodyShape() {
+  const nowFig = document.getElementById('body-now-fig');
+  const goalFig = document.getElementById('body-goal-fig');
+  if (!nowFig || !goalFig) return;
+  const nowSlider = document.getElementById('body-now-slider');
+  const goalSlider = document.getElementById('body-goal-slider');
+  const nowLabel = document.getElementById('body-now-label');
+  const goalLabel = document.getElementById('body-goal-label');
+  const motivation = document.getElementById('body-motivation');
+
+  // Saved values win; otherwise the markup defaults.
+  nowSlider.value = readBodyVal(BODY_NOW_KEY, parseInt(nowSlider.value, 10));
+  goalSlider.value = readBodyVal(BODY_GOAL_KEY, parseInt(goalSlider.value, 10));
+  buildBodyFigure(nowFig, parseInt(nowSlider.value, 10));
+  buildBodyFigure(goalFig, parseInt(goalSlider.value, 10));
+
+  function sync() {
+    const n = parseInt(nowSlider.value, 10), g = parseInt(goalSlider.value, 10);
+    setBodyShape(nowFig, n);
+    setBodyShape(goalFig, g);
+    nowLabel.textContent = BODY_LABELS[n - 1];
+    goalLabel.textContent = BODY_LABELS[g - 1];
+    nowSlider.setAttribute('aria-valuetext', BODY_LABELS[n - 1]);
+    goalSlider.setAttribute('aria-valuetext', BODY_LABELS[g - 1]);
+    // Only rewrite (and re-announce) when the sentence actually changes — the
+    // line depends on the now-vs-goal relationship, not every slider tick.
+    const next = bodyMotivation(n, g);
+    if (motivation.textContent !== next) motivation.textContent = next;
+  }
+  nowSlider.addEventListener('input', sync);
+  goalSlider.addEventListener('input', sync);
+  sync();
+
+  document.getElementById('body-save').addEventListener('click', () => {
+    try {
+      localStorage.setItem(BODY_NOW_KEY, String(parseInt(nowSlider.value, 10)));
+      localStorage.setItem(BODY_GOAL_KEY, String(parseInt(goalSlider.value, 10)));
+    } catch {}
+    const flash = document.getElementById('body-saved');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1500);
+    renderTransform();
+  });
+})();
+
+// Re-sync the Profile sliders/figures from storage (e.g. after a restore), so a
+// later Save can't overwrite restored values with stale slider positions.
+function refreshBodyShapeSliders() {
+  const nowSlider = document.getElementById('body-now-slider');
+  const goalSlider = document.getElementById('body-goal-slider');
+  if (!nowSlider || !goalSlider) return;
+  nowSlider.value = readBodyVal(BODY_NOW_KEY, parseInt(nowSlider.value, 10) || 3);
+  goalSlider.value = readBodyVal(BODY_GOAL_KEY, parseInt(goalSlider.value, 10) || 3);
+  nowSlider.dispatchEvent(new Event('input'));   // drives the shared sync() handler
+  goalSlider.dispatchEvent(new Event('input'));
+}
+
+// Dashboard read-only "My Direction" — saved shapes side by side.
+function renderTransform() {
+  const body = document.getElementById('transform-body');
+  const empty = document.getElementById('transform-empty');
+  if (!body || !empty) return;
+  const now = parseInt(localStorage.getItem(BODY_NOW_KEY), 10);
+  const goal = parseInt(localStorage.getItem(BODY_GOAL_KEY), 10);
+  const ok = now >= 1 && now <= 5 && goal >= 1 && goal <= 5;
+  body.style.display = ok ? '' : 'none';
+  empty.style.display = ok ? 'none' : '';
+  if (!ok) return;
+  buildBodyFigure(document.getElementById('t-body-now-fig'), now);
+  buildBodyFigure(document.getElementById('t-body-goal-fig'), goal);
+  document.getElementById('t-body-now-label').textContent = BODY_LABELS[now - 1];
+  document.getElementById('t-body-goal-label').textContent = BODY_LABELS[goal - 1];
+}
+
+/* ============================================================
    STARTUP
    ============================================================ */
 loadProfile();
@@ -3910,6 +4128,7 @@ renderSummary();
 renderDashboard();
 renderPhotos();
 renderToday();
+renderTransform();
 </script>
 
 </body>
