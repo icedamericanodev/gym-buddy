@@ -2,6 +2,11 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v4.1.0 — 2026-06-24
+
+### Added
+- **Interactive muscle map** 💪 — on the Workouts tab, a tappable body diagram (front & back views with a toggle). Tap a muscle to target it and the matching muscle filter activates automatically; pick a filter button and the muscle lights up on the figure. "Cardio" and "Flexibility" clear the highlight. Keyboard- and screen-reader-accessible.
+
 ## v4.0.0 — 2026-06-24
 
 ### Changed
