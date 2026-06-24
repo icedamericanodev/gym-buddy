@@ -2,6 +2,17 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v4.0.0 — 2026-06-24
+
+### Changed
+- **Layout refresh: "Honeyed Hybrid"** 📐 — a calmer, more considered layout across the app. A new shared spacing-and-radius system gives every screen consistent rhythm, the hero and goal cards get a gentle lift at the moments that matter, and the data screens tighten up so you scan less. Same Golden Honey colours, same six tabs — just easier on the eye.
+- **Today feels like a home, not a single number** — below your current weight, a tasteful glance row shows your **logging streak** (counted in weeks you've weighed in, which is the realistic cadence) and a **"Build a session →"** shortcut to Workouts. Your **hydration tracker now lives on Today** too, where a daily action belongs.
+- **Profile is shorter to scan** — the form is grouped into **About you · Your body · Your goals** with quiet section dividers, so the long single-column wall reads as three tidy steps.
+- **Dashboard leads with your goal** — the goal-progress card sits first with a subtle accent edge, your current weight is promoted to a banner above the comparison stats, and the stat tiles match the rest of the app.
+
+### Notes
+- Hydration moved from the Profile tab to Today — same tracker, better home. No data is affected and nothing migrates.
+
 ## v3.0.0 — 2026-06-24
 
 ### Changed

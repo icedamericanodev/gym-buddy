@@ -52,6 +52,32 @@ a time, each as its own reviewed PR.
    three per-screen passes on top. brand-designer owns surface/spacing/rhythm;
    ui-ux owns usability/flow; accessibility for any focus/markup changes.
 
+   **Exploration phase plan (session 2026-06-24 — owner chose: 3 distinct
+   directions, all three screens per concept):**
+   - [ ] Baseline: run-gym-buddy, seed data, screenshot Today/Profile/Dashboard @390px
+   - [ ] Explore in parallel: brand-designer (spacing scale, radii/padding, rhythm)
+         + ui-ux (Today density, Profile sectioning, Dashboard card hierarchy) —
+         read-only analysis grounded in current markup, return proposals as text
+   - [ ] Synthesize into 3 coherent directions (e.g. Airy / Dense-glanceable / Hybrid),
+         each = a global spacing scale + the three per-screen treatments
+   - [ ] Build each as throwaway CSS/markup on the running app; screenshot all 3 screens
+   - [x] AskUserQuestion → owner picks direction (escalate design direction per rule 2)
+   - [x] **Owner picked: Direction C "Honeyed Hybrid"** + "wire up what's cheap now"
+         (real streak from weight history, real hydration status; workout tile = CTA)
+
+   **Full build plan (Direction C):**
+   - [ ] Global geometry tokens in :root (--space-*, --radius-*); re-point .card,
+         .stat/.dash-stat, grids, main padding. Unify forked stat grids.
+   - [ ] Today glance row markup: Streak (real) · Hydration (real status) · Workout (CTA→Workouts)
+   - [ ] computeStreak() from getWeights() dates; wire into renderToday
+   - [ ] Move full hydration tracker card from Profile → Today; remove from Profile
+   - [ ] Profile: 3 grouped sections (About you / Your body / Your goals) w/ dividers
+   - [ ] Dashboard: goal-card elevation + accent top edge; promote current weight to banner
+   - [ ] Verify: npm run lint + npm test + real-browser drive @390px
+   - [ ] Auto-run agents: code-reviewer + qa + ui-ux + accessibility + progress-analyst + brand-designer
+   - [ ] MAJOR bump 3.0.0 → 4.0.0 + CHANGELOG
+   - [ ] Remove mockup.html; PR → approver gate
+
 ### Process notes
 - Redesigns: never ship on a single "go" — build rendered mockups (run-gym-buddy
   skill) and have the owner pick before the full build. (Worked well for #30.)
