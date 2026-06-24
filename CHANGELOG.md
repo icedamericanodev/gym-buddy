@@ -2,6 +2,14 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v4.2.0 — 2026-06-24
+
+### Added
+- **Animated exercise demos** 🎞️ — on the Workouts tab, you can add a free [ExerciseDB](https://rapidapi.com) API key (collapsible card at the top). When a key is saved, building a session shows animated GIF demo cards for your selected muscle group — each with the move, target muscle, equipment, and the first steps. Your curated session still works fully **without** a key, and everything stays offline-capable; the demos are a bonus when you're online.
+
+### Notes
+- The API key is stored **unencrypted in this browser only** and never uploaded; a "Forget key" button removes it anytime. New `herlyft_exercisedb_key` storage key — no existing data is touched.
+
 ## v4.1.0 — 2026-06-24
 
 ### Added

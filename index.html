@@ -418,6 +418,66 @@
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
 
+  /* ---- ExerciseDB API key card + animated GIF demos ---- */
+  .api-key-card > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+    list-style: none;
+  }
+  .api-key-card > summary::-webkit-details-marker { display: none; }
+  .api-key-card > summary::before { content: '🔑 '; }
+  .api-key-tag {
+    font-weight: 400; font-size: 12px; color: var(--muted);
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    padding: 2px 8px; margin-left: 6px; white-space: nowrap;
+  }
+  .api-key-card[open] > summary { margin-bottom: 10px; }
+  .api-key-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .api-key-actions button { width: auto; flex: 1; min-width: 130px; min-height: 44px; }
+  .api-key-note { margin-top: 10px; font-size: 12px; }
+
+  .gif-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--grid-gap);
+    margin-top: 12px;
+  }
+  .gif-card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .gif-card:hover, .gif-card:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 4px 16px rgba(20, 14, 4, 0.4);
+  }
+  .gif-img {
+    width: 100%; height: 200px; object-fit: cover; display: block;
+    background: var(--panel);
+  }
+  .gif-body { padding: 14px; }
+  .gif-name { margin: 0 0 6px; font-size: 16px; text-transform: capitalize; color: var(--text); }
+  .gif-meta { margin: 2px 0; font-size: 12px; color: var(--muted); }
+  .gif-steps { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text); }
+  .gif-steps li { margin-bottom: 4px; }
+
+  .gif-spinner {
+    width: 34px; height: 34px; margin: 24px auto;
+    border: 3px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: gif-spin 0.8s linear infinite;
+  }
+  @keyframes gif-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .gif-spinner { animation-duration: 2s; }
+    .gif-card { transition: none; }
+  }
+  .gif-note { color: var(--muted); font-size: 13px; }
+
   .visual {
     font-size: 48px;
     text-align: center;
@@ -1128,7 +1188,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.1.0</span>
+    <span class="version">v4.2.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1561,7 +1621,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.1.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.2.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1572,6 +1632,20 @@
 
   <!-- ============ WORKOUTS TAB ============ -->
   <section id="workouts" class="tab">
+    <!-- Optional ExerciseDB key: when present, the curated session is augmented
+         with animated GIF demos. Without it, the session still works fully. -->
+    <details class="card api-key-card" id="api-key-card">
+      <summary>ExerciseDB API Key <span class="api-key-tag">free at rapidapi.com</span></summary>
+      <p class="hint">Get your free key at rapidapi.com, search ExerciseDB, subscribe to the free plan, copy your key. Add it here to see animated exercise demos with your session.</p>
+      <input type="password" id="edb-key" autocomplete="off" placeholder="Paste your RapidAPI key">
+      <div class="api-key-actions">
+        <button type="button" class="primary" id="edb-save">Save Key</button>
+        <button type="button" class="primary secondary" id="edb-forget">Forget key</button>
+      </div>
+      <p class="hint api-key-note">🔒 Stored unencrypted in this browser only — never uploaded. Use “Forget key” to remove it anytime.</p>
+      <p id="edb-status" class="hint" role="status" aria-live="polite" style="display:none;"></p>
+    </details>
+
     <div class="card">
       <h2>Today's Coach</h2>
       <p class="hint">Pick where you're training. We'll show suitable exercises with form tips.</p>
@@ -1639,6 +1713,7 @@
     </div>
 
     <div id="w-results"></div>
+    <div id="w-demos"></div>
   </section>
 
 </main>
@@ -3187,6 +3262,7 @@ document.getElementById('w-plan').addEventListener('click', () => {
   if (pool.length === 0) {
     document.getElementById('w-results').innerHTML =
       '<div class="card empty">No exercises match those filters.</div>';
+    document.getElementById('w-demos').innerHTML = '';
     return;
   }
   // Pick 5 random, prefer one per muscle group
@@ -3205,7 +3281,121 @@ document.getElementById('w-plan').addEventListener('click', () => {
   }
   document.getElementById('w-results').innerHTML =
     `<div class="card"><h2>Your session (${picks.length} exercises)</h2>${picks.map(exerciseCard).join('')}</div>`;
+  // Augment with animated demos for the selected muscle (no-op without a key).
+  loadDemos(curMuscle);
 });
+
+/* ============================================================
+   EXERCISEDB — animated GIF demos that AUGMENT the curated session
+   when the user has saved a free RapidAPI key. Network-only extra;
+   the curated session above always works offline without it.
+   ============================================================ */
+const EDB_KEY_STORAGE = 'herlyft_exercisedb_key';
+const EDB_HOST = 'exercisedb.p.rapidapi.com';
+// Our muscle filter → ExerciseDB bodyPart name.
+const EDB_BODYPART = {
+  chest: 'chest', back: 'back', legs: 'upper legs',
+  shoulders: 'shoulders', arms: 'upper arms', core: 'waist',
+  all: 'chest', cardio: 'cardio',
+};
+
+function getEdbKey() {
+  try { return (localStorage.getItem(EDB_KEY_STORAGE) || '').trim(); } catch { return ''; }
+}
+
+// Key card: prefill from storage, Save / Forget.
+(function initEdbKeyCard() {
+  const input = document.getElementById('edb-key');
+  if (!input) return;
+  const status = document.getElementById('edb-status');
+  const flash = (msg) => { status.textContent = msg; status.style.display = ''; };
+  const saved = getEdbKey();
+  if (saved) input.value = saved;
+  document.getElementById('edb-save').addEventListener('click', () => {
+    const v = input.value.trim();
+    if (!v) { flash('Enter a key first.'); return; }
+    try { localStorage.setItem(EDB_KEY_STORAGE, v); } catch {}
+    flash('Key saved — build a session to see animated demos.');
+  });
+  document.getElementById('edb-forget').addEventListener('click', () => {
+    try { localStorage.removeItem(EDB_KEY_STORAGE); } catch {}
+    input.value = '';
+    flash('Key removed. Your curated session still works offline.');
+    document.getElementById('w-demos').innerHTML = '';
+  });
+})();
+
+async function fetchExerciseGifs(bodyPart, key) {
+  const url = `https://${EDB_HOST}/exercises/bodyPart/${encodeURIComponent(bodyPart)}?limit=6`;
+  const res = await fetch(url, {
+    headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': EDB_HOST },
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (!Array.isArray(data)) throw new Error('Unexpected response');
+  return data.slice(0, 6);
+}
+
+// Only allow http(s) image URLs — untrusted API data feeds an <img src>.
+function safeGifUrl(u) {
+  const s = String(u || '');
+  return /^https:\/\//i.test(s) ? esc(s) : '';
+}
+
+function gifCardHtml(ex) {
+  const name = esc(ex.name || 'Exercise');
+  const target = esc(ex.target || '');
+  const equip = esc(ex.equipment || '');
+  const img = safeGifUrl(ex.gifUrl);
+  const steps = Array.isArray(ex.instructions) ? ex.instructions.slice(0, 3) : [];
+  const stepsHtml = steps.length
+    ? `<ol class="gif-steps">${steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`
+    : '<p class="gif-meta">Perform with controlled form. 3 sets x 10 to 12 reps.</p>';
+  const imgHtml = img
+    ? `<img class="gif-img" src="${img}" alt="${name} demonstration" loading="lazy">`
+    : '';
+  return `<div class="gif-card">
+    ${imgHtml}
+    <div class="gif-body">
+      <h3 class="gif-name">${name}</h3>
+      ${target ? `<p class="gif-meta">🎯 ${target}</p>` : ''}
+      ${equip ? `<p class="gif-meta">🏋️ ${equip}</p>` : ''}
+      ${stepsHtml}
+    </div>
+  </div>`;
+}
+
+function flexibilityTipCard() {
+  return `<div class="card"><h2>Animated demos</h2>
+    <p class="gif-note">Flexibility &amp; mobility work doesn't need a demo feed — hold each stretch 20–30 seconds, breathe slowly, and never bounce. Aim for mild tension, not pain. Try cat–cow, the world's greatest stretch, a hip-flexor lunge, and a doorway chest stretch.</p></div>`;
+}
+
+let demoReqId = 0;  // guards against an older fetch resolving after a newer one
+async function loadDemos(muscle) {
+  const out = document.getElementById('w-demos');
+  if (!out) return;
+  const myId = ++demoReqId;
+
+  if (muscle === 'flexibility') { out.innerHTML = flexibilityTipCard(); return; }
+
+  const key = getEdbKey();
+  if (!key) {
+    out.innerHTML = '<div class="card"><p class="gif-note">Add your free ExerciseDB API key above to see animated exercise demos.</p></div>';
+    return;
+  }
+  const bodyPart = EDB_BODYPART[muscle] || 'chest';
+  out.innerHTML = '<div class="card"><h2>Animated demos</h2><div class="gif-spinner" role="status" aria-label="Loading demos"></div></div>';
+  try {
+    const list = await fetchExerciseGifs(bodyPart, key);
+    if (myId !== demoReqId) return;
+    out.innerHTML = list.length
+      ? `<div class="card"><h2>Animated demos</h2><div class="gif-grid">${list.map(gifCardHtml).join('')}</div></div>`
+      : '<div class="card"><h2>Animated demos</h2><p class="gif-note">No demos found for this muscle group.</p></div>';
+  } catch (e) {
+    if (myId !== demoReqId) return;
+    out.innerHTML = '<div class="card"><h2>Animated demos</h2><p class="gif-note">Couldn\'t load exercises. Check your API key or try again.</p></div>';
+  }
+}
 
 /* ============================================================
    SUMMARY — printable one-page snapshot of profile + targets
