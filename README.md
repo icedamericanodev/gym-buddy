@@ -6,7 +6,7 @@ A personal gym + nutrition assistant that runs in your web browser. No installat
 
 - **Profile** — enter your age, sex, height, weight, activity level, goal, and preferred training style. See your BMI, BMR, daily calorie target, macros (protein / carbs / fat), and water.
 - **Meals** — type the ingredients you have at home. Get matched recipes with USDA-grounded macros and prep steps.
-- **Workouts** — browse 32 exercises (bodyweight / home / gym / stretching), filter by location or muscle, embed real form-tutorial videos inline, generate a 5-exercise quick session.
+- **Workouts** — browse 32 exercises (bodyweight / home / gym / stretching), filter by location or muscle (with the selected muscle highlighted on an anatomical body map), embed real form-tutorial videos inline, generate a 5-exercise quick session. Add an optional free RapidAPI key to also see animated demos and the muscle map.
 - **Summary** — a one-page snapshot of your profile and daily targets, plus personalized meal & exercise recommendations. Export to PDF for the gym, your coach, or your records.
 
 Your profile is saved in your browser, so it's remembered next time.

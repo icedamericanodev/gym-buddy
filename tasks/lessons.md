@@ -79,6 +79,17 @@ prevents it recurring. Keep entries short and actionable.
   get right by rendering all variants side-by-side in a scratch HTML (Playwright
   `file://` screenshot) and iterating, vs. editing the 4000-line index.html and
   re-driving the whole app each time.
+- **Screenshot the SVG prototype at LARGE size, not just thumbnail rows.** The
+  v4.4.0 silhouette redraw looked fine in a 96px-wide row, so it shipped to review —
+  but a zoomed (300px+) shot revealed a self-intersecting torso gash, boxy shoulders,
+  and pin legs that two agents then flagged. Small renders hide path self-intersections
+  and control-point artifacts. Always render at least one variant 3-4× larger (and the
+  extreme sizes f=0 and f=1) before integrating.
+- **A "tightened" regex can stop matching the real token.** Narrowing `back`'s matcher
+  from `/lat/` to `/\blat\b/` to avoid grabbing `vastus lateralis` also stopped it
+  matching the actual API token `lats` (the trailing `s` kills the `\b`). Needed
+  `/\blats?\b|latissimus/`. When tightening a fuzzy matcher, unit-test BOTH a positive
+  (the real token) and the decoy you're excluding — a smoke test caught this.
 - **Arms-against-a-widening-body as separate overlapping sub-paths leave seams.**
   Two arm `<path>`s laid over a torso that widens with size produced a dark
   negative-space sliver / lopsided look that worsened on fuller figures. Fix:

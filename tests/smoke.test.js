@@ -1390,6 +1390,63 @@ dom.window.addEventListener('load', async () => {
     dom.window.localStorage.removeItem('herlyftWeights');
   });
 
+  // ---- MUSCLE ANATOMY VIEW (v4.4.0) ----
+  check('anatomy: muscle map fetch is lazy — wired to the Workouts tab, not eager on load', () => {
+    // Regression guard for the pwa-performance must-fix: no top-level fetch on
+    // page load; the anatomy image only loads when Workouts is opened.
+    assert.ok(/=== 'workouts'\) loadAnatomyImage\(curMuscle\)/.test(html),
+      'loadAnatomyImage must be wired to the Workouts-tab activation');
+    assert.ok(!/\n\s*loadAnatomyImage\(curMuscle\);\s*\n\s*\/\* =/.test(html),
+      'there must be no eager top-level loadAnatomyImage call at module scope');
+  });
+
+  check('anatomy: no-key state shows a benefit-led prompt (not a broken/locked state)', () => {
+    dom.window.localStorage.removeItem('herlyft_exercisedb_key');
+    dom.window.loadAnatomyImage('all');   // no-key branch returns synchronously
+    const view = document.getElementById('anatomy-view');
+    assert.ok(view, 'expected an #anatomy-view panel');
+    assert.strictEqual(view.getAttribute('aria-hidden'), 'true',
+      'panel must be aria-hidden so it does not double-announce on filter taps');
+    assert.ok(/add a free RapidAPI key/i.test(view.textContent),
+      `expected the benefit-led key prompt, got "${view.textContent}"`);
+    assert.ok(!/error|broken|failed/i.test(view.textContent),
+      'no-key state must not read as an error');
+  });
+
+  check('anatomy: filter → API muscle-group mapping resolves the right tokens', () => {
+    const f = dom.window.mgiGroupsFor;
+    // A realistic live token list, including a decoy quad ("vastus lateralis")
+    // that the old bare /lat/ matcher would have wrongly grabbed for "back".
+    const valid = ['chest', 'lats', 'traps', 'quads', 'hamstring', 'calves',
+      'biceps', 'triceps', 'deltoids', 'abs', 'obliques', 'vastus lateralis'];
+    // (window-returned arrays are cross-realm, so check contents — not deepStrictEqual.)
+    const chest = f('chest', valid);
+    assert.ok(chest.length === 1 && chest[0] === 'chest', 'chest → [chest]');
+    const back = f('back', valid);
+    assert.ok(back.includes('lats') && back.includes('traps'), 'back → lats + traps');
+    assert.ok(!back.includes('vastus lateralis'), 'back must NOT grab a quad via "lat"');
+    assert.ok(f('legs', valid).includes('quads'), 'legs → quads');
+    const arms = f('arms', valid);
+    assert.ok(arms.includes('biceps') && arms.includes('triceps'), 'arms → biceps + triceps');
+    assert.strictEqual(f('all', valid).length, 0, 'all/cardio/flexibility → no highlight (base image)');
+    // Empty live list → best-guess fallback tokens (offline / token fetch failed).
+    const backFb = f('back', []);
+    assert.ok(backFb.includes('lats') && backFb.includes('traps'), 'fallback covers back');
+    const armsFb = f('arms', []);
+    assert.ok(armsFb.includes('biceps') && armsFb.includes('triceps'), 'fallback covers arms');
+  });
+
+  check('bodyShapePath: every size returns a closed path with finite coordinates', () => {
+    const p = dom.window.bodyShapePath;
+    assert.strictEqual(typeof p, 'function', 'bodyShapePath should be defined');
+    for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+      const d = p(f);
+      assert.ok(d.startsWith('M '), `f=${f}: path should start with a moveto`);
+      assert.ok(/Z$/.test(d), `f=${f}: path should be closed with Z`);
+      assert.ok(!/NaN|undefined|Infinity/.test(d), `f=${f}: path must have finite coords`);
+    }
+  });
+
   if (process.exitCode) {
     console.error('\nSome smoke tests FAILED.');
   } else {

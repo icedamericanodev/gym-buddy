@@ -2,6 +2,15 @@
 
 All notable user-facing changes to Herlyft. The version shown in the app header matches the most recent entry.
 
+## v4.4.0 — 2026-06-24
+
+### Changed
+- **Muscle map, now anatomical** 💪 — the Workouts muscle picker no longer uses the hand-drawn body diagram. The muscle filter pills are the selector, and the panel above now shows the chosen muscle group highlighted on a real anatomical body image from the free [Muscle Group Image Generator](https://rapidapi.com) API. It shares the same optional RapidAPI key as the exercise demos (subscribe to both free plans on one key); without a key the picker still works and shows a short prompt.
+- **Nicer body silhouettes** 🪞 — the "Picture Your Direction" figures were redrawn: a neck closes the head gap, and the shoulders and legs are smoother so they read as more natural figures — while staying fully abstract and neutral (no real or AI bodies), so the body-image-safe framing is unchanged.
+
+### Notes
+- The muscle map is an online-only visual; the curated session, filtering, and everything else stay fully offline-capable. No stored data changed; the silhouette sliders still use `herlyft_body_now` / `herlyft_body_goal`.
+
 ## v4.3.0 — 2026-06-24
 
 ### Added

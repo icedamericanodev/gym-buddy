@@ -6,6 +6,63 @@ here before non-trivial work, check items off as you go, and add a short
 
 ---
 
+## ACTIVE (2026-06-24) — Replace the two drawn visuals (owner: "not appealing")
+
+Decisions via AskUserQuestion: replace **both** drawn visuals; muscle diagram →
+**anatomical muscle-image API**; body silhouettes → **redraw nicer but stay
+abstract/neutral** (body-image-safe — no real/AI bodies).
+Branch: `claude/layout-refresh-exploration-v3ofy1` (reset onto main @ v4.3.0).
+
+**A. Muscle map (Workouts) → API anatomy image**
+- [ ] Remove drawn `#muscle-front`/`#muscle-back` SVGs, `.view-toggle`, dead JS
+      (`showView`/`highlightMuscleZones`/`FRONT_ONLY`/`BACK_ONLY`/zone handlers).
+- [ ] Keep `#muscle-filter` buttons (selector) + `#muscle-status` live region.
+- [ ] `#anatomy-view` + `loadAnatomyImage(muscle)`: reuse `herlyft_exercisedb_key`;
+      host `muscle-group-image-generator.p.rapidapi.com` `/getImage?muscleGroups=…&color=F0C34A&transparentBackground=1`;
+      fetch→blob→objectURL→`<img>`; request-id guard; fuzzy-map via cached `/getMuscleGroups`;
+      all/cardio/flexibility→`/getBaseImage`; 400/404→base; no key→benefit-led prompt.
+- [ ] Async pitfalls: wrap onerror, guard `URL.revokeObjectURL`, revoke on swap.
+- [ ] Broaden key-card copy: one RapidAPI key powers GIFs + anatomy (two free subs).
+
+**B. Body silhouettes → redraw nicer, stay abstract**
+- [ ] Prototype `bodyShapePath(f)` variants in scratch HTML + screenshot first
+      (per lessons); arms merged into outline; swap in; keep structure/labels/a11y.
+
+**C. Ship** — lint+test (fix muscle-zone drivers) · MINOR v4.4.0 + CHANGELOG ·
+auto-run code-reviewer/qa/ui-ux/gym-coach/pwa-performance/accessibility · PR +
+subscribe + approver (flag the new-external-API escalation as human-directed).
+
+### Review (v4.4.0 — shipped this session)
+Both visuals replaced per the owner's AskUserQuestion answers.
+- **Muscle map → API anatomy image.** Removed the drawn SVG diagram + front/back
+  toggle + all dead JS/CSS/tokens. Filter pills are the selector; `#anatomy-view`
+  shows the chosen muscle highlighted via the Muscle Group Image Generator API
+  (reuses the ExerciseDB RapidAPI key). Fuzzy-maps our filters to the live
+  `/getMuscleGroups` tokens, falls back to base image, then to a benefit-led prompt
+  with no key/offline.
+- **Silhouettes redrawn (V2).** Prototyped in a scratch file and **zoomed** before
+  integrating (the first attempt looked fine small but a zoom revealed a torso gash +
+  boxy shoulders + pin legs — lesson reinforced). V2 has rounded shoulders, a clean
+  hourglass, sturdier legs, neck closes the head gap — still fully abstract/neutral.
+- **Verified:** lint + 27 smoke tests (added 4: lazy-fetch guard, no-key prompt,
+  muscle-token mapping incl. the `lats` vs `lateralis` decoy, `bodyShapePath` sanity);
+  real-browser drive dark+light, no page errors.
+- **Auto-run panel (7 agents):** no Must-fix on correctness/security/a11y/mapping/
+  women's-health. Applied: lazy-load on Workouts activation (was eager — pwa Must),
+  comma-encode fix for multi-muscle, tightened `back` matcher + array fallbacks
+  (gym-coach), blob cache + clean object-URL lifecycle (pwa/code-review), panel
+  `aria-hidden` to stop triple SR announcements (a11y), bordered panel container +
+  payoff-first empty copy (ui-ux Must), pinned image height for CLS, de-densified
+  key-card copy.
+- **Surfaced (not blocking):** keyless users now get a text prompt instead of an
+  always-on body map (gym-coach — kept per the owner's "remove the drawing" intent);
+  CSP/`connect-src` for the two RapidAPI origins is still its own backlog PR.
+- **Escalation note:** the new external API call/dependency is escalation-class per
+  rule 2, but the owner directed it explicitly this session → pre-resolved; flagged
+  for the approver in the PR body.
+
+---
+
 ## Mission: polish Herlyft for the owner's personal UX, then share publicly
 
 Owner is the first user. Goal: make the app excellent for *her own* journey
