@@ -479,6 +479,35 @@
   }
   .gif-note { color: var(--muted); font-size: 13px; }
 
+  /* ---- Body shape selector ("Visualize Your Goal") ---- */
+  .body-shape-cols {
+    display: flex; gap: 16px; justify-content: center; align-items: flex-start;
+    margin-top: 12px;
+  }
+  .body-col { flex: 1; max-width: 160px; text-align: center; }
+  .body-col-title {
+    margin: 0 0 4px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted);
+  }
+  .body-figure { width: 100%; }
+  .body-figure svg { width: 100%; height: auto; display: block; }
+  .body-shape { opacity: 0; transition: opacity 0.3s ease; }
+  .body-shape.on { opacity: 1; }
+  .body-col--now .body-shape, .body-col--now .body-head { fill: var(--muted); }
+  .body-col--goal .body-shape, .body-col--goal .body-head { fill: var(--accent); }
+  .body-col-label { margin: 6px 0 8px; font-size: 14px; font-weight: 600; color: var(--text); }
+  .body-col input[type="range"] {
+    width: 100%; height: 44px; accent-color: var(--accent); cursor: pointer;
+  }
+  .body-motivation {
+    text-align: center; font-size: 14px; font-weight: 600;
+    color: var(--accent); min-height: 1.2em; margin: 14px 0;
+  }
+  @media (prefers-reduced-motion: reduce) { .body-shape { transition: none; } }
+  /* Dashboard read-only transform */
+  .transform-cols { align-items: center; }
+  .transform-arrow { font-size: 28px; color: var(--muted); flex: 0 0 auto; }
+
   .visual {
     font-size: 48px;
     text-align: center;
@@ -1189,7 +1218,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.2.0</span>
+    <span class="version">v4.3.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1436,6 +1465,28 @@
       </details>
     </div>
 
+    <div class="card" id="body-shape-card">
+      <h2>Visualize Your Goal</h2>
+      <p class="hint">Pick how you see yourself now and the shape you're working toward — a personal compass, not a judgment. Every body here is strong.</p>
+      <div class="body-shape-cols">
+        <div class="body-col body-col--now">
+          <p class="body-col-title">Now</p>
+          <div class="body-figure" id="body-now-fig"></div>
+          <p class="body-col-label" id="body-now-label">Average</p>
+          <input type="range" min="1" max="5" step="1" value="3" id="body-now-slider" aria-label="Current body shape">
+        </div>
+        <div class="body-col body-col--goal">
+          <p class="body-col-title">Goal</p>
+          <div class="body-figure" id="body-goal-fig"></div>
+          <p class="body-col-label" id="body-goal-label">Athletic</p>
+          <input type="range" min="1" max="5" step="1" value="2" id="body-goal-slider" aria-label="Goal body shape">
+        </div>
+      </div>
+      <p class="body-motivation" id="body-motivation" role="status" aria-live="polite"></p>
+      <button class="primary" id="body-save">Save my goal</button>
+      <span id="body-saved" class="saved-flash">Saved!</span>
+    </div>
+
     <div class="card" id="data-card">
       <h2>Backup & Restore</h2>
       <p class="hint">Your data only lives in this browser. Download a backup before clearing your cookies, switching devices, or shipping a major app update.</p>
@@ -1450,6 +1501,24 @@
 
   <!-- ============ DASHBOARD TAB ============ -->
   <section id="dashboard" class="tab">
+    <div class="card" id="transform-card">
+      <h2>My Transformation Goal</h2>
+      <div class="body-shape-cols transform-cols" id="transform-body">
+        <div class="body-col body-col--now">
+          <p class="body-col-title">Now</p>
+          <div class="body-figure" id="t-body-now-fig"></div>
+          <p class="body-col-label" id="t-body-now-label">—</p>
+        </div>
+        <div class="transform-arrow" aria-hidden="true">→</div>
+        <div class="body-col body-col--goal">
+          <p class="body-col-title">Goal</p>
+          <div class="body-figure" id="t-body-goal-fig"></div>
+          <p class="body-col-label" id="t-body-goal-label">—</p>
+        </div>
+      </div>
+      <p class="hint" id="transform-empty" style="display:none;">Set your goal on the Profile tab.</p>
+    </div>
+
     <div class="card goal-card" id="goal-card" style="display:none;">
       <h2>Goal progress</h2>
       <p class="hint" id="goal-hint">Set a goal weight on the Profile tab to see how far you've come and how far's left.</p>
@@ -1622,7 +1691,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.2.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.3.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1991,7 +2060,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'summary') renderSummary();
-    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); }
+    if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); renderTransform(); }
     if (btn.dataset.tab === 'today') renderToday();
   });
 });
@@ -3900,6 +3969,122 @@ if (ppGrid) {
 }
 
 /* ============================================================
+   BODY SHAPE SELECTOR — "Visualize Your Goal" (Profile) + read-only
+   "My Transformation Goal" (Dashboard). Additive localStorage only.
+   ============================================================ */
+const BODY_NOW_KEY = 'herlyft_body_now';
+const BODY_GOAL_KEY = 'herlyft_body_goal';
+const BODY_LABELS = ['Slim', 'Athletic', 'Average', 'Curvy', 'Full-figured'];
+
+// Parametric female silhouette; f in [0,1] scales fullness (bust/waist/hip/lower).
+function bodyShapePath(f) {
+  const cx = 60;
+  const sh = 15 + f * 5, bu = 13 + f * 8, wa = 8 + f * 8, hi = 16 + f * 12, lo = 11 + f * 9;
+  const R = x => (cx + x).toFixed(1), L = x => (cx - x).toFixed(1);
+  return [
+    `M ${R(5)},55`,
+    `C ${R(sh)},57 ${R(sh)},66 ${R(sh)},74`,
+    `C ${R(sh)},88 ${R(bu)},92 ${R(bu)},106`,
+    `C ${R(bu)},124 ${R(wa)},128 ${R(wa)},142`,
+    `C ${R(wa)},158 ${R(hi)},162 ${R(hi)},180`,
+    `C ${R(hi)},206 ${R(lo)},220 ${R(lo)},250`,
+    `C ${R(lo)},276 ${R(lo * 0.7)},288 ${cx},288`,
+    `C ${L(lo * 0.7)},288 ${L(lo)},276 ${L(lo)},250`,
+    `C ${L(lo)},220 ${L(hi)},206 ${L(hi)},180`,
+    `C ${L(hi)},162 ${L(wa)},158 ${L(wa)},142`,
+    `C ${L(wa)},128 ${L(bu)},124 ${L(bu)},106`,
+    `C ${L(bu)},92 ${L(sh)},88 ${L(sh)},74`,
+    `C ${L(sh)},66 ${L(sh)},57 ${L(5)},55`,
+    'Z',
+  ].join(' ');
+}
+
+// One SVG per figure: a head + 5 stacked silhouettes; the selected one fades in.
+function buildBodyFigure(container, selectedIdx) {
+  if (!container) return;
+  const paths = BODY_LABELS.map((_, i) =>
+    `<path class="body-shape" data-shape="${i + 1}" d="${bodyShapePath(i / 4)}"/>`).join('');
+  container.innerHTML = `<svg viewBox="0 0 120 300" role="img" aria-label="Body shape figure">` +
+    `<circle class="body-head" cx="60" cy="34" r="15"/>${paths}</svg>`;
+  setBodyShape(container, selectedIdx);
+}
+
+function setBodyShape(container, idx) {
+  container.querySelectorAll('.body-shape').forEach(p =>
+    p.classList.toggle('on', Number(p.dataset.shape) === idx));
+}
+
+function readBodyVal(key, fallback) {
+  const n = parseInt(localStorage.getItem(key), 10);
+  return (n >= 1 && n <= 5) ? n : fallback;
+}
+
+function bodyMotivation(now, goal) {
+  if (goal < now) return "Every rep brings you closer. You've got this.";
+  if (goal > now) return 'Building something stronger every day. Keep lifting.';
+  return 'Maintaining is a goal too. Stay consistent.';
+}
+
+(function initBodyShape() {
+  const nowFig = document.getElementById('body-now-fig');
+  const goalFig = document.getElementById('body-goal-fig');
+  if (!nowFig || !goalFig) return;
+  const nowSlider = document.getElementById('body-now-slider');
+  const goalSlider = document.getElementById('body-goal-slider');
+  const nowLabel = document.getElementById('body-now-label');
+  const goalLabel = document.getElementById('body-goal-label');
+  const motivation = document.getElementById('body-motivation');
+
+  // Saved values win; otherwise the markup defaults.
+  nowSlider.value = readBodyVal(BODY_NOW_KEY, parseInt(nowSlider.value, 10));
+  goalSlider.value = readBodyVal(BODY_GOAL_KEY, parseInt(goalSlider.value, 10));
+  buildBodyFigure(nowFig, parseInt(nowSlider.value, 10));
+  buildBodyFigure(goalFig, parseInt(goalSlider.value, 10));
+
+  function sync() {
+    const n = parseInt(nowSlider.value, 10), g = parseInt(goalSlider.value, 10);
+    setBodyShape(nowFig, n);
+    setBodyShape(goalFig, g);
+    nowLabel.textContent = BODY_LABELS[n - 1];
+    goalLabel.textContent = BODY_LABELS[g - 1];
+    nowSlider.setAttribute('aria-valuetext', BODY_LABELS[n - 1]);
+    goalSlider.setAttribute('aria-valuetext', BODY_LABELS[g - 1]);
+    motivation.textContent = bodyMotivation(n, g);
+  }
+  nowSlider.addEventListener('input', sync);
+  goalSlider.addEventListener('input', sync);
+  sync();
+
+  document.getElementById('body-save').addEventListener('click', () => {
+    try {
+      localStorage.setItem(BODY_NOW_KEY, String(parseInt(nowSlider.value, 10)));
+      localStorage.setItem(BODY_GOAL_KEY, String(parseInt(goalSlider.value, 10)));
+    } catch {}
+    const flash = document.getElementById('body-saved');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1500);
+    renderTransform();
+  });
+})();
+
+// Dashboard read-only "My Transformation Goal" — saved shapes side by side.
+function renderTransform() {
+  const body = document.getElementById('transform-body');
+  const empty = document.getElementById('transform-empty');
+  if (!body || !empty) return;
+  const now = parseInt(localStorage.getItem(BODY_NOW_KEY), 10);
+  const goal = parseInt(localStorage.getItem(BODY_GOAL_KEY), 10);
+  const ok = now >= 1 && now <= 5 && goal >= 1 && goal <= 5;
+  body.style.display = ok ? '' : 'none';
+  empty.style.display = ok ? 'none' : '';
+  if (!ok) return;
+  buildBodyFigure(document.getElementById('t-body-now-fig'), now);
+  buildBodyFigure(document.getElementById('t-body-goal-fig'), goal);
+  document.getElementById('t-body-now-label').textContent = BODY_LABELS[now - 1];
+  document.getElementById('t-body-goal-label').textContent = BODY_LABELS[goal - 1];
+}
+
+/* ============================================================
    STARTUP
    ============================================================ */
 loadProfile();
@@ -3910,6 +4095,7 @@ renderSummary();
 renderDashboard();
 renderPhotos();
 renderToday();
+renderTransform();
 </script>
 
 </body>
