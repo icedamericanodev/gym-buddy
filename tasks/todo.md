@@ -52,6 +52,55 @@ a time, each as its own reviewed PR.
    three per-screen passes on top. brand-designer owns surface/spacing/rhythm;
    ui-ux owns usability/flow; accessibility for any focus/markup changes.
 
+   **Exploration phase plan (session 2026-06-24 — owner chose: 3 distinct
+   directions, all three screens per concept):**
+   - [ ] Baseline: run-gym-buddy, seed data, screenshot Today/Profile/Dashboard @390px
+   - [ ] Explore in parallel: brand-designer (spacing scale, radii/padding, rhythm)
+         + ui-ux (Today density, Profile sectioning, Dashboard card hierarchy) —
+         read-only analysis grounded in current markup, return proposals as text
+   - [ ] Synthesize into 3 coherent directions (e.g. Airy / Dense-glanceable / Hybrid),
+         each = a global spacing scale + the three per-screen treatments
+   - [ ] Build each as throwaway CSS/markup on the running app; screenshot all 3 screens
+   - [x] AskUserQuestion → owner picks direction (escalate design direction per rule 2)
+   - [x] **Owner picked: Direction C "Honeyed Hybrid"** + "wire up what's cheap now"
+         (real streak from weight history, real hydration status; workout tile = CTA)
+
+   **Full build plan (Direction C):**
+   - [ ] Global geometry tokens in :root (--space-*, --radius-*); re-point .card,
+         .stat/.dash-stat, grids, main padding. Unify forked stat grids.
+   - [ ] Today glance row markup: Streak (real) · Hydration (real status) · Workout (CTA→Workouts)
+   - [ ] computeStreak() from getWeights() dates; wire into renderToday
+   - [ ] Move full hydration tracker card from Profile → Today; remove from Profile
+   - [ ] Profile: 3 grouped sections (About you / Your body / Your goals) w/ dividers
+   - [ ] Dashboard: goal-card elevation + accent top edge; promote current weight to banner
+   - [ ] Verify: npm run lint + npm test + real-browser drive @390px
+   - [ ] Auto-run agents: code-reviewer + qa + ui-ux + accessibility + progress-analyst + brand-designer
+   - [x] MAJOR bump 3.0.0 → 4.0.0 + CHANGELOG + sw.js CACHE
+   - [x] Remove mockup.html; PR → approver gate
+
+   ### Review (v4.0.0 — shipped this session)
+   Built Direction C "Honeyed Hybrid" after the owner picked it from 3 rendered
+   mockups (brand-designer + ui-ux explored; mockups screenshotted via
+   run-gym-buddy). Shared spacing/radius token scale unifies the previously
+   forked stat grids; Today gains a 2-up glance row (real weekly streak +
+   workout CTA) with the hydration tracker relocated from Profile; Profile
+   grouped into 3 sections (now real <h3>s); Dashboard leads with the elevated
+   goal card + a current-weight banner. Verified: lint + 19→20 smoke tests
+   (added computeStreak coverage), real-browser drive @390px dark+light, no
+   page errors. Auto-run panel (code-reviewer, qa, ui-ux, accessibility,
+   progress-analyst, brand-designer) all reported; fixes applied:
+   - progress-analyst Must: streak no longer claims "This week" when only last
+     week was logged (added `current` flag + grace-window copy "log this week
+     to keep it").
+   - ui-ux Must: lapsed streak now dims (`.lapsed` — greyed flame + muted text).
+   - Removed dead `.glance-bar` CSS; dropped the workout-CTA aria-label that
+     was silencing its visible text; added `aria-live` to the streak tile;
+     field-group <p>→<h3>; tokenized residual raw px in .today-card/.today-head.
+   Deferred (Should/Nit, surfaced in PR): glance-tile height imbalance when the
+   workout value wraps at ≤390px (cosmetic); ≤320px real-device eyeball;
+   hydration as a peer card below a 2-tile glance (by design); `--space-7`
+   kept as a scale anchor (unused for now).
+
 ### Process notes
 - Redesigns: never ship on a single "go" — build rendered mockups (run-gym-buddy
   skill) and have the owner pick before the full build. (Worked well for #30.)

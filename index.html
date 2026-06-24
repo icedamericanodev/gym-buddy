@@ -33,6 +33,15 @@
     --border-strong: #4d4129;
     --header-glow-1: rgba(240, 195, 74, 0.16);  /* honey */
     --header-glow-2: rgba(20, 184, 166, 0.16);  /* teal */
+    /* ----- Geometry scale (v4 layout refresh — mode-independent) ----- */
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;
+    --space-5: 20px;  --space-6: 24px;  --space-7: 32px;
+    --radius-sm: 8px;  --radius-md: 12px;  --radius-lg: 16px;
+    --card-pad: var(--space-5);   /* card interior */
+    --card-gap: var(--space-4);   /* card-to-card */
+    --grid-gap: var(--space-3);   /* stat-grid / form-row gap */
+    --section-gap: var(--space-6);/* profile group separation */
+    --shadow-feature: 0 6px 18px rgba(20, 14, 4, 0.36);  /* hero / goal card lift */
     color-scheme: dark;
   }
   :root[data-theme="light"] {
@@ -50,6 +59,7 @@
     --border-strong: #d8c79c;
     --header-glow-1: rgba(184, 134, 11, 0.10);
     --header-glow-2: rgba(13, 143, 132, 0.08);
+    --shadow-feature: 0 6px 18px rgba(120, 90, 20, 0.16);
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -214,25 +224,25 @@
     background: var(--panel-2);
   }
 
-  main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  main { max-width: 900px; margin: 0 auto; padding: var(--space-5); }
   .tab { display: none; }
   .tab.active { display: block; }
 
   .card {
     background: var(--panel);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+    padding: var(--card-pad);
+    margin-bottom: var(--card-gap);
     border: 1px solid var(--border);
   }
   h2 { margin-top: 0; color: var(--accent); }
-  h3 { margin-bottom: 8px; }
+  h3 { margin-bottom: var(--space-2); }
 
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: var(--grid-gap);
+    margin-bottom: var(--grid-gap);
   }
   label {
     display: block;
@@ -273,13 +283,13 @@
   .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-top: 12px;
+    gap: var(--grid-gap);
+    margin-top: var(--grid-gap);
   }
   .stat {
     background: var(--panel-2);
-    padding: 14px;
-    border-radius: 8px;
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
     text-align: center;
   }
   .stat .num { font-size: 22px; font-weight: 700; color: var(--accent-2); }
@@ -515,15 +525,26 @@
   .dash-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-    margin: 16px 0;
+    gap: var(--grid-gap);
+    margin: var(--space-4) 0;
   }
   .dash-stat {
     background: var(--panel-2);
-    padding: 12px;
-    border-radius: 8px;
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
     text-align: center;
   }
+  /* Promote current weight out of the delta grid into a full-width banner so
+     the anchor reads first and the four comparisons sit below it. */
+  .dash-stat.dash-current {
+    grid-column: 1 / -1;
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .dash-stat.dash-current .dash-num { font-size: 34px; color: var(--accent); }
+  .dash-stat.dash-current .dash-label { margin-top: 0; }
   .dash-num { font-size: 22px; font-weight: 700; color: var(--text); }
   .dash-num.up { color: var(--danger); }
   .dash-num.down { color: var(--accent-2); }
@@ -544,9 +565,9 @@
   .dash-goal-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 1; }
   .dash-goal-label { fill: var(--accent); font-size: 10px; font-weight: 600; }
   /* TODAY (home view) */
-  .today-card { padding-top: 18px; padding-bottom: 22px; }
+  .today-card { padding-top: var(--space-5); padding-bottom: var(--space-6); }
   .today-head {
-    margin-bottom: 18px;
+    margin-bottom: var(--space-4);
   }
   .today-greeting {
     margin: 0;
@@ -562,9 +583,10 @@
   }
   .today-hero {
     text-align: center;
-    padding: 18px 12px 14px;
+    padding: 26px 14px 22px;
     background: var(--panel-2);
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-feature);   /* the emotional moment gets lift */
     position: relative;     /* anchor for the honey-particle delight */
     overflow: visible;
   }
@@ -953,6 +975,65 @@
     .rec-title .muted, .summary-block .muted { color: #555 !important; }
     .summary-recs { page-break-before: auto; }
   }
+
+  /* ===================================================================
+     LAYOUT REFRESH v4 — "Honeyed Hybrid"
+     Today glance row · grouped Profile · Dashboard goal-card hierarchy.
+     Airy at the emotional moments, tight where you scan data.
+     =================================================================== */
+
+  /* ---- Today: glance row below the hero ---- */
+  .today-glance {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: var(--grid-gap);
+    margin-top: var(--space-5);
+  }
+  .glance-tile {
+    background: var(--panel-2);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    text-align: left;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: default;
+  }
+  a.glance-tile, button.glance-tile { cursor: pointer; text-decoration: none; }
+  a.glance-tile:hover, button.glance-tile:hover { background: var(--border); }
+  a.glance-tile:focus-visible, button.glance-tile:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .glance-ico { font-size: 22px; line-height: 1.1; }
+  .glance-label {
+    margin: var(--space-1) 0 0; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted);
+  }
+  .glance-val { margin: 2px 0 0; font-size: 18px; font-weight: 700; color: var(--text); }
+  .glance-sub { margin: 0; font-size: 12px; color: var(--muted); }
+  .glance-cta { margin: 2px 0 0; font-size: 12px; font-weight: 700; color: var(--accent); }
+  /* Lapsed streak: dim the tile and grey the flame so "Restart" reads as a
+     paused state, not a live one. */
+  .glance-tile.lapsed { opacity: 0.72; }
+  .glance-tile.lapsed .glance-ico { filter: grayscale(1); opacity: 0.6; }
+  .glance-tile.lapsed .glance-val { color: var(--muted); }
+
+  /* ---- Profile: grouped section headers ---- */
+  .field-group {
+    margin: var(--section-gap) 0 var(--space-3); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+    font-weight: 700; padding-top: var(--space-4); border-top: 1px solid var(--border);
+  }
+  .field-group.first { margin-top: var(--space-2); padding-top: 0; border-top: none; }
+
+  /* ---- Dashboard: goal card leads, with lift + accent edge ---- */
+  #goal-card {
+    box-shadow: var(--shadow-feature);
+    border-top: 2px solid var(--accent);
+  }
 </style>
 <script>
   // Set the theme before first paint to avoid a flash of the wrong palette.
@@ -977,7 +1058,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v3.0.0</span>
+    <span class="version">v4.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1023,6 +1104,42 @@
             <div class="today-goal-bar-fill" id="t-goal-bar-fill" style="width:0%;"></div>
           </div>
         </div>
+
+        <!-- Glance row: a tasteful second look without crowding the hero -->
+        <div class="today-glance">
+          <div class="glance-tile" id="t-streak-tile" aria-live="polite">
+            <span class="glance-ico" aria-hidden="true">🔥</span>
+            <p class="glance-label">Logging streak</p>
+            <p class="glance-val" id="t-streak">—</p>
+            <p class="glance-sub" id="t-streak-sub"></p>
+          </div>
+          <button type="button" class="glance-tile" id="t-workout-cta">
+            <span class="glance-ico" aria-hidden="true">🏋️</span>
+            <p class="glance-label">Today's workout</p>
+            <p class="glance-val">Ready when you are</p>
+            <p class="glance-cta">Build a session →</p>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hydration moved here from Profile — it's a daily action, so it lives on
+         home. Same ids/listeners; renderHydration() shows it once a profile
+         (water target) exists. -->
+    <div class="card" id="h-card" style="display:none;">
+      <h2>Today's hydration <span id="h-pct" class="hydro-pct">0%</span></h2>
+      <p class="hint">Tap a button each time you drink. Resets at midnight.</p>
+
+      <div class="hydro-num">
+        <span id="h-current">0.0</span> / <span id="h-target">2.6</span> <span class="muted">L</span>
+      </div>
+      <div class="hydro-bar"><div class="hydro-fill" id="h-fill"></div></div>
+
+      <div class="hydro-buttons">
+        <button type="button" class="hydro-btn" data-ml="250">+ Cup<br><span class="ml">250 ml</span></button>
+        <button type="button" class="hydro-btn" data-ml="500">+ Bottle<br><span class="ml">500 ml</span></button>
+        <button type="button" class="hydro-btn" data-ml="750">+ Large<br><span class="ml">750 ml</span></button>
+        <button type="button" class="hydro-btn hydro-undo" id="h-undo">↶ Undo</button>
       </div>
     </div>
   </section>
@@ -1033,6 +1150,7 @@
       <h2>Your Profile</h2>
       <p class="hint">Fill this in once. We calculate your BMI, daily calories, and macros.</p>
 
+      <h3 class="field-group first">About you</h3>
       <div class="form-row">
         <div>
           <label>Name</label>
@@ -1061,6 +1179,7 @@
         </div>
       </div>
 
+      <h3 class="field-group">Your body</h3>
       <div class="form-row">
         <div>
           <label id="p-height-label">Height (cm)</label>
@@ -1072,6 +1191,7 @@
         </div>
       </div>
 
+      <h3 class="field-group">Your goals</h3>
       <div class="form-row">
         <div>
           <label>Activity level</label>
@@ -1185,23 +1305,6 @@
       </details>
     </div>
 
-    <div class="card" id="h-card" style="display:none;">
-      <h2>Today's hydration <span id="h-pct" class="hydro-pct">0%</span></h2>
-      <p class="hint">Tap a button each time you drink. Resets at midnight.</p>
-
-      <div class="hydro-num">
-        <span id="h-current">0.0</span> / <span id="h-target">2.6</span> <span class="muted">L</span>
-      </div>
-      <div class="hydro-bar"><div class="hydro-fill" id="h-fill"></div></div>
-
-      <div class="hydro-buttons">
-        <button type="button" class="hydro-btn" data-ml="250">+ Cup<br><span class="ml">250 ml</span></button>
-        <button type="button" class="hydro-btn" data-ml="500">+ Bottle<br><span class="ml">500 ml</span></button>
-        <button type="button" class="hydro-btn" data-ml="750">+ Large<br><span class="ml">750 ml</span></button>
-        <button type="button" class="hydro-btn hydro-undo" id="h-undo">↶ Undo</button>
-      </div>
-    </div>
-
     <div class="card" id="data-card">
       <h2>Backup & Restore</h2>
       <p class="hint">Your data only lives in this browser. Download a backup before clearing your cookies, switching devices, or shipping a major app update.</p>
@@ -1255,7 +1358,7 @@
 
       <div id="dash-content" style="display:none;">
         <div class="dash-stats">
-          <div class="dash-stat">
+          <div class="dash-stat dash-current">
             <div class="dash-num" id="dash-current">—</div>
             <div class="dash-label" id="dash-current-label">Current (kg)</div>
           </div>
@@ -1388,7 +1491,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v3.0.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -2190,6 +2293,26 @@ function celebrateWeightLog(el, prevKg, currentKg, unit) {
   });
 }
 
+// Logging streak measured in consecutive weeks (Monday-aligned) with at least
+// one weigh-in — weekly is the realistic cadence for stepping on a scale, so a
+// daily streak would almost always read "1" and discourage. The streak is
+// "active" only if this week or last week has a log; otherwise it's lapsed.
+function computeStreak() {
+  const arr = getWeights();
+  if (!arr.length) return { weeks: 0, active: false, current: false };
+  // YYYY-MM-DD parses as UTC midnight; Date.now() is UTC — same basis. Epoch
+  // day 0 (1970-01-01) was a Thursday, so −4 shifts the week boundary to Monday.
+  const weekIdx = (ms) => Math.floor((Math.floor(ms / 86400000) - 4) / 7);
+  const weeks = new Set(arr.map(e => weekIdx(new Date(e.date).getTime())));
+  const thisWeek = weekIdx(Date.now());
+  const current = weeks.has(thisWeek);   // logged in the current week (vs. only last week's grace)
+  let cursor = current ? thisWeek : weeks.has(thisWeek - 1) ? thisWeek - 1 : null;
+  if (cursor === null) return { weeks: 0, active: false, current: false };
+  let count = 0;
+  while (weeks.has(cursor)) { count++; cursor--; }
+  return { weeks: count, active: true, current };
+}
+
 function renderToday() {
   const dateEl = document.getElementById('t-date');
   const greetingEl = document.getElementById('t-greeting');
@@ -2231,6 +2354,31 @@ function renderToday() {
   const unit = wUnitLabel();
   const currentEl = document.getElementById('t-current');
   currentEl.textContent = `${fmtKg(current)} ${unit}`;
+
+  // Glance: logging streak (consecutive weeks with a weigh-in).
+  const streak = computeStreak();
+  const streakEl = document.getElementById('t-streak');
+  const streakSubEl = document.getElementById('t-streak-sub');
+  const streakTile = document.getElementById('t-streak-tile');
+  if (!streak.active) {
+    // Lapsed: nothing this week or last. Dim the tile so the lapse is legible.
+    streakEl.textContent = 'Restart';
+    streakSubEl.textContent = 'log a weight this week';
+    streakTile.classList.add('lapsed');
+  } else {
+    streakTile.classList.remove('lapsed');
+    if (!streak.current) {
+      // Alive on the last-week grace only — nudge to weigh in, don't claim "this week".
+      streakEl.textContent = streak.weeks === 1 ? '1 week' : `${streak.weeks} weeks`;
+      streakSubEl.textContent = 'log this week to keep it';
+    } else if (streak.weeks === 1) {
+      streakEl.textContent = 'This week';
+      streakSubEl.textContent = 'logged — keep it going';
+    } else {
+      streakEl.textContent = `${streak.weeks} weeks`;
+      streakSubEl.textContent = 'logged in a row';
+    }
+  }
 
   // Delight: if a new weight was just logged and Today is the visible tab,
   // count the hero up to it and toss a few honey motes. Consumed once.
@@ -2315,6 +2463,11 @@ function renderToday() {
     }
   }
 }
+
+// Today's glance "Build a session →" tile jumps to the Workouts tab.
+document.getElementById('t-workout-cta').addEventListener('click', () => {
+  document.querySelector('.tab-btn[data-tab="workouts"]').click();
+});
 
 function getGoalWeightKg() {
   try {
