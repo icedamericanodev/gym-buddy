@@ -14,16 +14,31 @@ a time, each as its own reviewed PR.
 
 ## Queue — do one at a time, each its own PR
 
-### Owner request 2026-06-24 — three new features (each its own PR off main)
-0. **Muscle anatomy diagram** (Feature 1) — interactive front/back SVG body map on
-   Workouts; tap a muscle ↔ muscle filter button two-way sync. MINOR v4.1.0.
-   IN REVIEW (branch claude/muscle-anatomy-diagram).
-1. **Exercise GIF cards** (Feature 2) — ExerciseDB/RapidAPI; user-supplied key in
-   localStorage; GIF cards replace text session. ⚠️ Architecturally significant:
-   turns the offline-first PWA into an API-dependent app + bypasses curated
-   EXERCISES. CONFIRM replace-vs-augment with owner before building.
-2. **Body shape selector** (Feature 3) — 5 female silhouettes, Now/Goal sliders on
-   Profile, read-only on Dashboard; herlyft_body_now / herlyft_body_goal. MINOR.
+### Owner request 2026-06-24 — three new features (all shipped, each its own PR)
+- ✅ **Feature 1 — Muscle anatomy diagram** — #34 (v4.1.0). Interactive front/back
+  SVG body map on Workouts; tap a zone ↔ muscle filter two-way sync via shared
+  setMuscleFilter(); auto-flips to the view that shows the muscle; keyboard +
+  screen-reader accessible.
+- ✅ **Feature 2 — Exercise GIF demos** — #35 (v4.2.0). ExerciseDB/RapidAPI.
+  Owner chose **AUGMENT** (curated offline session stays the base; GIFs layer in
+  when a key is present) + plaintext key with disclosure + Forget button. All API
+  fields esc()'d, https-only gifUrl. CSP deferred to a follow-up (app is fully
+  inline + has YouTube iframes — its own task).
+- ✅ **Feature 3 — Body shape selector "Picture Your Direction"** — #36 (v4.3.0).
+  Two slider-driven female silhouettes (Now/Goal) on Profile, read-only "My
+  Direction" on Dashboard. ESCALATED two findings to owner, who chose: adopt
+  womens-health's body-image-safe framing (neutral size labels, decoupled-from-
+  worth copy, equally-warm motivation) + redraw silhouettes. Backup round-trips
+  herlyft_body_now/goal.
+
+### Backlog / follow-ups surfaced during the 3-feature batch
+- [ ] **Whole-app Content-Security-Policy** (pwa-performance, from #35). Needs
+  'unsafe-inline' for the inline style/script + frame-src for the YouTube embeds
+  + connect-src rapidapi + img-src for the GIF CDN. Its own PR; owner aware.
+- [ ] **Global `scroll-margin-top` on headings** (ui-ux, app-wide) — section H2s
+  clip under the sticky nav when scrolled to the very top.
+- [ ] Muscle map pushes the filter chips + "Build a session" below the fold at
+  390px (qa/ui-ux nit from #34) — real-device eyeball; maybe shrink the figure.
 
 1. ✅ **Goal-weight suggestion from BMI** — shipped in #28 (v2.1.0). Final
    shape: healthy-range hint + "Use mid-range (BMI 23)" button + muscle caveat

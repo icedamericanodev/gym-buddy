@@ -56,6 +56,48 @@ prevents it recurring. Keep entries short and actionable.
   option (`newContext({ colorScheme: 'dark' })`) so screenshots/assertions are
   deterministic.
 
+## Escalation / sensitive features
+
+- **A domain agent can raise a values-level `Must fix` that overrides an explicit
+  user spec — that's an ESCALATE, not a silent override.** For the body-shape
+  selector the owner specified exact labels (Slim/Athletic/Average/Curvy/Full-
+  figured), but `womens-health` flagged that putting "Athletic" on a thin→full
+  size axis encodes "athletic = thinner" and the copy rewarded slimming. Don't
+  unilaterally rewrite the owner's chosen copy on a body-image/safety topic, and
+  don't merge with the Must-fix unresolved. Apply the values-neutral technical
+  fixes, then `AskUserQuestion` with the concern + concrete options; implement
+  only what they pick. (Owner chose the safer framing.)
+- **Get a domain agent's FINAL strings, don't paraphrase its concern.** After the
+  owner approved "safer framing," I ran `womens-health` again asking for exact
+  paste-ready labels/intro/motivation copy. Much better than guessing what
+  "safer" means.
+
+## SVG / generated art
+
+- **Prototype generated SVG in a throwaway standalone file and screenshot it
+  before integrating.** The body silhouettes and muscle map were far faster to
+  get right by rendering all variants side-by-side in a scratch HTML (Playwright
+  `file://` screenshot) and iterating, vs. editing the 4000-line index.html and
+  re-driving the whole app each time.
+- **Arms-against-a-widening-body as separate overlapping sub-paths leave seams.**
+  Two arm `<path>`s laid over a torso that widens with size produced a dark
+  negative-space sliver / lopsided look that worsened on fuller figures. Fix:
+  merge arms into the single body outline (or omit them) — a head + hourglass +
+  legs reads as a body with zero seam risk at any scale.
+
+## Testing (jsdom smoke tests)
+
+- **`assert.deepStrictEqual` rejects cross-realm objects.** An object returned by
+  page code via `dom.window.fn()` has the jsdom realm's `Object.prototype`, so
+  `deepStrictEqual(result, {…literal})` fails on the prototype check even when
+  values match (symptom: the printed "actual" looks identical to "expected").
+  Assert fields individually (`assert.strictEqual(r.x, …)`) for window-returned
+  objects.
+- **Keep verify-driver assertions in sync with copy changes.** A driver that
+  greps for old UI text ("Set your goal") silently fails after a copy reframe
+  ("Set your direction") and looks like an app regression — check the driver
+  before assuming the app broke.
+
 ## Subagents / orchestration
 
 - **A newly-created `.claude/agents/*.md` isn't selectable as a `subagent_type`
