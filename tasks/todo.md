@@ -32,8 +32,34 @@ Branch: `claude/layout-refresh-exploration-v3ofy1` (reset onto main @ v4.3.0).
 auto-run code-reviewer/qa/ui-ux/gym-coach/pwa-performance/accessibility · PR +
 subscribe + approver (flag the new-external-API escalation as human-directed).
 
-### Review
-(filled in when done)
+### Review (v4.4.0 — shipped this session)
+Both visuals replaced per the owner's AskUserQuestion answers.
+- **Muscle map → API anatomy image.** Removed the drawn SVG diagram + front/back
+  toggle + all dead JS/CSS/tokens. Filter pills are the selector; `#anatomy-view`
+  shows the chosen muscle highlighted via the Muscle Group Image Generator API
+  (reuses the ExerciseDB RapidAPI key). Fuzzy-maps our filters to the live
+  `/getMuscleGroups` tokens, falls back to base image, then to a benefit-led prompt
+  with no key/offline.
+- **Silhouettes redrawn (V2).** Prototyped in a scratch file and **zoomed** before
+  integrating (the first attempt looked fine small but a zoom revealed a torso gash +
+  boxy shoulders + pin legs — lesson reinforced). V2 has rounded shoulders, a clean
+  hourglass, sturdier legs, neck closes the head gap — still fully abstract/neutral.
+- **Verified:** lint + 27 smoke tests (added 4: lazy-fetch guard, no-key prompt,
+  muscle-token mapping incl. the `lats` vs `lateralis` decoy, `bodyShapePath` sanity);
+  real-browser drive dark+light, no page errors.
+- **Auto-run panel (7 agents):** no Must-fix on correctness/security/a11y/mapping/
+  women's-health. Applied: lazy-load on Workouts activation (was eager — pwa Must),
+  comma-encode fix for multi-muscle, tightened `back` matcher + array fallbacks
+  (gym-coach), blob cache + clean object-URL lifecycle (pwa/code-review), panel
+  `aria-hidden` to stop triple SR announcements (a11y), bordered panel container +
+  payoff-first empty copy (ui-ux Must), pinned image height for CLS, de-densified
+  key-card copy.
+- **Surfaced (not blocking):** keyless users now get a text prompt instead of an
+  always-on body map (gym-coach — kept per the owner's "remove the drawing" intent);
+  CSP/`connect-src` for the two RapidAPI origins is still its own backlog PR.
+- **Escalation note:** the new external API call/dependency is escalation-class per
+  rule 2, but the owner directed it explicitly this session → pre-resolved; flagged
+  for the approver in the PR body.
 
 ---
 

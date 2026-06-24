@@ -354,21 +354,26 @@
      image API (shares the optional RapidAPI key with the exercise demos). */
   .anatomy-view {
     max-width: 280px;
-    min-height: 230px;
+    min-height: 250px;          /* reserves image + caption height so swaps don't jump */
     margin: 0 auto 16px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
     text-align: center;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
   }
   .anatomy-img {
-    width: 100%;
-    max-width: 240px;
-    height: auto;
+    width: auto;
+    height: 200px;              /* fixed height avoids layout shift; body image is portrait */
+    max-width: 100%;
     display: block;
   }
+  .anatomy-view .gif-spinner { margin: 0; }   /* panel already centres it */
   .anatomy-caption {
     margin: 0;
     font-size: 13px;
@@ -1690,7 +1695,9 @@
            panel shows the chosen muscle highlighted on an anatomical body image
            from the muscle-group image API (shares the optional RapidAPI key with
            the demos). Degrades to a benefit-led prompt with no key / offline. -->
-      <div class="anatomy-view" id="anatomy-view" aria-live="polite"></div>
+      <!-- Decorative: the filter pills + #muscle-status convey the state to AT,
+           so the panel is aria-hidden to avoid double-announcing on every tap. -->
+      <div class="anatomy-view" id="anatomy-view" aria-hidden="true"></div>
       <p class="sr-only" id="muscle-status" role="status" aria-live="polite"></p>
 
       <div class="filter-bar" id="muscle-filter">
@@ -1716,7 +1723,7 @@
          bury the primary "build a session" flow for keyless users. -->
     <details class="card api-key-card" id="api-key-card">
       <summary>Animated demos &amp; muscle map — add a free RapidAPI key <span class="api-key-tag">optional</span></summary>
-      <p class="hint">Unlock an animated demo for each move <em>and</em> a highlighted muscle map. Get a free key at rapidapi.com and, on that same key, subscribe to the free plans for <strong>ExerciseDB</strong> (demos) and <strong>Muscle Group Image Generator</strong> (muscle map), then paste your key here. Your session works fine without it.</p>
+      <p class="hint">See an animated demo for each move, plus the muscle you pick highlighted on a body map. Both are free: get a key at rapidapi.com, then subscribe that one key to <strong>ExerciseDB</strong> (demos) and <strong>Muscle Group Image Generator</strong> (muscle map). Your session works fine without it.</p>
       <label for="edb-key">RapidAPI key</label>
       <input type="password" id="edb-key" autocomplete="off" placeholder="Paste your RapidAPI key">
       <div class="api-key-actions">
@@ -2002,6 +2009,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'summary') renderSummary();
     if (btn.dataset.tab === 'dashboard') { renderDashboard(); renderPhotos(); renderTransform(); }
     if (btn.dataset.tab === 'today') renderToday();
+    // Lazy — only fetch the muscle map when Workouts is actually opened (cached
+    // after first load), never eagerly on page load.
+    if (btn.dataset.tab === 'workouts') loadAnatomyImage(curMuscle);
   });
 });
 
@@ -3406,24 +3416,26 @@ const ANATOMY_LABELS = {
   shoulders: 'Shoulders', arms: 'Arms', core: 'Core',
 };
 // Our filter → which of the API's tokens to highlight. The real token names vary,
-// so we fuzzy-match against the live /getMuscleGroups list and fall back to a
-// best guess (then to the plain base image) if a name doesn't resolve.
+// so we fuzzy-match against the live /getMuscleGroups list and fall back to the
+// token arrays below (then to the plain base image) if a name doesn't resolve.
+// `\blat\b|latissimus` (not bare `lat`) so it can't grab `vastus lateralis` etc.
 const MGI_MATCHERS = {
   chest: t => /chest|pector|\bpec/.test(t),
-  back: t => /lat|trap|back|rhomb|erector|spinae/.test(t),
-  legs: t => /quad|hamstring|calf|calves|glute|adductor|abductor|leg|thigh/.test(t),
+  back: t => /\blats?\b|latissimus|trap|back|rhomb|erector|spinae/.test(t),
+  legs: t => /quad|hamstring|calf|calves|glute|adductor|abductor|\bleg|thigh/.test(t),
   shoulders: t => /delt|shoulder/.test(t),
   arms: t => /bicep|tricep|forearm/.test(t),
   core: t => /abs|abdomin|oblique|core|waist/.test(t),
 };
 const MGI_FALLBACK = {
-  chest: 'chest', back: 'lats', legs: 'quads',
-  shoulders: 'shoulders', arms: 'biceps', core: 'abs',
+  chest: ['chest'], back: ['lats', 'traps'], legs: ['quads', 'hamstring'],
+  shoulders: ['shoulders'], arms: ['biceps', 'triceps'], core: ['abs'],
 };
 
-let mgiGroupsCache = null;   // null=unfetched · []=failed/empty · [tokens]
-let mgiObjUrl = null;        // current object URL, revoked on swap
-let anatomyReqId = 0;        // guards a stale fetch resolving after a newer one
+let mgiGroupsCache = null;        // null=unfetched · [tokens]=cached (success only)
+const mgiBlobCache = new Map();   // request path → image Blob (≤7 stable results/session)
+let mgiObjUrl = null;             // current object URL, revoked on every swap
+let anatomyReqId = 0;             // guards a stale fetch resolving after a newer one
 
 async function mgiFetchBlob(path, key) {
   const res = await fetch(`https://${MGI_HOST}${path}`, {
@@ -3433,10 +3445,20 @@ async function mgiFetchBlob(path, key) {
   return res.blob();
 }
 
-// One-time fetch of the API's supported muscle-group tokens (cached). Returns
-// [] on failure so callers fall back to best-guess names.
+// Cached image-blob fetch — the 6 muscles + base image are stable per session,
+// so toggling filters back and forth never re-hits the API.
+async function mgiImageBlob(path, key) {
+  if (mgiBlobCache.has(path)) return mgiBlobCache.get(path);
+  const blob = await mgiFetchBlob(path, key);
+  mgiBlobCache.set(path, blob);
+  return blob;
+}
+
+// Fetch the API's supported muscle-group tokens once (cached on success only —
+// a transient failure returns [] without sticking, so a later tap retries and
+// falls back to best-guess names in the meantime).
 async function mgiValidGroups(key) {
-  if (mgiGroupsCache !== null) return mgiGroupsCache;
+  if (mgiGroupsCache) return mgiGroupsCache;
   try {
     const res = await fetch(`https://${MGI_HOST}/getMuscleGroups`, {
       headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': MGI_HOST },
@@ -3446,26 +3468,31 @@ async function mgiValidGroups(key) {
     const list = Array.isArray(data) ? data
       : (data && Array.isArray(data.muscleGroups)) ? data.muscleGroups : [];
     mgiGroupsCache = list.map(s => String(s));
-  } catch { mgiGroupsCache = []; }
-  return mgiGroupsCache;
+    return mgiGroupsCache;
+  } catch { return []; }
 }
 
 function mgiGroupsFor(muscle, valid) {
   const match = MGI_MATCHERS[muscle];
   if (!match) return [];                                   // all/cardio/flexibility
   const hits = valid.filter(t => match(t.toLowerCase()));
-  return hits.length ? hits : (MGI_FALLBACK[muscle] ? [MGI_FALLBACK[muscle]] : []);
+  return hits.length ? hits : (MGI_FALLBACK[muscle] || []);
+}
+
+// Release the live object URL on every view swap (the cached Blob is unaffected).
+function revokeAnatomyUrl() {
+  if (mgiObjUrl && URL.revokeObjectURL) URL.revokeObjectURL(mgiObjUrl);
+  mgiObjUrl = null;
 }
 
 function setAnatomyImg(blob, alt, caption) {
   const view = document.getElementById('anatomy-view');
   if (!view) return;
   if (!URL.createObjectURL) {                              // e.g. jsdom — no blobs
-    view.innerHTML = `<p class="anatomy-note">${esc(caption)}</p>`;
+    view.innerHTML = `<p class="anatomy-caption">${esc(caption)}</p>`;
     return;
   }
-  if (mgiObjUrl && URL.revokeObjectURL) URL.revokeObjectURL(mgiObjUrl);  // guard: jsdom lacks it
-  mgiObjUrl = URL.createObjectURL(blob);
+  mgiObjUrl = URL.createObjectURL(blob);                  // prior one revoked at load start
   view.innerHTML = `<img class="anatomy-img" src="${mgiObjUrl}" alt="${esc(alt)}" decoding="async" onerror="this.style.display='none'">` +
     `<p class="anatomy-caption">${esc(caption)}</p>`;
 }
@@ -3474,9 +3501,10 @@ async function loadAnatomyImage(muscle) {
   const view = document.getElementById('anatomy-view');
   if (!view) return;
   const myId = ++anatomyReqId;
+  revokeAnatomyUrl();                                      // free the previous image's URL
   const key = getEdbKey();
   if (!key) {
-    view.innerHTML = '<p class="anatomy-note">Pick a muscle below to filter the moves. Add a free RapidAPI key (card below) to see it highlighted on a muscle map — optional.</p>';
+    view.innerHTML = '<p class="anatomy-note">See the muscle you pick highlighted on a body map — add a free RapidAPI key in the card below (optional).</p>';
     return;
   }
   view.innerHTML = '<div class="gif-spinner" role="status" aria-label="Loading muscle map"></div>';
@@ -3485,17 +3513,18 @@ async function loadAnatomyImage(muscle) {
     if (myId !== anatomyReqId) return;
     const groups = mgiGroupsFor(muscle, valid);
     const label = ANATOMY_LABELS[muscle];
+    const basePath = '/getBaseImage?transparentBackground=1';
     let blob;
     if (groups.length) {
+      const imgPath = `/getImage?muscleGroups=${groups.map(encodeURIComponent).join(',')}&color=${MGI_COLOR}&transparentBackground=1`;
       try {
-        blob = await mgiFetchBlob(
-          `/getImage?muscleGroups=${encodeURIComponent(groups.join(','))}&color=${MGI_COLOR}&transparentBackground=1`, key);
+        blob = await mgiImageBlob(imgPath, key);
       } catch (e) {
-        if (e.status === 401 || e.status === 403 || e.status === 429) throw e;  // key / limit
-        blob = await mgiFetchBlob('/getBaseImage?transparentBackground=1', key); // bad name → plain body
+        if (e && (e.status === 401 || e.status === 403 || e.status === 429)) throw e;  // key / limit
+        blob = await mgiImageBlob(basePath, key);          // bad name → plain body
       }
     } else {
-      blob = await mgiFetchBlob('/getBaseImage?transparentBackground=1', key);
+      blob = await mgiImageBlob(basePath, key);
     }
     if (myId !== anatomyReqId) return;
     if (label) setAnatomyImg(blob, `Body map with ${label} highlighted`, `${label} highlighted`);
@@ -3510,9 +3539,6 @@ async function loadAnatomyImage(muscle) {
     view.innerHTML = `<p class="anatomy-note">${esc(msg)}</p>`;
   }
 }
-
-// Initial render so the panel isn't blank before the first filter tap.
-loadAnatomyImage(curMuscle);
 
 /* ============================================================
    SUMMARY — printable one-page snapshot of profile + targets
@@ -4013,31 +4039,31 @@ const BODY_LABELS = ['Slimmer', 'Lean', 'Mid', 'Soft', 'Fuller'];
 // read as legs rather than sticks. What changes with f is bust/waist/hip/leg width.
 function bodyShapePath(f) {
   const cx = 60;
-  const nk = 4.5 + 1.0 * f, sh = 17 + 6 * f, bu = 13.5 + 10 * f, wa = 8 + 8 * f,
-        hi = 18 + 15 * f, th = 10.5 + 7 * f, kn = 8 + 4 * f, an = 5.5 + 2.5 * f, ig = 2.2;
+  const nk = 6 + 1 * f, sh = 18 + 6 * f, bu = 14 + 9 * f, wa = 9 + 7 * f, hi = 18 + 14 * f,
+        th = 11 + 7 * f, ca = 7 + 3 * f, an = 5 + 2 * f, ig = 2 + 1.5 * f;
   const R = x => (cx + x).toFixed(1), L = x => (cx - x).toFixed(1);
   return [
-    `M ${R(nk)},45`,                                 // neck (meets head bottom)
-    `C ${R(nk)},56 ${R(sh - 2)},58 ${R(sh)},70`,     // shoulder slope
-    `C ${R(sh)},86 ${R(bu)},94 ${R(bu)},106`,        // bust
-    `C ${R(bu)},126 ${R(wa)},134 ${R(wa)},150`,      // waist
-    `C ${R(wa)},170 ${R(hi)},178 ${R(hi)},196`,      // hip
-    `C ${R(hi)},214 ${R(th + 2)},226 ${R(th)},240`,  // outer thigh
-    `C ${R(th)},262 ${R(kn)},268 ${R(kn)},278`,      // knee
-    `C ${R(kn)},296 ${R(an)},306 ${R(an)},314`,      // outer ankle
-    `L ${R(ig)},314`,                                // right foot
-    `C ${R(ig)},300 ${R(ig + 1)},262 ${R(ig + 2)},240`, // inner right leg up
-    `C ${R(ig + 1)},226 ${R(ig)},220 ${cx},218`,     // to crotch
-    `C ${L(ig)},220 ${L(ig + 1)},226 ${L(ig + 2)},240`, // inner left leg down
-    `C ${L(ig + 1)},262 ${L(ig)},300 ${L(ig)},314`,
-    `L ${L(an)},314`,                                // left foot
-    `C ${L(kn)},306 ${L(kn)},296 ${L(kn)},278`,
-    `C ${L(kn)},268 ${L(th)},262 ${L(th)},240`,
-    `C ${L(th + 2)},226 ${L(hi)},214 ${L(hi)},196`,
-    `C ${L(hi)},178 ${L(wa)},170 ${L(wa)},150`,
-    `C ${L(wa)},134 ${L(bu)},126 ${L(bu)},106`,
-    `C ${L(bu)},94 ${L(sh)},86 ${L(sh)},70`,
-    `C ${L(sh - 2)},58 ${L(nk)},56 ${L(nk)},45`, 'Z',
+    `M ${R(nk)},44`,                                 // neck (meets head bottom)
+    `C ${R(nk)},52 ${R(sh)},58 ${R(sh)},68`,         // rounded shoulder
+    `C ${R(sh)},80 ${R(bu)},92 ${R(bu)},104`,        // shoulder → bust
+    `C ${R(bu)},124 ${R(wa)},132 ${R(wa)},148`,      // bust → waist
+    `C ${R(wa)},168 ${R(hi)},176 ${R(hi)},194`,      // waist → hip
+    `C ${R(hi)},210 ${R(th + 2)},220 ${R(th)},232`,  // hip → thigh
+    `C ${R(th)},256 ${R(ca)},262 ${R(ca)},272`,      // thigh → knee
+    `C ${R(ca)},294 ${R(an)},304 ${R(an)},312`,      // knee → ankle
+    `L ${R(ig)},312`,                                // right foot
+    `C ${R(ig)},290 ${R(ig + 1)},250 ${R(ig + 2)},232`, // inner right leg up
+    `C ${R(ig + 1)},222 ${R(ig)},216 ${cx},214`,     // to crotch
+    `C ${L(ig)},216 ${L(ig + 1)},222 ${L(ig + 2)},232`, // inner left leg down
+    `C ${L(ig + 1)},250 ${L(ig)},290 ${L(ig)},312`,
+    `L ${L(an)},312`,                                // left foot
+    `C ${L(ca)},304 ${L(ca)},294 ${L(ca)},272`,
+    `C ${L(ca)},262 ${L(th)},256 ${L(th)},232`,
+    `C ${L(th + 2)},220 ${L(hi)},210 ${L(hi)},194`,
+    `C ${L(hi)},176 ${L(wa)},168 ${L(wa)},148`,
+    `C ${L(wa)},132 ${L(bu)},124 ${L(bu)},104`,
+    `C ${L(bu)},92 ${L(sh)},80 ${L(sh)},68`,
+    `C ${L(sh)},58 ${L(nk)},52 ${L(nk)},44`, 'Z',
   ].join(' ');
 }
 
