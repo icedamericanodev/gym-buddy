@@ -5,10 +5,10 @@ All notable user-facing changes to Herlyft. The version shown in the app header 
 ## v4.3.0 — 2026-06-24
 
 ### Added
-- **Visualize Your Goal** 🪞 — on the Profile tab, two side-by-side body silhouettes ("Now" and "Goal") with a slider each. Pick how you see yourself now and the shape you're working toward (Slim · Athletic · Average · Curvy · Full-figured), and a motivational line responds to your choice. Save it and a read-only **"My Transformation Goal"** appears at the top of your Dashboard — your before-and-now compass, alongside the weight chart.
+- **Picture Your Direction** 🪞 — on the Profile tab, two side-by-side body silhouettes ("Now" and "Goal"), each set by a slider across five neutral sizes (Slimmer · Lean · Mid · Soft · Fuller), with an equally-warm encouraging line whichever way you're headed. Save it and a read-only **"My Direction"** appears at the top of your Dashboard, alongside the weight chart.
 
 ### Notes
-- Your choices are stored locally (`herlyft_body_now` / `herlyft_body_goal`) — additive, nothing else is touched. Framed as a personal compass, never a judgment.
+- Framed as a private compass, decoupled from health or worth — strength lives at every size, and the silhouettes never touch your calorie or weight math. Choices are stored locally (`herlyft_body_now` / `herlyft_body_goal`); additive, nothing else is touched.
 
 ## v4.2.0 — 2026-06-24
 
