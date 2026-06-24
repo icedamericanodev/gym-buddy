@@ -42,8 +42,6 @@
     --grid-gap: var(--space-3);   /* stat-grid / form-row gap */
     --section-gap: var(--space-6);/* profile group separation */
     --shadow-feature: 0 6px 18px rgba(20, 14, 4, 0.36);  /* hero / goal card lift */
-    --muscle-idle: rgba(240, 195, 74, 0.20);   /* idle muscle zone — visible but subtle */
-    --muscle-stroke: rgba(248, 217, 126, 0.55);
     color-scheme: dark;
   }
   :root[data-theme="light"] {
@@ -62,8 +60,6 @@
     --header-glow-1: rgba(184, 134, 11, 0.10);
     --header-glow-2: rgba(13, 143, 132, 0.08);
     --shadow-feature: 0 6px 18px rgba(120, 90, 20, 0.16);
-    --muscle-idle: rgba(184, 134, 11, 0.16);
-    --muscle-stroke: rgba(184, 134, 11, 0.45);
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -352,66 +348,38 @@
     border-color: var(--accent);
   }
 
-  /* ---- Interactive muscle map (Workouts tab) ---- */
-  .muscle-map-label {
-    margin: 4px 0 8px;
-    font-size: 13px;
-    color: var(--muted);
+  /* ---- Muscle anatomy view (Workouts tab) ----
+     The filter pills below are the selector; this panel shows the selected
+     muscle highlighted on an anatomical body image fetched from the muscle-group
+     image API (shares the optional RapidAPI key with the exercise demos). */
+  .anatomy-view {
+    max-width: 280px;
+    min-height: 230px;
+    margin: 0 auto 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-align: center;
   }
-  /* Segmented control — deliberately distinct from the muscle filter pills so
-     the "Back" view button isn't confused with the "Back" muscle filter. */
-  .view-toggle {
-    display: flex;
-    width: max-content;
-    margin: 0 auto 10px;
-    padding: 3px;
-    gap: 3px;
-    background: var(--panel-2);
-    border: 1px solid var(--border-strong);
-    border-radius: 999px;
+  .anatomy-img {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    display: block;
   }
-  .view-toggle button {
-    background: transparent;
-    color: var(--muted);
-    border: none;
-    padding: 8px 22px;
-    min-height: 44px;
-    border-radius: 999px;
-    cursor: pointer;
+  .anatomy-caption {
+    margin: 0;
     font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
   }
-  .view-toggle button.on {
-    background: var(--accent);
-    color: #0a0e1a;
-  }
-  .muscle-figure {
-    max-width: 280px;
-    margin: 0 auto 16px;
-  }
-  .muscle-svg { width: 100%; height: auto; display: block; }
-  .muscle-svg.hidden { display: none; }
-  .body-base {
-    fill: var(--panel-2);
-    stroke: var(--border-strong);
-    stroke-width: 1;
-  }
-  .muscle-zone {
-    fill: var(--muscle-idle);
-    stroke: var(--muscle-stroke);
-    stroke-width: 0.75;
-    cursor: pointer;
-    transition: fill 0.3s ease;
-  }
-  .muscle-zone:hover { fill: var(--accent-soft); }
-  /* outline + a stroke fallback (some browsers drop `outline` on SVG children) */
-  .muscle-zone:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 1px;
-    stroke: var(--accent); stroke-width: 2;
-  }
-  .muscle-zone.active { fill: var(--accent); stroke: none; }
-  @media (prefers-reduced-motion: reduce) {
-    .muscle-zone { transition: none; }
+  .anatomy-note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
   }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -1223,7 +1191,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.3.0</span>
+    <span class="version">v4.4.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1696,7 +1664,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.3.0</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.4.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1718,44 +1686,11 @@
         <button data-loc="gym">Gym</button>
       </div>
 
-      <!-- Interactive muscle map: tap a zone to set the muscle filter, and the
-           filter buttons highlight the matching zone. Front/Back toggle. -->
-      <p class="muscle-map-label">Tap a muscle — or pick a filter below</p>
-      <div class="view-toggle" role="group" aria-label="Body view">
-        <button type="button" data-view="front" class="on" aria-pressed="true">Front</button>
-        <button type="button" data-view="back" aria-pressed="false">Back</button>
-      </div>
-      <div class="muscle-figure">
-        <svg id="muscle-front" class="muscle-svg" viewBox="0 0 200 380" role="img" aria-label="Front view body map">
-          <circle class="body-base" cx="100" cy="28" r="18"/>
-          <path class="body-base" d="M84,48 L116,48 C136,52 144,68 142,90 C140,116 130,134 124,152 C123,168 126,186 140,206 C144,252 140,302 130,366 L112,366 C108,302 104,252 100,212 C96,252 92,302 88,366 L70,366 C60,302 56,252 60,206 C74,186 77,168 76,152 C70,134 60,116 58,90 C56,68 64,52 84,48 Z"/>
-          <path class="body-base" d="M56,92 C48,96 44,110 44,140 C43,160 46,178 52,196 L60,194 C56,176 56,158 58,138 C60,118 64,104 68,96 Z"/>
-          <path class="body-base" d="M144,92 C152,96 156,110 156,140 C157,160 154,178 148,196 L140,194 C144,176 144,158 142,138 C140,118 136,104 132,96 Z"/>
-          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-pressed="false" aria-label="Target shoulders" d="M58,84 C50,86 47,96 50,108 C58,104 66,102 70,100 C68,90 64,84 58,84 Z"/>
-          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-pressed="false" aria-label="Target shoulders" d="M142,84 C150,86 153,96 150,108 C142,104 134,102 130,100 C132,90 136,84 142,84 Z"/>
-          <path class="muscle-zone" data-muscle="chest" tabindex="0" role="button" aria-pressed="false" aria-label="Target chest" d="M74,104 C82,100 92,100 98,106 C98,118 94,126 84,128 C76,128 72,118 74,104 Z"/>
-          <path class="muscle-zone" data-muscle="chest" tabindex="0" role="button" aria-pressed="false" aria-label="Target chest" d="M126,104 C118,100 108,100 102,106 C102,118 106,126 116,128 C124,128 128,118 126,104 Z"/>
-          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-pressed="false" aria-label="Target arms" d="M48,116 C45,128 45,146 48,162 C54,160 58,158 60,156 C58,142 58,128 60,116 C56,114 52,114 48,116 Z"/>
-          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-pressed="false" aria-label="Target arms" d="M152,116 C155,128 155,146 152,162 C146,160 142,158 140,156 C142,142 142,128 140,116 C144,114 148,114 152,116 Z"/>
-          <path class="muscle-zone" data-muscle="core" tabindex="0" role="button" aria-pressed="false" aria-label="Target core" d="M88,132 C96,130 104,130 112,132 C114,150 113,168 108,184 C103,190 97,190 92,184 C87,168 86,150 88,132 Z"/>
-          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-pressed="false" aria-label="Target legs" d="M70,210 C66,240 66,270 72,298 C80,296 86,294 90,290 C90,262 90,236 88,212 C82,208 76,208 70,210 Z"/>
-          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-pressed="false" aria-label="Target legs" d="M130,210 C134,240 134,270 128,298 C120,296 114,294 110,290 C110,262 110,236 112,212 C118,208 124,208 130,210 Z"/>
-        </svg>
-        <svg id="muscle-back" class="muscle-svg hidden" viewBox="0 0 200 380" role="img" aria-label="Back view body map">
-          <circle class="body-base" cx="100" cy="28" r="18"/>
-          <path class="body-base" d="M84,48 L116,48 C136,52 144,68 142,90 C140,116 130,134 124,152 C123,168 126,186 140,206 C144,252 140,302 130,366 L112,366 C108,302 104,252 100,212 C96,252 92,302 88,366 L70,366 C60,302 56,252 60,206 C74,186 77,168 76,152 C70,134 60,116 58,90 C56,68 64,52 84,48 Z"/>
-          <path class="body-base" d="M56,92 C48,96 44,110 44,140 C43,160 46,178 52,196 L60,194 C56,176 56,158 58,138 C60,118 64,104 68,96 Z"/>
-          <path class="body-base" d="M144,92 C152,96 156,110 156,140 C157,160 154,178 148,196 L140,194 C144,176 144,158 142,138 C140,118 136,104 132,96 Z"/>
-          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-pressed="false" aria-label="Target shoulders" d="M58,84 C50,86 47,96 50,108 C58,104 66,102 70,100 C68,90 64,84 58,84 Z"/>
-          <path class="muscle-zone" data-muscle="shoulders" tabindex="0" role="button" aria-pressed="false" aria-label="Target shoulders" d="M142,84 C150,86 153,96 150,108 C142,104 134,102 130,100 C132,90 136,84 142,84 Z"/>
-          <path class="muscle-zone" data-muscle="back" tabindex="0" role="button" aria-pressed="false" aria-label="Target back" d="M84,86 C92,82 108,82 116,86 C112,100 106,108 100,110 C94,108 88,100 84,86 Z"/>
-          <path class="muscle-zone" data-muscle="back" tabindex="0" role="button" aria-pressed="false" aria-label="Target back" d="M76,112 C86,108 114,108 124,112 C122,140 114,166 100,178 C86,166 78,140 76,112 Z"/>
-          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-pressed="false" aria-label="Target arms" d="M48,116 C45,128 45,146 48,162 C54,160 58,158 60,156 C58,142 58,128 60,116 C56,114 52,114 48,116 Z"/>
-          <path class="muscle-zone" data-muscle="arms" tabindex="0" role="button" aria-pressed="false" aria-label="Target arms" d="M152,116 C155,128 155,146 152,162 C146,160 142,158 140,156 C142,142 142,128 140,116 C144,114 148,114 152,116 Z"/>
-          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-pressed="false" aria-label="Target legs (glutes &amp; hamstrings)" d="M70,196 C66,228 66,262 72,294 C80,292 86,290 90,286 C90,256 90,224 88,198 C82,194 76,194 70,196 Z"/>
-          <path class="muscle-zone" data-muscle="legs" tabindex="0" role="button" aria-pressed="false" aria-label="Target legs (glutes &amp; hamstrings)" d="M130,196 C134,228 134,262 128,294 C120,292 114,290 110,286 C110,256 110,224 112,198 C118,194 124,194 130,196 Z"/>
-        </svg>
-      </div>
+      <!-- Muscle anatomy view: the filter pills below are the selector; this
+           panel shows the chosen muscle highlighted on an anatomical body image
+           from the muscle-group image API (shares the optional RapidAPI key with
+           the demos). Degrades to a benefit-led prompt with no key / offline. -->
+      <div class="anatomy-view" id="anatomy-view" aria-live="polite"></div>
       <p class="sr-only" id="muscle-status" role="status" aria-live="polite"></p>
 
       <div class="filter-bar" id="muscle-filter">
@@ -1780,9 +1715,9 @@
          augmented with animated GIF demos. Kept at the bottom so it doesn't
          bury the primary "build a session" flow for keyless users. -->
     <details class="card api-key-card" id="api-key-card">
-      <summary>Animated demos — add a free ExerciseDB key <span class="api-key-tag">optional</span></summary>
-      <p class="hint">See an animated demo for each move. Get a free key at rapidapi.com, search ExerciseDB, subscribe to the free plan, and paste your key here. Your session works fine without it.</p>
-      <label for="edb-key">ExerciseDB API key</label>
+      <summary>Animated demos &amp; muscle map — add a free RapidAPI key <span class="api-key-tag">optional</span></summary>
+      <p class="hint">Unlock an animated demo for each move <em>and</em> a highlighted muscle map. Get a free key at rapidapi.com and, on that same key, subscribe to the free plans for <strong>ExerciseDB</strong> (demos) and <strong>Muscle Group Image Generator</strong> (muscle map), then paste your key here. Your session works fine without it.</p>
+      <label for="edb-key">RapidAPI key</label>
       <input type="password" id="edb-key" autocomplete="off" placeholder="Paste your RapidAPI key">
       <div class="api-key-actions">
         <button type="button" class="primary" id="edb-save">Save key</button>
@@ -3198,24 +3133,8 @@ document.querySelectorAll('#loc-filter button').forEach(b => {
     renderExercises();
   });
 });
-// Muscles that only appear on one view — selecting them auto-flips the figure
-// so the highlight is always visible.
-const FRONT_ONLY = ['chest', 'core'];
-const BACK_ONLY = ['back'];
-
-// Show one body view; keeps the segmented toggle's pressed state in sync.
-function showView(view) {
-  document.querySelectorAll('.view-toggle button').forEach(b => {
-    const on = b.dataset.view === view;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', String(on));
-  });
-  document.getElementById('muscle-front').classList.toggle('hidden', view !== 'front');
-  document.getElementById('muscle-back').classList.toggle('hidden', view !== 'back');
-}
-
-// Single source of truth for the muscle filter — driven by both the filter
-// buttons and the interactive muscle map, so they stay in sync.
+// Single source of truth for the muscle filter — the filter pills are the
+// selector; the anatomy view reflects the choice with a highlighted body image.
 function setMuscleFilter(muscle) {
   document.querySelectorAll('#muscle-filter button').forEach(x => {
     const on = x.dataset.muscle === muscle;
@@ -3223,23 +3142,9 @@ function setMuscleFilter(muscle) {
     x.setAttribute('aria-pressed', String(on));
   });
   curMuscle = muscle;
-  // Flip to the view that actually shows this muscle, so the map reflects it.
-  if (FRONT_ONLY.includes(muscle)) showView('front');
-  else if (BACK_ONLY.includes(muscle)) showView('back');
-  highlightMuscleZones(muscle);
+  loadAnatomyImage(muscle);
   renderExercises();
   announceMuscle(muscle);
-}
-
-// Highlight every SVG zone matching the muscle (front + back share data-muscle)
-// and expose the state to assistive tech via aria-pressed.
-// 'all', 'cardio' and 'flexibility' have no body part → clears all highlights.
-function highlightMuscleZones(muscle) {
-  document.querySelectorAll('.muscle-zone').forEach(z => {
-    const on = z.dataset.muscle === muscle;
-    z.classList.toggle('active', on);
-    z.setAttribute('aria-pressed', String(on));
-  });
 }
 
 // Concise screen-reader announcement of the filter result (the full list swap
@@ -3254,19 +3159,6 @@ function announceMuscle(muscle) {
 
 document.querySelectorAll('#muscle-filter button').forEach(b => {
   b.addEventListener('click', () => setMuscleFilter(b.dataset.muscle));
-});
-
-// Muscle-map zones: tap (or Enter/Space) sets the filter, which highlights back.
-document.querySelectorAll('.muscle-zone').forEach(z => {
-  z.addEventListener('click', () => setMuscleFilter(z.dataset.muscle));
-  z.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMuscleFilter(z.dataset.muscle); }
-  });
-});
-
-// Front / Back view toggle — only one figure visible at a time.
-document.querySelectorAll('.view-toggle button').forEach(b => {
-  b.addEventListener('click', () => showView(b.dataset.view));
 });
 
 function filteredExercises() {
@@ -3403,8 +3295,9 @@ function getEdbKey() {
     if (!v) { flash('Enter a key first.'); return; }
     try { localStorage.setItem(EDB_KEY_STORAGE, v); } catch {}
     flash('Key saved.');
-    // If a session is already on screen, refresh the demos right away
-    // (symmetric with Forget, which clears them).
+    // Same key powers the muscle map — refresh it now, and the demos if a
+    // session is already on screen (symmetric with Forget, which clears them).
+    loadAnatomyImage(curMuscle);
     if (document.getElementById('w-results').innerHTML.trim()) loadDemos(curMuscle);
   });
   document.getElementById('edb-forget').addEventListener('click', () => {
@@ -3412,6 +3305,7 @@ function getEdbKey() {
     input.value = '';
     flash('Key removed. Your curated session still works offline.');
     document.getElementById('w-demos').innerHTML = '';
+    loadAnatomyImage(curMuscle);  // back to the benefit-led prompt
   });
 })();
 
@@ -3497,6 +3391,128 @@ async function loadDemos(muscle) {
     out.innerHTML = `<div class="card">${DEMOS_HEAD}<p class="gif-note">${msg}</p></div>`;
   }
 }
+
+/* ============================================================
+   MUSCLE ANATOMY VIEW — the chosen muscle highlighted on an
+   anatomical body image from the Muscle Group Image Generator API
+   (MertenD, RapidAPI). Shares the optional key with the demos; the
+   filter pills are the real selector, so this is a pure visual that
+   degrades to a prompt with no key / offline.
+   ============================================================ */
+const MGI_HOST = 'muscle-group-image-generator.p.rapidapi.com';
+const MGI_COLOR = 'F0C34A';                    // brand honey, on transparent bg
+const ANATOMY_LABELS = {
+  chest: 'Chest', back: 'Back', legs: 'Legs',
+  shoulders: 'Shoulders', arms: 'Arms', core: 'Core',
+};
+// Our filter → which of the API's tokens to highlight. The real token names vary,
+// so we fuzzy-match against the live /getMuscleGroups list and fall back to a
+// best guess (then to the plain base image) if a name doesn't resolve.
+const MGI_MATCHERS = {
+  chest: t => /chest|pector|\bpec/.test(t),
+  back: t => /lat|trap|back|rhomb|erector|spinae/.test(t),
+  legs: t => /quad|hamstring|calf|calves|glute|adductor|abductor|leg|thigh/.test(t),
+  shoulders: t => /delt|shoulder/.test(t),
+  arms: t => /bicep|tricep|forearm/.test(t),
+  core: t => /abs|abdomin|oblique|core|waist/.test(t),
+};
+const MGI_FALLBACK = {
+  chest: 'chest', back: 'lats', legs: 'quads',
+  shoulders: 'shoulders', arms: 'biceps', core: 'abs',
+};
+
+let mgiGroupsCache = null;   // null=unfetched · []=failed/empty · [tokens]
+let mgiObjUrl = null;        // current object URL, revoked on swap
+let anatomyReqId = 0;        // guards a stale fetch resolving after a newer one
+
+async function mgiFetchBlob(path, key) {
+  const res = await fetch(`https://${MGI_HOST}${path}`, {
+    headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': MGI_HOST },
+  });
+  if (!res.ok) { const e = new Error('HTTP ' + res.status); e.status = res.status; throw e; }
+  return res.blob();
+}
+
+// One-time fetch of the API's supported muscle-group tokens (cached). Returns
+// [] on failure so callers fall back to best-guess names.
+async function mgiValidGroups(key) {
+  if (mgiGroupsCache !== null) return mgiGroupsCache;
+  try {
+    const res = await fetch(`https://${MGI_HOST}/getMuscleGroups`, {
+      headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': MGI_HOST },
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data
+      : (data && Array.isArray(data.muscleGroups)) ? data.muscleGroups : [];
+    mgiGroupsCache = list.map(s => String(s));
+  } catch { mgiGroupsCache = []; }
+  return mgiGroupsCache;
+}
+
+function mgiGroupsFor(muscle, valid) {
+  const match = MGI_MATCHERS[muscle];
+  if (!match) return [];                                   // all/cardio/flexibility
+  const hits = valid.filter(t => match(t.toLowerCase()));
+  return hits.length ? hits : (MGI_FALLBACK[muscle] ? [MGI_FALLBACK[muscle]] : []);
+}
+
+function setAnatomyImg(blob, alt, caption) {
+  const view = document.getElementById('anatomy-view');
+  if (!view) return;
+  if (!URL.createObjectURL) {                              // e.g. jsdom — no blobs
+    view.innerHTML = `<p class="anatomy-note">${esc(caption)}</p>`;
+    return;
+  }
+  if (mgiObjUrl && URL.revokeObjectURL) URL.revokeObjectURL(mgiObjUrl);  // guard: jsdom lacks it
+  mgiObjUrl = URL.createObjectURL(blob);
+  view.innerHTML = `<img class="anatomy-img" src="${mgiObjUrl}" alt="${esc(alt)}" decoding="async" onerror="this.style.display='none'">` +
+    `<p class="anatomy-caption">${esc(caption)}</p>`;
+}
+
+async function loadAnatomyImage(muscle) {
+  const view = document.getElementById('anatomy-view');
+  if (!view) return;
+  const myId = ++anatomyReqId;
+  const key = getEdbKey();
+  if (!key) {
+    view.innerHTML = '<p class="anatomy-note">Pick a muscle below to filter the moves. Add a free RapidAPI key (card below) to see it highlighted on a muscle map — optional.</p>';
+    return;
+  }
+  view.innerHTML = '<div class="gif-spinner" role="status" aria-label="Loading muscle map"></div>';
+  try {
+    const valid = await mgiValidGroups(key);
+    if (myId !== anatomyReqId) return;
+    const groups = mgiGroupsFor(muscle, valid);
+    const label = ANATOMY_LABELS[muscle];
+    let blob;
+    if (groups.length) {
+      try {
+        blob = await mgiFetchBlob(
+          `/getImage?muscleGroups=${encodeURIComponent(groups.join(','))}&color=${MGI_COLOR}&transparentBackground=1`, key);
+      } catch (e) {
+        if (e.status === 401 || e.status === 403 || e.status === 429) throw e;  // key / limit
+        blob = await mgiFetchBlob('/getBaseImage?transparentBackground=1', key); // bad name → plain body
+      }
+    } else {
+      blob = await mgiFetchBlob('/getBaseImage?transparentBackground=1', key);
+    }
+    if (myId !== anatomyReqId) return;
+    if (label) setAnatomyImg(blob, `Body map with ${label} highlighted`, `${label} highlighted`);
+    else setAnatomyImg(blob, 'Full-body muscle map', 'Full body');
+  } catch (e) {
+    if (myId !== anatomyReqId) return;
+    const msg = (e && (e.status === 401 || e.status === 403))
+      ? "That key looks invalid, or it isn't subscribed to the Muscle Group Image Generator API yet — check the key card below."
+      : (e && e.status === 429)
+      ? 'Daily free-tier limit reached — try again tomorrow.'
+      : "Couldn't load the muscle map — check your connection and try again.";
+    view.innerHTML = `<p class="anatomy-note">${esc(msg)}</p>`;
+  }
+}
+
+// Initial render so the panel isn't blank before the first filter tap.
+loadAnatomyImage(curMuscle);
 
 /* ============================================================
    SUMMARY — printable one-page snapshot of profile + targets
@@ -3991,28 +4007,37 @@ const BODY_GOAL_KEY = 'herlyft_body_goal';
 const BODY_LABELS = ['Slimmer', 'Lean', 'Mid', 'Soft', 'Fuller'];
 
 // Parametric female silhouette (head drawn separately); f in [0,1] scales body
-// fullness. Arms-against-body (merged into the outline, no separate sub-paths)
-// so there's no seam at any size — what changes is bust/waist/hip/leg width.
+// fullness. One continuous outline — a neck closes the head-to-shoulder gap,
+// arms stay merged into the torso (no separate sub-paths, so no seam at any
+// size), and the legs taper through the knee to a small inner-thigh gap so they
+// read as legs rather than sticks. What changes with f is bust/waist/hip/leg width.
 function bodyShapePath(f) {
   const cx = 60;
-  const sh = 16 + 6 * f, bu = 14 + 10 * f, wa = 8 + 9 * f, hi = 17 + 15 * f, th = 10 + 7 * f, an = 7 + 3 * f;
+  const nk = 4.5 + 1.0 * f, sh = 17 + 6 * f, bu = 13.5 + 10 * f, wa = 8 + 8 * f,
+        hi = 18 + 15 * f, th = 10.5 + 7 * f, kn = 8 + 4 * f, an = 5.5 + 2.5 * f, ig = 2.2;
   const R = x => (cx + x).toFixed(1), L = x => (cx - x).toFixed(1);
   return [
-    `M ${R(4)},62`,
-    `C ${R(sh)},64 ${R(sh)},74 ${R(sh)},82`,
-    `C ${R(sh)},96 ${R(bu)},100 ${R(bu)},114`,
-    `C ${R(bu)},132 ${R(wa)},138 ${R(wa)},152`,
-    `C ${R(wa)},168 ${R(hi)},174 ${R(hi)},192`,
-    `C ${R(hi)},214 ${R(th + 3)},224 ${R(th)},236`,
-    `L ${R(an + 1)},310`, `L ${R(an - 3)},310`,
-    `L ${R(3)},238`, `L ${cx},232`, `L ${L(3)},238`,
-    `L ${L(an - 3)},310`, `L ${L(an + 1)},310`,
-    `L ${L(th)},236`,
-    `C ${L(th + 3)},224 ${L(hi)},214 ${L(hi)},192`,
-    `C ${L(hi)},174 ${L(wa)},168 ${L(wa)},152`,
-    `C ${L(wa)},138 ${L(bu)},132 ${L(bu)},114`,
-    `C ${L(bu)},100 ${L(sh)},96 ${L(sh)},82`,
-    `C ${L(sh)},74 ${L(sh)},64 ${L(4)},62`, 'Z',
+    `M ${R(nk)},45`,                                 // neck (meets head bottom)
+    `C ${R(nk)},56 ${R(sh - 2)},58 ${R(sh)},70`,     // shoulder slope
+    `C ${R(sh)},86 ${R(bu)},94 ${R(bu)},106`,        // bust
+    `C ${R(bu)},126 ${R(wa)},134 ${R(wa)},150`,      // waist
+    `C ${R(wa)},170 ${R(hi)},178 ${R(hi)},196`,      // hip
+    `C ${R(hi)},214 ${R(th + 2)},226 ${R(th)},240`,  // outer thigh
+    `C ${R(th)},262 ${R(kn)},268 ${R(kn)},278`,      // knee
+    `C ${R(kn)},296 ${R(an)},306 ${R(an)},314`,      // outer ankle
+    `L ${R(ig)},314`,                                // right foot
+    `C ${R(ig)},300 ${R(ig + 1)},262 ${R(ig + 2)},240`, // inner right leg up
+    `C ${R(ig + 1)},226 ${R(ig)},220 ${cx},218`,     // to crotch
+    `C ${L(ig)},220 ${L(ig + 1)},226 ${L(ig + 2)},240`, // inner left leg down
+    `C ${L(ig + 1)},262 ${L(ig)},300 ${L(ig)},314`,
+    `L ${L(an)},314`,                                // left foot
+    `C ${L(kn)},306 ${L(kn)},296 ${L(kn)},278`,
+    `C ${L(kn)},268 ${L(th)},262 ${L(th)},240`,
+    `C ${L(th + 2)},226 ${L(hi)},214 ${L(hi)},196`,
+    `C ${L(hi)},178 ${L(wa)},170 ${L(wa)},150`,
+    `C ${L(wa)},134 ${L(bu)},126 ${L(bu)},106`,
+    `C ${L(bu)},94 ${L(sh)},86 ${L(sh)},70`,
+    `C ${L(sh - 2)},58 ${L(nk)},56 ${L(nk)},45`, 'Z',
   ].join(' ');
 }
 
@@ -4023,7 +4048,7 @@ function buildBodyFigure(container, selectedIdx) {
     `<path class="body-shape" data-shape="${i + 1}" d="${bodyShapePath(i / 4)}"/>`).join('');
   // The visible text label carries the meaning for AT; the figure is decorative.
   container.innerHTML = `<svg viewBox="0 0 120 320" aria-hidden="true" focusable="false">` +
-    `<circle class="body-head" cx="60" cy="32" r="15"/>${paths}</svg>`;
+    `<circle class="body-head" cx="60" cy="30" r="14"/>${paths}</svg>`;
   setBodyShape(container, selectedIdx);
 }
 

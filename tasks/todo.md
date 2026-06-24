@@ -6,6 +6,37 @@ here before non-trivial work, check items off as you go, and add a short
 
 ---
 
+## ACTIVE (2026-06-24) — Replace the two drawn visuals (owner: "not appealing")
+
+Decisions via AskUserQuestion: replace **both** drawn visuals; muscle diagram →
+**anatomical muscle-image API**; body silhouettes → **redraw nicer but stay
+abstract/neutral** (body-image-safe — no real/AI bodies).
+Branch: `claude/layout-refresh-exploration-v3ofy1` (reset onto main @ v4.3.0).
+
+**A. Muscle map (Workouts) → API anatomy image**
+- [ ] Remove drawn `#muscle-front`/`#muscle-back` SVGs, `.view-toggle`, dead JS
+      (`showView`/`highlightMuscleZones`/`FRONT_ONLY`/`BACK_ONLY`/zone handlers).
+- [ ] Keep `#muscle-filter` buttons (selector) + `#muscle-status` live region.
+- [ ] `#anatomy-view` + `loadAnatomyImage(muscle)`: reuse `herlyft_exercisedb_key`;
+      host `muscle-group-image-generator.p.rapidapi.com` `/getImage?muscleGroups=…&color=F0C34A&transparentBackground=1`;
+      fetch→blob→objectURL→`<img>`; request-id guard; fuzzy-map via cached `/getMuscleGroups`;
+      all/cardio/flexibility→`/getBaseImage`; 400/404→base; no key→benefit-led prompt.
+- [ ] Async pitfalls: wrap onerror, guard `URL.revokeObjectURL`, revoke on swap.
+- [ ] Broaden key-card copy: one RapidAPI key powers GIFs + anatomy (two free subs).
+
+**B. Body silhouettes → redraw nicer, stay abstract**
+- [ ] Prototype `bodyShapePath(f)` variants in scratch HTML + screenshot first
+      (per lessons); arms merged into outline; swap in; keep structure/labels/a11y.
+
+**C. Ship** — lint+test (fix muscle-zone drivers) · MINOR v4.4.0 + CHANGELOG ·
+auto-run code-reviewer/qa/ui-ux/gym-coach/pwa-performance/accessibility · PR +
+subscribe + approver (flag the new-external-API escalation as human-directed).
+
+### Review
+(filled in when done)
+
+---
+
 ## Mission: polish Herlyft for the owner's personal UX, then share publicly
 
 Owner is the first user. Goal: make the app excellent for *her own* journey
