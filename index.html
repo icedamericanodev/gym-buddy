@@ -507,6 +507,62 @@
     margin-top: 8px;
   }
   .demo-toggle:hover { background: var(--panel-2); }
+  /* Workout logging on each exercise card */
+  .ws { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px; }
+  .ws-last {
+    margin: 0 0 6px; font-size: 12.5px; color: var(--text);
+  }
+  .ws-sets {
+    list-style: none; margin: 0 0 8px; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .ws-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12.5px;
+    color: var(--text);
+  }
+  .ws-del-set {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; min-height: 32px;
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; line-height: 1; border-radius: 50%;
+  }
+  .ws-del-set:hover { color: var(--text); background: var(--border); }
+  .ws-log-toggle {
+    display: inline-flex; align-items: center; min-height: 44px;
+    background: none; color: var(--text); border: 1px solid var(--accent);
+    padding: 5px 13px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .ws-log-toggle:hover { background: var(--panel-2); }
+  .ws-panel {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 8px;
+  }
+  .ws-hint {
+    flex-basis: 100%; margin: 0 0 2px; font-size: 12px; color: var(--text);
+  }
+  .ws-field {
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 12px; color: var(--text);
+  }
+  .ws-field input {
+    width: 90px; min-height: 44px; box-sizing: border-box;
+    padding: 6px 8px; font-size: 14px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border-strong); border-radius: 6px;
+  }
+  .ws-add-set {
+    min-height: 44px;
+    background: var(--accent); color: var(--bg); border: none;
+    padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .ws-add-set:hover { filter: brightness(1.05); }
+  .ws-log-toggle:focus-visible,
+  .ws-add-set:focus-visible,
+  .ws-del-set:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
   .demo-frame {
     position: relative;
     width: 100%;
@@ -1196,7 +1252,7 @@
       <circle cx="20" cy="37" r="5" fill="currentColor"/>
       <line x1="20" y1="44" x2="20" y2="68" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/>
     </svg><span class="word">FT</span>
-    <span class="version">v4.4.1</span>
+    <span class="version">v5.0.0</span>
   </h1>
   <p class="tagline">Lift with her</p>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
@@ -1253,9 +1309,9 @@
           </div>
           <button type="button" class="glance-tile" id="t-workout-cta">
             <span class="glance-ico" aria-hidden="true">🏋️</span>
-            <p class="glance-label">Today's workout</p>
-            <p class="glance-val">Ready when you are</p>
-            <p class="glance-cta">Build a session →</p>
+            <p class="glance-label">Training</p>
+            <p class="glance-val" id="t-workout-val">Ready when you are</p>
+            <p class="glance-cta">Log or build a session →</p>
           </button>
         </div>
       </div>
@@ -1669,7 +1725,7 @@
         </div>
 
         <p class="summary-footer">
-          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v4.4.1</span><br>
+          Generated: <span id="s-date">—</span> · Herlyft <span class="version-inline">v5.0.0</span><br>
           General adult guidelines, not medical advice. Talk to a doctor or registered dietitian for personalized recommendations.
         </p>
       </div>
@@ -1715,6 +1771,7 @@
       <button class="primary" id="w-plan">Build me a quick session</button>
     </div>
 
+    <p class="sr-only" id="ws-status" role="status" aria-live="polite"></p>
     <div id="w-results"></div>
     <div id="w-demos" aria-live="polite"></div>
 
@@ -1861,17 +1918,17 @@ const EXERCISES = [
     sets: "3 × 12–20", desc: "Feet shoulder-width, sit back like into a chair, stand up. Keep knees tracking over toes — don't let them cave inward." },
   { name: "Lunges", loc: "bodyweight", muscle: "legs", emoji: "🚶",
     sets: "3 × 10 per leg", desc: "Step forward, lower back knee toward floor, push back to start. Front knee stays over the ankle, not collapsed inward." },
-  { name: "Plank", loc: "bodyweight", muscle: "core", emoji: "🧘",
+  { name: "Plank", loc: "bodyweight", muscle: "core", emoji: "🧘", log: "time",
     sets: "3 × 30–60 sec", desc: "Forearms on ground, body straight from head to heels, brace core. Don't let hips sag or pike up." },
   { name: "Sit-ups", loc: "bodyweight", muscle: "core", emoji: "🤸",
     sets: "3 × 15–25", desc: "Lie on back, knees bent, hands lightly by ears, sit up curling forward, lower with control. Don't yank on your neck — keep elbows wide." },
   { name: "Glute bridges", loc: "bodyweight", muscle: "legs", emoji: "🍑",
     sets: "3 × 15", desc: "Lie on back, knees bent, drive heels into floor, lift hips, squeeze glutes at the top with a 2-second hold. Don't overarch your lower back — finish in a straight line from knee to shoulder." },
-  { name: "Mountain climbers", loc: "bodyweight", muscle: "cardio", emoji: "⛰️",
+  { name: "Mountain climbers", loc: "bodyweight", muscle: "cardio", emoji: "⛰️", log: "time",
     sets: "3 × 30 sec", desc: "Plank position, alternate driving knees toward chest fast. Keep hips low and steady — don't bounce them up." },
   { name: "Burpees", loc: "bodyweight", muscle: "cardio", emoji: "💥",
     sets: "3 × 10 or 40 sec", desc: "Squat down, kick feet back to plank, push-up, jump feet forward, jump up with hands overhead. Land softly on the balls of your feet with a braced core to protect knees and lower back." },
-  { name: "Jumping jacks", loc: "bodyweight", muscle: "cardio", emoji: "🤾",
+  { name: "Jumping jacks", loc: "bodyweight", muscle: "cardio", emoji: "🤾", log: "time",
     sets: "3 × 60 sec", desc: "Jump feet wide while raising arms overhead, then back. Land softly on the midfoot — avoid stiff-legged landings." },
   { name: "Tricep dips (chair)", loc: "bodyweight", muscle: "arms", emoji: "💪",
     sets: "3 × 10", desc: "Hands on edge of a sturdy chair, legs out, lower body by bending elbows, push back up. Keep elbows pointing straight back — flared elbows stress the shoulder." },
@@ -1887,7 +1944,7 @@ const EXERCISES = [
     sets: "3 × 10–12", desc: "Hold one dumbbell at chest. Squat down keeping chest up, drive through heels to stand. Don't let knees cave in or heels lift off the floor." },
   { name: "Dumbbell Romanian deadlift", loc: "home", muscle: "legs", emoji: "🏋️",
     sets: "3 × 8–12", desc: "Dumbbells in front of thighs, soft knees, hinge at the hips pushing them back, lower until you feel a hamstring stretch (~mid-shin), drive hips forward to stand. Don't round your lower back — stop the descent the moment your back starts to bend." },
-  { name: "Farmer's walk", loc: "home", muscle: "core", emoji: "🚶",
+  { name: "Farmer's walk", loc: "home", muscle: "core", emoji: "🚶", log: "dist",
     sets: "3 × 30–40 m", desc: "Heavy dumbbell in each hand, stand tall, walk in a straight line at a normal pace. Ribs down, shoulders back, breathe steadily — don't shrug, don't lean to one side, don't let the weights swing." },
   // Stretches (mobility / flexibility): static holds, no equipment.
   // ACSM recommends 2–4 reps of 10–30 s for static stretching after a warmup
@@ -2135,6 +2192,7 @@ document.getElementById('p-units').addEventListener('change', (ev) => {
   renderDashboard();
   renderToday();
   renderPhotos();
+  renderExercises();  // exercise cards show weight in the chosen unit
 });
 
 // Recompute the goal-weight suggestion as the user types their height.
@@ -2587,6 +2645,21 @@ function renderToday() {
     }
   }
 
+  // Glance: training read-back — surface the most recent logged session so
+  // logged workouts (not just weigh-ins) show up where the user lands.
+  const wkVal = document.getElementById('t-workout-val');
+  if (wkVal) {
+    const days = workoutDays();
+    if (days.length) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const when = days[0].date === todayStr ? 'Trained today' : `Last trained ${shortDate(days[0].date)}`;
+      const n = sessionsThisWeek();
+      wkVal.textContent = n > 1 ? `${when} · ${n} in 7 days` : when;
+    } else {
+      wkVal.textContent = 'Ready when you are';
+    }
+  }
+
   // Delight: if a new weight was just logged and Today is the visible tab,
   // count the hero up to it and toss a few honey motes. Consumed once.
   if (pendingCelebrate && document.getElementById('today').classList.contains('active')) {
@@ -2939,11 +3012,14 @@ function buildBackup() {
     bodyNow: localStorage.getItem(BODY_NOW_KEY),
     bodyGoal: localStorage.getItem(BODY_GOAL_KEY),
     hydration: {},
+    workouts: {},
   };
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (k && k.startsWith('herlyftHydro:')) {
       try { data.hydration[k.slice('herlyftHydro:'.length)] = JSON.parse(localStorage.getItem(k)); } catch {}
+    } else if (k && k.startsWith(WORKOUT_PREFIX)) {
+      try { data.workouts[k.slice(WORKOUT_PREFIX.length)] = JSON.parse(localStorage.getItem(k)); } catch {}
     }
   }
   return data;
@@ -2962,6 +3038,14 @@ function applyBackup(data) {
     for (const [date, entries] of Object.entries(data.hydration)) {
       if (Array.isArray(entries)) {
         localStorage.setItem(`herlyftHydro:${date}`, JSON.stringify(entries));
+      }
+    }
+  }
+  // Workout log (additive; older backups simply lack the `workouts` key).
+  if (data.workouts && typeof data.workouts === 'object') {
+    for (const [date, entries] of Object.entries(data.workouts)) {
+      if (Array.isArray(entries)) {
+        localStorage.setItem(`${WORKOUT_PREFIX}${date}`, JSON.stringify(entries));
       }
     }
   }
@@ -3081,6 +3165,150 @@ document.getElementById('h-undo').addEventListener('click', () => {
 });
 
 /* ============================================================
+   WORKOUT LOG — capture sets (reps + weight) per exercise, per day,
+   so a lifter can see "last time" and progress over weeks. Stored
+   per-day in localStorage (same pattern as hydration) so it rides
+   along in Backup & Restore and stays fully offline. Weight is stored
+   canonical in kg (like body weight); the UI reads/writes in the
+   user's chosen unit. Bodyweight sets store kg = null.
+   ============================================================ */
+const WORKOUT_PREFIX = 'herlyftWorkout:';
+function workoutKey(date) {
+  return `${WORKOUT_PREFIX}${date || new Date().toISOString().slice(0, 10)}`;
+}
+function getWorkoutDay(date) {
+  try {
+    const raw = localStorage.getItem(workoutKey(date));
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveWorkoutDay(entries, date) {
+  localStorage.setItem(workoutKey(date), JSON.stringify(entries));
+}
+// Append a set to today's entry for `name` (creating the entry if needed).
+// Returns true if it logged. `kg` null/blank = a bodyweight set.
+function logSet(name, muscle, reps, kg) {
+  const repsN = Math.round(+reps);
+  if (!repsN || repsN < 1) return false;
+  const kgN = (kg === null || kg === undefined || kg === '' || isNaN(+kg)) ? null : Math.max(0, +kg);
+  const entries = getWorkoutDay();
+  let entry = entries.find(e => e.name === name);
+  if (!entry) { entry = { name, muscle, sets: [] }; entries.push(entry); }
+  entry.sets.push({ reps: repsN, kg: kgN });
+  saveWorkoutDay(entries);
+  return true;
+}
+// Remove the set at `idx` from today's entry for `name`; drop the entry if it empties.
+function removeSet(name, idx) {
+  const entries = getWorkoutDay();
+  const entry = entries.find(e => e.name === name);
+  if (!entry || idx < 0 || idx >= entry.sets.length) return;
+  entry.sets.splice(idx, 1);
+  saveWorkoutDay(entry.sets.length ? entries : entries.filter(e => e !== entry));
+}
+// Most recent PRIOR day (strictly before today) that logged `name`, for the
+// "last time" line. Returns { date, sets } or null.
+function lastLoggedFor(name) {
+  const today = new Date().toISOString().slice(0, 10);
+  let best = null;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(WORKOUT_PREFIX)) continue;
+    const date = k.slice(WORKOUT_PREFIX.length);
+    if (date >= today) continue;
+    if (best && date <= best.date) continue;
+    let entries; try { entries = JSON.parse(localStorage.getItem(k)); } catch { continue; }
+    if (!Array.isArray(entries)) continue;
+    const entry = entries.find(e => e && e.name === name && Array.isArray(e.sets) && e.sets.length);
+    if (entry) best = { date, sets: entry.sets };
+  }
+  return best;
+}
+// All logged workout days (with an exercise count), most recent first.
+function workoutDays() {
+  const today = new Date().toISOString().slice(0, 10);
+  const days = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(WORKOUT_PREFIX)) continue;
+    const date = k.slice(WORKOUT_PREFIX.length);
+    if (date > today) continue;  // ignore future-dated keys (clock change / hand-edited restore)
+    let entries; try { entries = JSON.parse(localStorage.getItem(k)); } catch { continue; }
+    if (!Array.isArray(entries)) continue;
+    const logged = entries.filter(e => e && Array.isArray(e.sets) && e.sets.length);
+    if (logged.length) days.push({ date, count: logged.length });
+  }
+  return days.sort((a, b) => b.date.localeCompare(a.date));
+}
+// Distinct days trained in the last 7 days (today inclusive).
+function sessionsThisWeek() {
+  const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  return workoutDays().filter(d => d.date >= weekAgo).length;
+}
+// What an exercise logs: rep-based (default), time-based (seconds), distance
+// (metres), or none (mobility/stretches — no progressive overload to track).
+function logKind(e) { return e.log || (e.muscle === 'flexibility' ? 'none' : 'reps'); }
+function primaryLabel(e) {
+  const k = logKind(e);
+  return k === 'time' ? 'seconds' : k === 'dist' ? 'metres' : 'reps';
+}
+function perSideHint(e) { return /per (leg|arm|side)/i.test(e.sets); }
+
+// --- display helpers (weight shown in the user's unit) ---
+function wDisp(kg) { return `${+fmtKg(kg)} ${wUnitLabel()}`; }  // e.g. "42.5 kg"
+// One label used for BOTH today's chips and the "last time" line, so the two
+// always read identically. reps → "8 × 42.5 kg" / "8 reps"; time → "45 sec";
+// dist → "30 m"; an added load appends "× N kg".
+function formatSet(e, s) {
+  const k = logKind(e);
+  const primary = k === 'time' ? `${s.reps} sec`
+    : k === 'dist' ? `${s.reps} m`
+    : (s.kg == null ? `${s.reps} reps` : `${s.reps}`);
+  return s.kg == null ? primary : `${primary} × ${wDisp(s.kg)}`;
+}
+function setSummary(e, sets) { return sets.map(s => formatSet(e, s)).join(', '); }
+function shortDate(iso) {
+  const d = new Date(`${iso}T00:00:00`);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+// The "last time" line + today's logged-set chips for one exercise card.
+// `lastMap` (optional) is a precomputed name → {date,sets} of the most recent
+// prior session, so a full render scans localStorage once instead of per card.
+function workoutLogInner(e, lastMap) {
+  const last = lastMap ? lastMap.get(e.name) : lastLoggedFor(e.name);
+  const lastLine = last
+    ? `<p class="ws-last">Last time (${esc(shortDate(last.date))}): ${esc(setSummary(e, last.sets))}</p>`
+    : '';
+  const today = getWorkoutDay().find(x => x.name === e.name);
+  if (!today || !today.sets.length) return lastLine;
+  const chips = today.sets.map((s, i) => {
+    const label = formatSet(e, s);
+    return `<li class="ws-chip">${esc(label)}<button type="button" class="ws-del-set" data-ex="${esc(e.name)}" data-idx="${i}" aria-label="Remove set: ${esc(label)}">✕</button></li>`;
+  }).join('');
+  return `${lastLine}<ul class="ws-sets" aria-label="Sets logged today">${chips}</ul>`;
+}
+// One localStorage pass → most-recent-prior session per exercise (perf: avoids
+// a per-card scan when rendering the whole list).
+function buildLastLoggedMap() {
+  const today = new Date().toISOString().slice(0, 10);
+  const map = new Map();
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(WORKOUT_PREFIX)) continue;
+    const date = k.slice(WORKOUT_PREFIX.length);
+    if (date >= today) continue;
+    let entries; try { entries = JSON.parse(localStorage.getItem(k)); } catch { continue; }
+    if (!Array.isArray(entries)) continue;
+    for (const en of entries) {
+      if (!en || !en.name || !Array.isArray(en.sets) || !en.sets.length) continue;
+      const prev = map.get(en.name);
+      if (!prev || date > prev.date) map.set(en.name, { date, sets: en.sets });
+    }
+  }
+  return map;
+}
+
+/* ============================================================
    MEALS — match user ingredients against recipes
    ============================================================ */
 function normalize(s) { return s.toLowerCase().trim(); }
@@ -3178,12 +3406,28 @@ function filteredExercises() {
   );
 }
 
-function exerciseCard(e) {
+function exerciseCard(e, lastMap) {
   const videoId = EXERCISE_VIDEOS[e.name];
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(e.name + ' form tutorial')}`;
   const demoBtn = videoId
     ? `<button type="button" class="demo-toggle" data-vid="${esc(videoId)}">▶ Show demo</button>`
     : `<a class="demo-toggle" href="${esc(searchUrl)}" target="_blank" rel="noopener">▶ Search YouTube</a>`;
+  // Mobility/stretch moves have no progressive overload to track — no logger.
+  const ws = logKind(e) === 'none' ? '' : `
+      <div class="ws" data-ex="${esc(e.name)}">
+        <div class="ws-info">${workoutLogInner(e, lastMap)}</div>
+        <button type="button" class="ws-log-toggle" aria-expanded="false">＋ Log a set</button>
+        <div class="ws-panel" hidden>
+          ${perSideHint(e) ? `<p class="ws-hint">Log one side</p>` : ''}
+          <label class="ws-field">${esc(primaryLabel(e))}
+            <input type="number" class="ws-reps" min="1" step="1" inputmode="numeric">
+          </label>
+          <label class="ws-field">weight (${esc(wUnitLabel())})
+            <input type="number" class="ws-weight" min="0" step="0.5" inputmode="decimal" placeholder="optional">
+          </label>
+          <button type="button" class="ws-add-set" data-ex="${esc(e.name)}" data-muscle="${esc(e.muscle)}">Add</button>
+        </div>
+      </div>`;
   return `
     <div class="exercise">
       <div class="visual">${esc(e.emoji)}</div>
@@ -3194,7 +3438,7 @@ function exerciseCard(e) {
         <span class="pill good">${esc(e.sets)}</span>
       </div>
       <div class="desc">${esc(e.desc)}</div>
-      ${demoBtn}
+      ${demoBtn}${ws}
     </div>`;
 }
 
@@ -3222,6 +3466,75 @@ document.addEventListener('click', (ev) => {
   btn.textContent = '✕ Hide demo';
 });
 
+// Workout logging — delegated like the demo toggle. Handles opening the log
+// panel, adding a set (reps + optional weight in the user's unit), and removing
+// a logged set. Re-renders only the card's `.ws-info` region so other cards and
+// the panel's open state are untouched.
+function announceWs(msg) {
+  const s = document.getElementById('ws-status');
+  if (s) s.textContent = msg;
+}
+// Re-render a single card's log region. `data-idx` on the chips stays valid
+// because the whole region is rebuilt from storage on every add/remove.
+function rerenderWsInfo(wsEl, name) {
+  const e = EXERCISES.find(x => x.name === name);
+  if (e) wsEl.querySelector('.ws-info').innerHTML = workoutLogInner(e);
+}
+function addSetFromPanel(ws) {
+  const repsEl = ws.querySelector('.ws-reps');
+  const wEl = ws.querySelector('.ws-weight');
+  const addBtn = ws.querySelector('.ws-add-set');
+  const reps = parseInt(repsEl.value, 10);
+  if (!reps || reps < 1) { repsEl.focus(); return; }
+  // Blank, zero or non-positive weight = a bodyweight set (no added load).
+  const wNum = parseFloat(wEl.value.trim());
+  const kg = (wNum > 0) ? (currentUnits === 'imperial' ? lbToKg(wNum) : wNum) : null;
+  const ex = addBtn.dataset.ex;
+  if (logSet(ex, addBtn.dataset.muscle, reps, kg)) {
+    repsEl.value = ''; wEl.value = '';
+    rerenderWsInfo(ws, ex);
+    const e = EXERCISES.find(x => x.name === ex);
+    const day = getWorkoutDay().find(x => x.name === ex);
+    if (e && day && day.sets.length) announceWs(`Logged ${formatSet(e, day.sets[day.sets.length - 1])}`);
+    repsEl.focus();
+  }
+}
+document.addEventListener('click', (ev) => {
+  const toggle = ev.target.closest('.ws-log-toggle');
+  if (toggle) {
+    const panel = toggle.closest('.ws').querySelector('.ws-panel');
+    const opening = panel.hasAttribute('hidden');
+    panel.toggleAttribute('hidden', !opening);
+    toggle.setAttribute('aria-expanded', String(opening));
+    toggle.textContent = opening ? '✕ Close' : '＋ Log a set';
+    if (opening) panel.querySelector('.ws-reps').focus();
+    return;
+  }
+  const add = ev.target.closest('.ws-add-set');
+  if (add) { addSetFromPanel(add.closest('.ws')); return; }
+  const del = ev.target.closest('.ws-del-set');
+  if (del) {
+    const ws = del.closest('.ws');
+    const idx = parseInt(del.dataset.idx, 10);
+    removeSet(del.dataset.ex, idx);
+    rerenderWsInfo(ws, del.dataset.ex);
+    announceWs('Set removed');
+    // Keep focus in the card rather than dropping it to <body>.
+    const remaining = ws.querySelectorAll('.ws-del-set');
+    if (remaining.length) remaining[Math.min(idx, remaining.length - 1)].focus();
+    else ws.querySelector('.ws-log-toggle').focus();
+    return;
+  }
+});
+// Enter in either input adds the set (the panel isn't a <form>).
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter') return;
+  const input = ev.target.closest('.ws-reps, .ws-weight');
+  if (!input) return;
+  ev.preventDefault();
+  addSetFromPanel(input.closest('.ws'));
+});
+
 function updatePlanButtonLabel() {
   const planBtn = document.getElementById('w-plan');
   const count = Math.min(5, filteredExercises().length);
@@ -3242,7 +3555,8 @@ function renderExercises() {
     out.innerHTML = '<div class="card empty">No exercises match those filters.</div>';
     return;
   }
-  out.innerHTML = `<div class="card"><h2>Exercises (${list.length})</h2>${list.map(exerciseCard).join('')}</div>`;
+  const lastMap = buildLastLoggedMap();
+  out.innerHTML = `<div class="card"><h2>Exercises (${list.length})</h2>${list.map(e => exerciseCard(e, lastMap)).join('')}</div>`;
 }
 
 document.getElementById('w-plan').addEventListener('click', () => {
@@ -3267,8 +3581,9 @@ document.getElementById('w-plan').addEventListener('click', () => {
     const e = pool[Math.floor(Math.random() * pool.length)];
     if (!picks.includes(e)) picks.push(e);
   }
+  const lastMap = buildLastLoggedMap();
   document.getElementById('w-results').innerHTML =
-    `<div class="card"><h2>Your session (${picks.length} exercises)</h2>${picks.map(exerciseCard).join('')}</div>`;
+    `<div class="card"><h2>Your session (${picks.length} exercises)</h2>${picks.map(e => exerciseCard(e, lastMap)).join('')}</div>`;
   // Augment with animated demos for the selected muscle (no-op without a key).
   loadDemos(curMuscle);
 });
